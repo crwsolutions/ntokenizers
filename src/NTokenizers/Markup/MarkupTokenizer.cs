@@ -976,6 +976,9 @@ public static class MarkupTokenizer
                 case State.InHtmlTag:
                     onToken(new MarkupToken(MarkupTokenType.HtmlTag, sb.ToString()));
                     break;
+                case State.InCustomContainer:
+                    onToken(new MarkupToken(MarkupTokenType.CustomContainer, ":::" + sb.ToString()));
+                    break;
             }
             sb.Clear();
         }
