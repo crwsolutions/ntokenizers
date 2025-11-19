@@ -35,8 +35,8 @@ public static class TypescriptTokenizer
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.</exception>
     public static void Parse(Stream stream, string? stopDelimiter, Action<TypescriptToken> onToken)
     {
-        ArgumentNullException.ThrowIfNull(stream);
-        ArgumentNullException.ThrowIfNull(onToken);
+        //ArgumentNullException.ThrowIfNull(stream);
+        //ArgumentNullException.ThrowIfNull(onToken);
 
         using var reader = new StreamReader(stream, Encoding.UTF8);
         ParseInternal(reader, stopDelimiter, onToken);
@@ -260,7 +260,7 @@ public static class TypescriptTokenizer
             // Determine if it's a datetime or a number
             TypescriptTokenType tokenType = TypescriptTokenType.Number;
             if (number.Contains('T') || number.Count(ch => ch == ':') >= 2 || 
-                (number.Count(ch => ch == '-') >= 2 && !number.StartsWith('-')))
+                (number.Count(ch => ch == '-') >= 2 && !number.StartsWith("-")))
             {
                 tokenType = TypescriptTokenType.DateTimeValue;
             }
@@ -427,7 +427,7 @@ public static class TypescriptTokenizer
                     string number = sb.ToString();
                     TypescriptTokenType tokenType = TypescriptTokenType.Number;
                     if (number.Contains('T') || number.Count(ch => ch == ':') >= 2 || 
-                        (number.Count(ch => ch == '-') >= 2 && !number.StartsWith('-')))
+                        (number.Count(ch => ch == '-') >= 2 && !number.StartsWith("-")))
                     {
                         tokenType = TypescriptTokenType.DateTimeValue;
                     }
