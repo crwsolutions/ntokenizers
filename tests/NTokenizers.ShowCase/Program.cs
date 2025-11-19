@@ -180,7 +180,87 @@
 //    }
 //}
 
-using NTokenizers.Sql;   // <--- SQL tokenizer
+//using NTokenizers.Sql;   // <--- SQL tokenizer
+//using Spectre.Console;
+//using System.IO.Pipes;
+//using System.Text;
+
+//class Program
+//{
+//    static async Task Main()
+//    {
+//        string sql = """
+//        SELECT u.id, u.name, a.city, a.postal_code
+//        FROM users u
+//        INNER JOIN addresses a ON a.user_id = u.id
+//        WHERE u.active = TRUE
+//        ORDER BY u.name ASC;
+
+//        -- Fetch user with address
+//        SELECT *
+//        FROM users
+//        WHERE id = 42;
+//        """;
+
+//        // Connected streams
+//        using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
+//        using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
+
+//        // Start slow writer
+//        var writerTask = EmitSlowlyAsync(sql, pipe);
+
+//        // Parse SQL stream
+//        SqlTokenizer.Parse(reader, null, onToken: token =>
+//        {
+//            var value = Markup.Escape(token.Value);
+
+//            var colored = token.TokenType switch
+//            {
+//                SqlTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
+//                SqlTokenType.Identifier => new Markup($"[blue]{value}[/]"),
+//                SqlTokenType.StringValue => new Markup($"[green]{value}[/]"),
+//                SqlTokenType.Number => new Markup($"[green]{value}[/]"),
+//                SqlTokenType.Operator => new Markup($"[red]{value}[/]"),
+
+//                SqlTokenType.Comma => new Markup($"[grey]{value}[/]"),
+//                SqlTokenType.Dot => new Markup($"[grey]{value}[/]"),
+
+//                SqlTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
+//                SqlTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
+
+//                SqlTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
+
+//                SqlTokenType.Comment => new Markup($"[grey]{value}[/]"),
+
+//                SqlTokenType.NotDefined => new Markup($"[white]{value}[/]"),
+//                _ => new Markup(value)
+//            };
+
+//            AnsiConsole.Write(colored);
+//        });
+
+//        await writerTask;
+
+//        Console.WriteLine();
+//        Console.WriteLine("Done.");
+//    }
+
+//    static async Task EmitSlowlyAsync(string sql, Stream output)
+//    {
+//        var rng = new Random();
+//        byte[] bytes = Encoding.UTF8.GetBytes(sql);
+
+//        foreach (var b in bytes)
+//        {
+//            await output.WriteAsync(new[] { b }.AsMemory(0, 1));
+//            await output.FlushAsync();
+//            await Task.Delay(rng.Next(10, 60));
+//        }
+
+//        output.Close(); // EOF
+//    }
+//}
+using NTokenizers.Typescript;   // <--- your Typescript tokenizer
 using Spectre.Console;
 using System.IO.Pipes;
 using System.Text;
@@ -189,50 +269,54 @@ class Program
 {
     static async Task Main()
     {
-        string sql = """
-        SELECT u.id, u.name, a.city, a.postal_code
-        FROM users u
-        INNER JOIN addresses a ON a.user_id = u.id
-        WHERE u.active = TRUE
-        ORDER BY u.name ASC;
+        string ts = """
+        import { readFile } from 'fs';
+        import { join } from 'path';
 
-        -- Fetch user with address
-        SELECT *
-        FROM users
-        WHERE id = 42;
+        // Function to greet a user
+        function greet(name: string): void {
+            const message = "Hello, " + name;
+            console.log(message);
+        }
+
+        // Run greeting
+        greet("World");
         """;
 
-        // Connected streams
+        // Connected pipe streams
         using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
         using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
-        // Start slow writer
-        var writerTask = EmitSlowlyAsync(sql, pipe);
+        // Start slow writer (mimics network or terminal stream)
+        var writerTask = EmitSlowlyAsync(ts, pipe);
 
-        // Parse SQL stream
-        SqlTokenizer.Parse(reader, null, onToken: token =>
+        // Parse TypeScript stream
+        TypescriptTokenizer.Parse(reader, null, onToken: token =>
         {
             var value = Markup.Escape(token.Value);
 
             var colored = token.TokenType switch
             {
-                SqlTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
-                SqlTokenType.Identifier => new Markup($"[blue]{value}[/]"),
-                SqlTokenType.StringValue => new Markup($"[green]{value}[/]"),
-                SqlTokenType.Number => new Markup($"[green]{value}[/]"),
-                SqlTokenType.Operator => new Markup($"[red]{value}[/]"),
+                TypescriptTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
+                TypescriptTokenType.Identifier => new Markup($"[blue]{value}[/]"),
+                TypescriptTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                TypescriptTokenType.Number => new Markup($"[green]{value}[/]"),
+                TypescriptTokenType.Operator => new Markup($"[red]{value}[/]"),
 
-                SqlTokenType.Comma => new Markup($"[grey]{value}[/]"),
-                SqlTokenType.Dot => new Markup($"[grey]{value}[/]"),
+                TypescriptTokenType.Comma => new Markup($"[grey]{value}[/]"),
+                TypescriptTokenType.Dot => new Markup($"[grey]{value}[/]"),
 
-                SqlTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
-                SqlTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
+                TypescriptTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
+                TypescriptTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
 
-                SqlTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
+                TypescriptTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
 
-                SqlTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                TypescriptTokenType.Whitespace => new Markup(value),
 
-                SqlTokenType.NotDefined => new Markup($"[white]{value}[/]"),
+                TypescriptTokenType.NotDefined => new Markup($"[white]{value}[/]"),
+                TypescriptTokenType.Invalid => new Markup($"[red]{value}[/]"),
+
                 _ => new Markup(value)
             };
 
@@ -245,16 +329,16 @@ class Program
         Console.WriteLine("Done.");
     }
 
-    static async Task EmitSlowlyAsync(string sql, Stream output)
+    static async Task EmitSlowlyAsync(string text, Stream output)
     {
         var rng = new Random();
-        byte[] bytes = Encoding.UTF8.GetBytes(sql);
+        byte[] bytes = Encoding.UTF8.GetBytes(text);
 
         foreach (var b in bytes)
         {
             await output.WriteAsync(new[] { b }.AsMemory(0, 1));
             await output.FlushAsync();
-            await Task.Delay(rng.Next(10, 60));
+            await Task.Delay(rng.Next(10, 60)); // slow streaming effect
         }
 
         output.Close(); // EOF
