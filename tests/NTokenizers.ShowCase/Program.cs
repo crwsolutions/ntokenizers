@@ -260,7 +260,91 @@
 //        output.Close(); // EOF
 //    }
 //}
-using NTokenizers.Typescript;   // <--- your Typescript tokenizer
+//using NTokenizers.Typescript;   // <--- your Typescript tokenizer
+//using Spectre.Console;
+//using System.IO.Pipes;
+//using System.Text;
+
+//class Program
+//{
+//    static async Task Main()
+//    {
+//        string ts = """
+//        import { readFile } from 'fs';
+//        import { join } from 'path';
+
+//        // Function to greet a user
+//        function greet(name: string): void {
+//            const message = "Hello, " + name;
+//            console.log(message);
+//        }
+
+//        // Run greeting
+//        greet("World");
+//        """;
+
+//        // Connected pipe streams
+//        using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
+//        using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
+
+//        // Start slow writer (mimics network or terminal stream)
+//        var writerTask = EmitSlowlyAsync(ts, pipe);
+
+//        // Parse TypeScript stream
+//        TypescriptTokenizer.Parse(reader, null, onToken: token =>
+//        {
+//            var value = Markup.Escape(token.Value);
+
+//            var colored = token.TokenType switch
+//            {
+//                TypescriptTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
+//                TypescriptTokenType.Identifier => new Markup($"[blue]{value}[/]"),
+//                TypescriptTokenType.StringValue => new Markup($"[green]{value}[/]"),
+//                TypescriptTokenType.Number => new Markup($"[green]{value}[/]"),
+//                TypescriptTokenType.Operator => new Markup($"[red]{value}[/]"),
+
+//                TypescriptTokenType.Comma => new Markup($"[grey]{value}[/]"),
+//                TypescriptTokenType.Dot => new Markup($"[grey]{value}[/]"),
+
+//                TypescriptTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
+//                TypescriptTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
+
+//                TypescriptTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
+
+//                TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
+//                TypescriptTokenType.Whitespace => new Markup(value),
+
+//                TypescriptTokenType.NotDefined => new Markup($"[white]{value}[/]"),
+//                TypescriptTokenType.Invalid => new Markup($"[red]{value}[/]"),
+
+//                _ => new Markup(value)
+//            };
+
+//            AnsiConsole.Write(colored);
+//        });
+
+//        await writerTask;
+
+//        Console.WriteLine();
+//        Console.WriteLine("Done.");
+//    }
+
+//    static async Task EmitSlowlyAsync(string text, Stream output)
+//    {
+//        var rng = new Random();
+//        byte[] bytes = Encoding.UTF8.GetBytes(text);
+
+//        foreach (var b in bytes)
+//        {
+//            await output.WriteAsync(new[] { b }.AsMemory(0, 1));
+//            await output.FlushAsync();
+//            await Task.Delay(rng.Next(10, 60)); // slow streaming effect
+//        }
+
+//        output.Close(); // EOF
+//    }
+//}
+using NTokenizers.CSharp;
 using Spectre.Console;
 using System.IO.Pipes;
 using System.Text;
@@ -269,78 +353,65 @@ class Program
 {
     static async Task Main()
     {
-        string ts = """
-        import { readFile } from 'fs';
-        import { join } from 'path';
+        string cs = """
+using System;
+using System.Collections.Generic;
 
-        // Function to greet a user
-        function greet(name: string): void {
-            const message = "Hello, " + name;
-            console.log(message);
-        }
+// Calculate sum of numbers
+class Program
+{
+    static void Main()
+    {
+        var numbers = new List<int> { 1, 2, 3, 4 };
+        int sum = 0;
+        foreach (var n in numbers)
+            sum += n;
+        Console.WriteLine("Sum: " + sum);
+    }
+}
+""";
 
-        // Run greeting
-        greet("World");
-        """;
-
-        // Connected pipe streams
         using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
         using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
-        // Start slow writer (mimics network or terminal stream)
-        var writerTask = EmitSlowlyAsync(ts, pipe);
+        var writerTask = EmitSlowlyAsync(cs, pipe);
 
-        // Parse TypeScript stream
-        TypescriptTokenizer.Parse(reader, null, onToken: token =>
+        CSharpTokenizer.Parse(reader, null, token =>
         {
             var value = Markup.Escape(token.Value);
-
             var colored = token.TokenType switch
             {
-                TypescriptTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
-                TypescriptTokenType.Identifier => new Markup($"[blue]{value}[/]"),
-                TypescriptTokenType.StringValue => new Markup($"[green]{value}[/]"),
-                TypescriptTokenType.Number => new Markup($"[green]{value}[/]"),
-                TypescriptTokenType.Operator => new Markup($"[red]{value}[/]"),
-
-                TypescriptTokenType.Comma => new Markup($"[grey]{value}[/]"),
-                TypescriptTokenType.Dot => new Markup($"[grey]{value}[/]"),
-
-                TypescriptTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
-                TypescriptTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
-
-                TypescriptTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
-
-                TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
-                TypescriptTokenType.Whitespace => new Markup(value),
-
-                TypescriptTokenType.NotDefined => new Markup($"[white]{value}[/]"),
-                TypescriptTokenType.Invalid => new Markup($"[red]{value}[/]"),
-
+                CSharpTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
+                CSharpTokenType.Identifier => new Markup($"[blue]{value}[/]"),
+                CSharpTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                CSharpTokenType.Number => new Markup($"[green]{value}[/]"),
+                CSharpTokenType.Operator => new Markup($"[red]{value}[/]"),
+                CSharpTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                CSharpTokenType.Comma => new Markup($"[grey]{value}[/]"),
+                CSharpTokenType.Dot => new Markup($"[grey]{value}[/]"),
+                CSharpTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
+                CSharpTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
+                CSharpTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
                 _ => new Markup(value)
             };
-
             AnsiConsole.Write(colored);
         });
 
         await writerTask;
-
-        Console.WriteLine();
-        Console.WriteLine("Done.");
+        Console.WriteLine("\nDone.");
     }
 
     static async Task EmitSlowlyAsync(string text, Stream output)
     {
         var rng = new Random();
         byte[] bytes = Encoding.UTF8.GetBytes(text);
-
         foreach (var b in bytes)
         {
             await output.WriteAsync(new[] { b }.AsMemory(0, 1));
             await output.FlushAsync();
-            await Task.Delay(rng.Next(10, 60)); // slow streaming effect
+            await Task.Delay(rng.Next(10, 60));
         }
-
-        output.Close(); // EOF
+        output.Close();
     }
 }
+
