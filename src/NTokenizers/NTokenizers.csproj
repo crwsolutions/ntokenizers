@@ -1,9 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>true</IsPackable>
+		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+		<!-- NuGet package metadata -->
+		<PackageId>NTokenizers</PackageId>
+		<VersionSuffix Condition="'$(VersionSuffix)' == ''">preview</VersionSuffix>
+		<Version>0.1-$(VersionSuffix)</Version>
+		<Authors>crwsolutions</Authors>
+		<Copyright>(c) crwsolutions</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Description>Collection of stream-capable tokenizers for XML and JSON processing. See README for usage and details.</Description>
+		<PackageDescription>Collection of stream-capable tokenizers for XML and JSON processing. See README for usage and details.</PackageDescription>
+		<PackageTags>tokenizer;xml;json;stream;parsing;dotnet</PackageTags>
+		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/crwsolutions/ntokenizers</PackageProjectUrl>
+		<Title>NTokenizers</Title>
+		<PackageReleaseNotes>Initial preview release: XML and JSON stream tokenizers.</PackageReleaseNotes>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 </Project>
