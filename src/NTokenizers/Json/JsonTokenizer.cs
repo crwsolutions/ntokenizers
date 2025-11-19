@@ -2,8 +2,60 @@ using System.Text;
 
 namespace NTokenizers.Json;
 
+/// <summary>
+/// Provides functionality for tokenizing JSON or JSON-like text sources.
+/// </summary>
 public static class JsonTokenizer
 {
+    /// <summary>
+    /// Parses JSON or JSON-like content from the given <see cref="Stream"/> and
+    /// produces a sequence of <see cref="JsonToken"/> objects.
+    /// </summary>
+    /// <param name="stream">
+    /// The input stream containing the text to tokenize.  
+    /// The stream is read as UTF-8.
+    /// </param>
+    /// <param name="stopDelimiter">
+    /// An optional string that, when encountered in the input, instructs the tokenizer
+    /// to stop parsing and return control to the caller.  
+    /// This is typically used when the tokenizer is operating as a sub-tokenizer
+    /// inside another language (for example, JSON inside Markdown or another format),
+    /// where parsing should stop when reaching a delimiter such as a Markdown code
+    /// fence (<c>```</c>).
+    /// If <c>null</c>, the tokenizer parses until the end of the stream.
+    /// </param>
+    /// <param name="onToken">
+    /// A callback invoked for each <see cref="JsonToken"/> produced during parsing.
+    /// This delegate must not be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.
+    /// </exception>
+    /// <example>
+    /// The following example demonstrates how to parse a simple JSON snippet:
+    /// <code>
+    /// var json = "{ \"name\": \"Alice\", \"age\": 30 }";
+    /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
+    ///
+    /// JsonTokenizer.Parse(ms, null, token =>
+    /// {
+    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
+    /// });
+    /// </code>
+    ///
+    /// The next example shows parsing JSON that is embedded inside Markdown.
+    /// The tokenizer stops when the code fence delimiter is reached:
+    /// <code>
+    /// var markdown = "```json\n{ \"value\": 123 }\n``` extra";
+    ///
+    /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
+    ///
+    /// JsonTokenizer.Parse(ms, "```", token =>
+    /// {
+    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
+    /// });
+    /// </code>
+    /// </example>
     public static void Parse(Stream stream, string? stopDelimiter, Action<JsonToken> onToken)
     {
         using var reader = new StreamReader(stream, Encoding.UTF8);

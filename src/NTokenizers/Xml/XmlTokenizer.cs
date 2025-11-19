@@ -2,6 +2,9 @@
 
 namespace NTokenizers.Xml;
 
+/// <summary>
+/// Provides functionality for tokenizing XML or XML-like text sources.
+/// </summary>
 public static class XmlTokenizer
 {
     private enum State
@@ -21,6 +24,55 @@ public static class XmlTokenizer
         InWhitespace       // Collecting whitespace between structural tokens
     }
 
+    /// <summary>
+    /// Parses XML or XML-like content from the given <see cref="Stream"/> and
+    /// produces a sequence of <see cref="XmlToken"/> objects.
+    /// </summary>
+    /// <param name="stream">
+    /// The input stream containing the text to tokenize.  
+    /// The stream is read as UTF-8.
+    /// </param>
+    /// <param name="stopDelimiter">
+    /// An optional string that, when encountered in the input, instructs the tokenizer
+    /// to stop parsing and return control to the caller.  
+    /// This is typically used when the tokenizer is operating as a sub-tokenizer
+    /// inside another language (e.g., XML embedded in Markdown), where parsing should
+    /// stop when reaching a delimiter such as a Markdown code fence (<c>```</c>).
+    /// If <c>null</c>, the tokenizer parses until the end of the stream.
+    /// </param>
+    /// <param name="onToken">
+    /// A callback invoked for each <see cref="XmlToken"/> produced during parsing.
+    /// This delegate must not be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.
+    /// </exception>
+    /// <example>
+    /// The following example demonstrates how to parse a simple XML snippet:
+    /// <code>
+    /// var xml = "&lt;root&gt;Hello&lt;/root&gt;";
+    /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(xml));
+    ///
+    /// XmlTokenizer.Parse(ms, null, token =>
+    /// {
+    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
+    /// });
+    /// </code>
+    ///
+    /// The next example shows parsing XML that is embedded inside Markdown.
+    /// The tokenizer stops when the code fence delimiter is reached:
+    /// <code>
+    /// var markdown = "```xml\n&lt;root&gt;Hi&lt;/root&gt;\n``` more text";
+    ///
+    /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
+    ///
+    /// // We want to parse only until the closing code fence appears.
+    /// XmlTokenizer.Parse(ms, "```", token =>
+    /// {
+    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
+    /// });
+    /// </code>
+    /// </example>
     public static void Parse(Stream stream, string? stopDelimiter, Action<XmlToken> onToken)
     {
         using var reader = new StreamReader(stream, Encoding.UTF8);
