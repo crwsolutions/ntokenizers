@@ -328,6 +328,61 @@ public class XmlTokenizerTests
         Assert.Equal(0, tokens.Count);
     }
 
+    [Fact]
+    public void TestComplexNestedXmlWithAttributes()
+    {
+        // Test case from issue - complex nested XML with attributes and self-closing tags
+        var xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <user id="4821" active="true">
+            <name>Laura Smith</name>
+            <addresses>
+                <address type="home">
+                    <street>221B Baker Street</street>
+                    <city>London</city>
+                    <postalCode>NW1 6XE</postalCode>
+                    <coordinates lat="51.5237" lng="-0.1586" />
+                </address>
+                <address type="office" floor="5">
+                    <street>18 King William Street</street>
+                    <city>London</city>
+                    <postalCode>EC4N 7BP</postalCode>
+                </address>
+            </addresses>
+        </user>
+        """;
+
+        var tokens = Tokenize(xml);
+
+        // Verify we have proper angle brackets and element names (not all attributes)
+        // Key validation: ensure opening angle brackets are present
+        var openingBrackets = tokens.Count(t => t.TokenType == XmlTokenType.OpeningAngleBracket);
+        var closingBrackets = tokens.Count(t => t.TokenType == XmlTokenType.ClosingAngleBracket);
+        var elementNames = tokens.Count(t => t.TokenType == XmlTokenType.ElementName);
+        
+        // We should have opening brackets (excluding self-closing which have different structure)
+        // user(1) + name(2) + addresses(2) + address(4) + street(4) + city(4) + postalCode(4) + coordinates(1) = 22 opening brackets
+        Assert.True(openingBrackets > 0, "Should have opening angle brackets");
+        
+        // Verify element names are properly tokenized (not as AttributeName)
+        Assert.True(elementNames > 0, "Should have element names");
+        
+        // Ensure that "name" appears as ElementName, not AttributeName
+        var nameElementTokens = tokens.Where(t => 
+            t.TokenType == XmlTokenType.ElementName && t.Value == "name").ToList();
+        Assert.Equal(2, nameElementTokens.Count); // Opening and closing tag
+        
+        // Ensure "Laura Smith" is tokenized as Text, not as AttributeName
+        var textTokens = tokens.Where(t => t.TokenType == XmlTokenType.Text).ToList();
+        Assert.Contains(textTokens, t => t.Value.Contains("Laura Smith"));
+        
+        // Ensure we don't have incorrect AttributeName tokens for element text
+        var incorrectAttrTokens = tokens.Where(t => 
+            t.TokenType == XmlTokenType.AttributeName && 
+            (t.Value == "Laura" || t.Value == "Smith" || t.Value == "London")).ToList();
+        Assert.Empty(incorrectAttrTokens);
+    }
+
     private static List<XmlToken> Tokenize(string input)
     {
         var tokens = new List<XmlToken>();

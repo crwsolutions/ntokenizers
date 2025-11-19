@@ -242,7 +242,12 @@ public static class XmlTokenizer
                         sb.Clear();
                     }
 
-                    if (c == '>')
+                    if (c == '<')
+                    {
+                        sb.Append(c);
+                        state = State.TagStart;
+                    }
+                    else if (c == '>')
                     {
                         onToken(new XmlToken(XmlTokenType.ClosingAngleBracket, ">"));
                         insideTag = false;
