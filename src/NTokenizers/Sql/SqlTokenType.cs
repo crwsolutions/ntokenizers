@@ -63,5 +63,10 @@ public enum SqlTokenType
     /// <summary>
     /// Represents a comment (inline -- or block /* */).
     /// </summary>
-    Comment
+    Comment,
+
+    /// <summary>
+    /// Represents whitespace characters (spaces, tabs, newlines, carriage returns) between tokens.
+    /// </summary>
+    Whitespace
 }

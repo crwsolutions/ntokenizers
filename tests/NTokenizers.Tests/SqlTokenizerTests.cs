@@ -9,21 +9,27 @@ public class SqlTokenizerTests
     public void TestSimpleSelect()
     {
         var tokens = Tokenize("SELECT * FROM users");
-        Assert.Equal(4, tokens.Count);
+        Assert.Equal(7, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
-        Assert.Equal(SqlTokenType.Operator, tokens[1].TokenType);
-        Assert.Equal("*", tokens[1].Value);
-        Assert.Equal(SqlTokenType.Keyword, tokens[2].TokenType);
-        Assert.Equal("FROM", tokens[2].Value);
-        Assert.Equal(SqlTokenType.Identifier, tokens[3].TokenType);
-        Assert.Equal("users", tokens[3].Value);
+        Assert.Equal(SqlTokenType.Whitespace, tokens[1].TokenType);
+        Assert.Equal(" ", tokens[1].Value);
+        Assert.Equal(SqlTokenType.Operator, tokens[2].TokenType);
+        Assert.Equal("*", tokens[2].Value);
+        Assert.Equal(SqlTokenType.Whitespace, tokens[3].TokenType);
+        Assert.Equal(" ", tokens[3].Value);
+        Assert.Equal(SqlTokenType.Keyword, tokens[4].TokenType);
+        Assert.Equal("FROM", tokens[4].Value);
+        Assert.Equal(SqlTokenType.Whitespace, tokens[5].TokenType);
+        Assert.Equal(" ", tokens[5].Value);
+        Assert.Equal(SqlTokenType.Identifier, tokens[6].TokenType);
+        Assert.Equal("users", tokens[6].Value);
     }
 
     [Fact]
     public void TestSelectWithWhere()
     {
-        var tokens = Tokenize("SELECT id, name FROM users WHERE age > 18");
+        var tokens = TokenizeWithoutWhitespace("SELECT id, name FROM users WHERE age > 18");
         Assert.Equal(10, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -49,7 +55,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestInsertStatement()
     {
-        var tokens = Tokenize("INSERT INTO users (id, name) VALUES (1, 'John')");
+        var tokens = TokenizeWithoutWhitespace("INSERT INTO users (id, name) VALUES (1, 'John')");
         Assert.Equal(14, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("INSERT", tokens[0].Value);
@@ -78,7 +84,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestUpdateStatement()
     {
-        var tokens = Tokenize("UPDATE users SET name = 'Jane' WHERE id = 1");
+        var tokens = TokenizeWithoutWhitespace("UPDATE users SET name = 'Jane' WHERE id = 1");
         Assert.Equal(10, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("UPDATE", tokens[0].Value);
@@ -105,7 +111,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestDeleteStatement()
     {
-        var tokens = Tokenize("DELETE FROM users WHERE id = 1");
+        var tokens = TokenizeWithoutWhitespace("DELETE FROM users WHERE id = 1");
         Assert.Equal(7, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("DELETE", tokens[0].Value);
@@ -126,7 +132,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestStringLiteralsSingleQuotes()
     {
-        var tokens = Tokenize("SELECT 'Hello World' FROM dual");
+        var tokens = TokenizeWithoutWhitespace("SELECT 'Hello World' FROM dual");
         Assert.Equal(4, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -141,7 +147,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestStringLiteralsDoubleQuotes()
     {
-        var tokens = Tokenize("SELECT \"Hello World\" FROM dual");
+        var tokens = TokenizeWithoutWhitespace("SELECT \"Hello World\" FROM dual");
         Assert.Equal(4, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -156,7 +162,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestNumbers()
     {
-        var tokens = Tokenize("SELECT 123, 45.67, 0.5 FROM dual");
+        var tokens = TokenizeWithoutWhitespace("SELECT 123, 45.67, 0.5 FROM dual");
         Assert.Equal(8, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -177,7 +183,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestOperators()
     {
-        var tokens = Tokenize("SELECT * FROM t WHERE a = 1 AND b <> 2 AND c < 3 AND d > 4 AND e <= 5 AND f >= 6");
+        var tokens = TokenizeWithoutWhitespace("SELECT * FROM t WHERE a = 1 AND b <> 2 AND c < 3 AND d > 4 AND e <= 5 AND f >= 6");
         Assert.Equal(28, tokens.Count);
         // Checking key operators
         Assert.Equal(SqlTokenType.Operator, tokens[6].TokenType);
@@ -199,7 +205,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestArithmeticOperators()
     {
-        var tokens = Tokenize("SELECT a + b - c * d / e % f FROM t");
+        var tokens = TokenizeWithoutWhitespace("SELECT a + b - c * d / e % f FROM t");
         Assert.Equal(14, tokens.Count);
         Assert.Equal(SqlTokenType.Identifier, tokens[1].TokenType);
         Assert.Equal("a", tokens[1].Value);
@@ -220,7 +226,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestLineComment()
     {
-        var tokens = Tokenize("SELECT * FROM users -- This is a comment\nWHERE id = 1");
+        var tokens = TokenizeWithoutWhitespace("SELECT * FROM users -- This is a comment\nWHERE id = 1");
         Assert.Equal(9, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -239,7 +245,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestBlockComment()
     {
-        var tokens = Tokenize("SELECT * /* This is a block comment */ FROM users");
+        var tokens = TokenizeWithoutWhitespace("SELECT * /* This is a block comment */ FROM users");
         Assert.Equal(5, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -256,7 +262,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestPunctuation()
     {
-        var tokens = Tokenize("SELECT id, name FROM users.accounts WHERE id = 1;");
+        var tokens = TokenizeWithoutWhitespace("SELECT id, name FROM users.accounts WHERE id = 1;");
         Assert.Equal(13, tokens.Count);
         Assert.Equal(SqlTokenType.Comma, tokens[2].TokenType);
         Assert.Equal(",", tokens[2].Value);
@@ -273,7 +279,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestJoinQuery()
     {
-        var tokens = Tokenize("SELECT u.name, o.amount FROM users u INNER JOIN orders o ON u.id = o.user_id");
+        var tokens = TokenizeWithoutWhitespace("SELECT u.name, o.amount FROM users u INNER JOIN orders o ON u.id = o.user_id");
         Assert.Equal(23, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -293,7 +299,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestSubquery()
     {
-        var tokens = Tokenize("SELECT * FROM users WHERE id IN (SELECT user_id FROM orders)");
+        var tokens = TokenizeWithoutWhitespace("SELECT * FROM users WHERE id IN (SELECT user_id FROM orders)");
         Assert.Equal(13, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -314,7 +320,7 @@ public class SqlTokenizerTests
                     LEFT JOIN products p ON o.product_id = p.id 
                     WHERE u.age > 18 AND o.amount > 100 
                     ORDER BY u.name ASC";
-        var tokens = Tokenize(sql);
+        var tokens = TokenizeWithoutWhitespace(sql);
         
         // Check for key elements
         var keywords = tokens.Where(t => t.TokenType == SqlTokenType.Keyword).Select(t => t.Value.ToUpper()).ToList();
@@ -334,7 +340,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestStopDelimiter()
     {
-        var tokens = Tokenize("SELECT * FROM users```MORE CONTENT", "```");
+        var tokens = TokenizeWithoutWhitespace("SELECT * FROM users```MORE CONTENT", "```");
         Assert.Equal(4, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -349,7 +355,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestStopDelimiterWithScript()
     {
-        var tokens = Tokenize("SELECT * FROM users</script>MORE CONTENT", "</script>");
+        var tokens = TokenizeWithoutWhitespace("SELECT * FROM users</script>MORE CONTENT", "</script>");
         Assert.Equal(4, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -364,7 +370,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestCaseInsensitiveKeywords()
     {
-        var tokens = Tokenize("select * from users where id = 1");
+        var tokens = TokenizeWithoutWhitespace("select * from users where id = 1");
         Assert.Equal(8, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("select", tokens[0].Value);
@@ -377,7 +383,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestIdentifierVsKeyword()
     {
-        var tokens = Tokenize("SELECT my_select FROM users");
+        var tokens = TokenizeWithoutWhitespace("SELECT my_select FROM users");
         Assert.Equal(4, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -392,7 +398,7 @@ public class SqlTokenizerTests
     [Fact]
     public void TestGroupByAndOrderBy()
     {
-        var tokens = Tokenize("SELECT name, COUNT(*) FROM users GROUP BY name ORDER BY name DESC");
+        var tokens = TokenizeWithoutWhitespace("SELECT name, COUNT(*) FROM users GROUP BY name ORDER BY name DESC");
         Assert.Equal(16, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("SELECT", tokens[0].Value);
@@ -412,7 +418,7 @@ public class SqlTokenizerTests
     public void TestCreateTable()
     {
         var sql = "CREATE TABLE users (id INT, name VARCHAR(100))";
-        var tokens = Tokenize(sql);
+        var tokens = TokenizeWithoutWhitespace(sql);
         
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("CREATE", tokens[0].Value);
@@ -434,7 +440,7 @@ public class SqlTokenizerTests
         /* This is a 
         multiline comment */
         FROM users";
-        var tokens = Tokenize(sql);
+        var tokens = TokenizeWithoutWhitespace(sql);
         
         var comments = tokens.Where(t => t.TokenType == SqlTokenType.Comment).ToList();
         Assert.Single(comments);
@@ -444,12 +450,50 @@ public class SqlTokenizerTests
     [Fact]
     public void TestNullAndIs()
     {
-        var tokens = Tokenize("SELECT * FROM users WHERE name IS NULL");
+        var tokens = TokenizeWithoutWhitespace("SELECT * FROM users WHERE name IS NULL");
         Assert.Equal(8, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[6].TokenType);
         Assert.Equal("IS", tokens[6].Value);
         Assert.Equal(SqlTokenType.Keyword, tokens[7].TokenType);
         Assert.Equal("NULL", tokens[7].Value);
+    }
+
+    [Fact]
+    public void TestWhitespaceTokens()
+    {
+        var tokens = Tokenize("SELECT * FROM users");
+        
+        // Should have whitespace tokens between keywords/operators
+        var whitespaceTokens = tokens.Where(t => t.TokenType == SqlTokenType.Whitespace).ToList();
+        Assert.Equal(3, whitespaceTokens.Count);
+        
+        // Verify structure: SELECT <ws> * <ws> FROM <ws> users
+        Assert.Equal(7, tokens.Count);
+        Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
+        Assert.Equal("SELECT", tokens[0].Value);
+        Assert.Equal(SqlTokenType.Whitespace, tokens[1].TokenType);
+        Assert.Equal(" ", tokens[1].Value);
+        Assert.Equal(SqlTokenType.Operator, tokens[2].TokenType);
+        Assert.Equal("*", tokens[2].Value);
+        Assert.Equal(SqlTokenType.Whitespace, tokens[3].TokenType);
+        Assert.Equal(" ", tokens[3].Value);
+        Assert.Equal(SqlTokenType.Keyword, tokens[4].TokenType);
+        Assert.Equal("FROM", tokens[4].Value);
+        Assert.Equal(SqlTokenType.Whitespace, tokens[5].TokenType);
+        Assert.Equal(" ", tokens[5].Value);
+        Assert.Equal(SqlTokenType.Identifier, tokens[6].TokenType);
+        Assert.Equal("users", tokens[6].Value);
+    }
+
+    [Fact]
+    public void TestMultipleWhitespaceCharacters()
+    {
+        var tokens = Tokenize("SELECT  \t\n id");
+        
+        // Should have one whitespace token with multiple chars
+        var whitespaceTokens = tokens.Where(t => t.TokenType == SqlTokenType.Whitespace).ToList();
+        Assert.Single(whitespaceTokens);
+        Assert.Equal("  \t\n ", whitespaceTokens[0].Value);
     }
 
     private static List<SqlToken> Tokenize(string input)
@@ -460,11 +504,23 @@ public class SqlTokenizerTests
         return tokens;
     }
 
+    private static List<SqlToken> TokenizeWithoutWhitespace(string input)
+    {
+        var tokens = Tokenize(input);
+        return tokens.Where(t => t.TokenType != SqlTokenType.Whitespace).ToList();
+    }
+
     private static List<SqlToken> Tokenize(string input, string stopDelimiter)
     {
         var tokens = new List<SqlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         SqlTokenizer.Parse(stream, stopDelimiter, token => tokens.Add(token));
         return tokens;
+    }
+
+    private static List<SqlToken> TokenizeWithoutWhitespace(string input, string stopDelimiter)
+    {
+        var tokens = Tokenize(input, stopDelimiter);
+        return tokens.Where(t => t.TokenType != SqlTokenType.Whitespace).ToList();
     }
 }

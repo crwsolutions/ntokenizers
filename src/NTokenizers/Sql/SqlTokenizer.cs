@@ -137,6 +137,9 @@ public static class SqlTokenizer
             case State.InBlockComment:
                 return ProcessInBlockComment(c, sb, onToken);
 
+            case State.InWhitespace:
+                return ProcessInWhitespace(c, sb, ref stringQuote, onToken, reader);
+
             default:
                 return State.Start;
         }
@@ -145,10 +148,11 @@ public static class SqlTokenizer
     private static State ProcessStart(char c, StringBuilder sb, ref char stringQuote, 
         Action<SqlToken> onToken, TextReader reader)
     {
-        // Skip whitespace
+        // Accumulate whitespace
         if (char.IsWhiteSpace(c))
         {
-            return State.Start;
+            sb.Append(c);
+            return State.InWhitespace;
         }
 
         // String literals
@@ -242,7 +246,10 @@ public static class SqlTokenizer
     {
         sb.Append(c);
 
-        if (c == stringQuote)
+        // Determine the quote character from the first char in buffer if stringQuote is not set
+        char actualQuote = stringQuote != '\0' ? stringQuote : (sb.Length > 0 ? sb[0] : '"');
+        
+        if (c == actualQuote && sb.Length > 1) // Must have at least opening quote + closing quote
         {
             // Check for escaped quote (double quote)
             // We need to peek ahead, but we can't in this architecture
@@ -275,7 +282,8 @@ public static class SqlTokenizer
             // Handle current character based on what it is
             if (char.IsWhiteSpace(c))
             {
-                return State.Start;
+                sb.Append(c);
+                return State.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
             {
@@ -336,7 +344,8 @@ public static class SqlTokenizer
             // Handle current character
             if (char.IsWhiteSpace(c))
             {
-                return State.Start;
+                sb.Append(c);
+                return State.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
             {
@@ -403,7 +412,8 @@ public static class SqlTokenizer
             // Handle current character
             if (char.IsWhiteSpace(c))
             {
-                return State.Start;
+                sb.Append(c);
+                return State.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
             {
@@ -478,6 +488,107 @@ public static class SqlTokenizer
         return State.InBlockComment;
     }
 
+    private static State ProcessInWhitespace(char c, StringBuilder sb, ref char stringQuote, 
+        Action<SqlToken> onToken, TextReader reader)
+    {
+        if (char.IsWhiteSpace(c))
+        {
+            sb.Append(c);
+            return State.InWhitespace;
+        }
+        else
+        {
+            // Whitespace is complete
+            string value = sb.ToString();
+            onToken(new SqlToken(SqlTokenType.Whitespace, value));
+            sb.Clear();
+
+            // Handle current character based on what it is
+            if (c == '\'' || c == '"')
+            {
+                stringQuote = c;
+                sb.Append(c);
+                return State.InString;
+            }
+            else if (char.IsDigit(c))
+            {
+                sb.Append(c);
+                return State.InNumber;
+            }
+            else if (char.IsLetter(c) || c == '_')
+            {
+                sb.Append(c);
+                return State.InIdentifier;
+            }
+            // Check for comments
+            else if (c == '-')
+            {
+                int next = reader.Peek();
+                if (next == '-')
+                {
+                    reader.Read(); // consume second '-'
+                    sb.Append("--");
+                    return State.InLineComment;
+                }
+                else
+                {
+                    sb.Append(c);
+                    return State.InOperator;
+                }
+            }
+            else if (c == '/')
+            {
+                int next = reader.Peek();
+                if (next == '*')
+                {
+                    reader.Read(); // consume '*'
+                    sb.Append("/*");
+                    return State.InBlockComment;
+                }
+                else
+                {
+                    sb.Append(c);
+                    return State.InOperator;
+                }
+            }
+            else if (c == ',')
+            {
+                onToken(new SqlToken(SqlTokenType.Comma, ","));
+                return State.Start;
+            }
+            else if (c == '.')
+            {
+                onToken(new SqlToken(SqlTokenType.Dot, "."));
+                return State.Start;
+            }
+            else if (c == '(')
+            {
+                onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
+                return State.Start;
+            }
+            else if (c == ')')
+            {
+                onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
+                return State.Start;
+            }
+            else if (c == ';')
+            {
+                onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
+                return State.Start;
+            }
+            else if (IsOperatorChar(c))
+            {
+                sb.Append(c);
+                return State.InOperator;
+            }
+            else
+            {
+                onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
+                return State.Start;
+            }
+        }
+    }
+
     private static void EmitPending(State state, StringBuilder sb, Action<SqlToken> onToken)
     {
         if (sb.Length == 0)
@@ -504,6 +615,9 @@ public static class SqlTokenizer
             case State.InBlockComment:
                 onToken(new SqlToken(SqlTokenType.Comment, value));
                 break;
+            case State.InWhitespace:
+                onToken(new SqlToken(SqlTokenType.Whitespace, value));
+                break;
         }
 
         sb.Clear();
@@ -523,6 +637,7 @@ public static class SqlTokenizer
         InIdentifier,
         InOperator,
         InLineComment,
-        InBlockComment
+        InBlockComment,
+        InWhitespace
     }
 }
