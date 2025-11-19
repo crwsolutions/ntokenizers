@@ -1,4 +1,4 @@
-# ntokenizers
+# NTokenizers
 Collection of tokenizers for XML, JSON, HTML, etc processing
 
 ## Overview
