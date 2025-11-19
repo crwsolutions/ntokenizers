@@ -5,6 +5,10 @@ Collection of tokenizers for XML, JSON, HTML, etc processing
 
 The `Tokenize` method is the core functionality of ntokenizers that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
+## Warning
+
+These tokenizers are **not validation-based** and are primarily intended for **prettifying**, **formatting**, or **visualizing** structured text. They do not perform strict validation of the input format, so they may produce unexpected results when processing malformed or invalid XML, JSON, or HTML. Use them with caution when dealing with untrusted or poorly formatted input.
+
 ## Example
 
 Here's a simple example showing how to use the XML tokenizer:
