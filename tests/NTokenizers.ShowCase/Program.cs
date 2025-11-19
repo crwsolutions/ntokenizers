@@ -89,7 +89,98 @@
 //    }
 //}
 
-using NTokenizers.Xml;  // <--- XML tokenizer
+//using NTokenizers.Xml;  // <--- XML tokenizer
+//using Spectre.Console;
+//using System.IO.Pipes;
+//using System.Text;
+
+//class Program
+//{
+//    static async Task Main()
+//    {
+//        string xml = """
+//        <?xml version="1.0" encoding="utf-8"?>
+//        <user id="4821" active="true">
+//            <name>Laura Smith</name>
+//            <addresses>
+//                <address type="home">
+//                    <street>221B Baker Street</street>
+//                    <city>London</city>
+//                    <postalCode>NW1 6XE</postalCode>
+//                    <coordinates lat="51.5237" lng="-0.1586" />
+//                </address>
+//                <address type="office" floor="5">
+//                    <street>18 King William Street</street>
+//                    <city>London</city>
+//                    <postalCode>EC4N 7BP</postalCode>
+//                </address>
+//            </addresses>
+//        </user>
+//        """;
+
+//        // Create connected streams
+//        using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
+//        using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
+
+//        // Start slow writer
+//        var writerTask = EmitSlowlyAsync(xml, pipe);
+
+//        // Start parsing XML
+//        XmlTokenizer.Parse(reader, null,onToken: token =>
+//        {
+//            var value = Markup.Escape(token.Value);
+
+//            var colored = token.TokenType switch
+//            {
+//                XmlTokenType.ElementName => new Markup($"[blue]{value}[/]"),
+//                XmlTokenType.EndElement => new Markup($"[blue]{value}[/]"),
+
+//                XmlTokenType.OpeningAngleBracket => new Markup($"[yellow]{value}[/]"),
+//                XmlTokenType.ClosingAngleBracket => new Markup($"[yellow]{value}[/]"),
+//                XmlTokenType.SelfClosingSlash => new Markup($"[yellow]{value}[/]"),
+
+//                XmlTokenType.AttributeName => new Markup($"[cyan]{value}[/]"),
+//                XmlTokenType.AttributeEquals => new Markup($"[yellow]{value}[/]"),
+//                XmlTokenType.AttributeQuote => new Markup($"[grey]{value}[/]"),
+//                XmlTokenType.AttributeValue => new Markup($"[green]{value}[/]"),
+
+//                XmlTokenType.Text => new Markup($"[white]{value}[/]"),
+//                XmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+
+//                XmlTokenType.Comment => new Markup($"[grey]{value}[/]"),
+//                XmlTokenType.CData => new Markup($"[magenta]{value}[/]"),
+//                XmlTokenType.DocumentTypeDeclaration => new Markup($"[orange1]{value}[/]"),
+//                XmlTokenType.ProcessingInstruction => new Markup($"[orange1]{value}[/]"),
+
+//                _ => new Markup(value)
+//            };
+
+//            AnsiConsole.Write(colored);
+//        });
+
+//        await writerTask;
+
+//        Console.WriteLine();
+//        Console.WriteLine("Done.");
+//    }
+
+//    static async Task EmitSlowlyAsync(string xml, Stream output)
+//    {
+//        var rng = new Random();
+//        byte[] bytes = Encoding.UTF8.GetBytes(xml);
+
+//        foreach (var b in bytes)
+//        {
+//            await output.WriteAsync(new[] { b }.AsMemory(0, 1));
+//            await output.FlushAsync();
+//            await Task.Delay(rng.Next(10, 60));
+//        }
+
+//        output.Close(); // EOF
+//    }
+//}
+
+using NTokenizers.Sql;   // <--- SQL tokenizer
 using Spectre.Console;
 using System.IO.Pipes;
 using System.Text;
@@ -98,60 +189,50 @@ class Program
 {
     static async Task Main()
     {
-        string xml = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <user id="4821" active="true">
-            <name>Laura Smith</name>
-            <addresses>
-                <address type="home">
-                    <street>221B Baker Street</street>
-                    <city>London</city>
-                    <postalCode>NW1 6XE</postalCode>
-                    <coordinates lat="51.5237" lng="-0.1586" />
-                </address>
-                <address type="office" floor="5">
-                    <street>18 King William Street</street>
-                    <city>London</city>
-                    <postalCode>EC4N 7BP</postalCode>
-                </address>
-            </addresses>
-        </user>
+        string sql = """
+        SELECT u.id, u.name, a.city, a.postal_code
+        FROM users u
+        INNER JOIN addresses a ON a.user_id = u.id
+        WHERE u.active = TRUE
+        ORDER BY u.name ASC;
+
+        -- Fetch user with address
+        SELECT *
+        FROM users
+        WHERE id = 42;
         """;
 
-        // Create connected streams
+        // Connected streams
         using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
         using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
         // Start slow writer
-        var writerTask = EmitSlowlyAsync(xml, pipe);
+        var writerTask = EmitSlowlyAsync(sql, pipe);
 
-        // Start parsing XML
-        XmlTokenizer.Parse(reader, null,onToken: token =>
+        // Parse SQL stream
+        SqlTokenizer.Parse(reader, null, onToken: token =>
         {
             var value = Markup.Escape(token.Value);
 
             var colored = token.TokenType switch
             {
-                XmlTokenType.ElementName => new Markup($"[blue]{value}[/]"),
-                XmlTokenType.EndElement => new Markup($"[blue]{value}[/]"),
+                SqlTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
+                SqlTokenType.Identifier => new Markup($"[blue]{value}[/]"),
+                SqlTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                SqlTokenType.Number => new Markup($"[green]{value}[/]"),
+                SqlTokenType.Operator => new Markup($"[red]{value}[/]"),
 
-                XmlTokenType.OpeningAngleBracket => new Markup($"[yellow]{value}[/]"),
-                XmlTokenType.ClosingAngleBracket => new Markup($"[yellow]{value}[/]"),
-                XmlTokenType.SelfClosingSlash => new Markup($"[yellow]{value}[/]"),
+                SqlTokenType.Comma => new Markup($"[grey]{value}[/]"),
+                SqlTokenType.Dot => new Markup($"[grey]{value}[/]"),
 
-                XmlTokenType.AttributeName => new Markup($"[cyan]{value}[/]"),
-                XmlTokenType.AttributeEquals => new Markup($"[yellow]{value}[/]"),
-                XmlTokenType.AttributeQuote => new Markup($"[grey]{value}[/]"),
-                XmlTokenType.AttributeValue => new Markup($"[green]{value}[/]"),
+                SqlTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
+                SqlTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
 
-                XmlTokenType.Text => new Markup($"[white]{value}[/]"),
-                XmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                SqlTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
 
-                XmlTokenType.Comment => new Markup($"[grey]{value}[/]"),
-                XmlTokenType.CData => new Markup($"[magenta]{value}[/]"),
-                XmlTokenType.DocumentTypeDeclaration => new Markup($"[orange1]{value}[/]"),
-                XmlTokenType.ProcessingInstruction => new Markup($"[orange1]{value}[/]"),
+                SqlTokenType.Comment => new Markup($"[grey]{value}[/]"),
 
+                SqlTokenType.NotDefined => new Markup($"[white]{value}[/]"),
                 _ => new Markup(value)
             };
 
@@ -164,10 +245,10 @@ class Program
         Console.WriteLine("Done.");
     }
 
-    static async Task EmitSlowlyAsync(string xml, Stream output)
+    static async Task EmitSlowlyAsync(string sql, Stream output)
     {
         var rng = new Random();
-        byte[] bytes = Encoding.UTF8.GetBytes(xml);
+        byte[] bytes = Encoding.UTF8.GetBytes(sql);
 
         foreach (var b in bytes)
         {
@@ -179,4 +260,3 @@ class Program
         output.Close(); // EOF
     }
 }
-
