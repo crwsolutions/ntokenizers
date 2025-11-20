@@ -27,9 +27,30 @@ public class MarkupTokenizerTests
             {
                 listMeta.OnInlineToken = tokens.Add;
             }
-            else if (token.Metadata is CodeBlockMetadata codeMeta)
+            else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
             {
-                codeMeta.OnInlineToken = tokens.Add;
+                // For C# code blocks, we receive CSharpToken objects
+                csharpMeta.OnInlineToken = csharpToken => { /* Capture C# tokens if needed */ };
+            }
+            else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
+            {
+                // For JSON code blocks, we receive JsonToken objects
+                jsonMeta.OnInlineToken = jsonToken => { /* Capture JSON tokens if needed */ };
+            }
+            else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
+            {
+                // For XML code blocks, we receive XmlToken objects
+                xmlMeta.OnInlineToken = xmlToken => { /* Capture XML tokens if needed */ };
+            }
+            else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
+            {
+                // For SQL code blocks, we receive SqlToken objects
+                sqlMeta.OnInlineToken = sqlToken => { /* Capture SQL tokens if needed */ };
+            }
+            else if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
+            {
+                // For TypeScript code blocks, we receive TypescriptToken objects
+                tsMeta.OnInlineToken = tsToken => { /* Capture TypeScript tokens if needed */ };
             }
             else if (token.Metadata is TableMetadata tableMeta)
             {
@@ -138,8 +159,11 @@ public class MarkupTokenizerTests
         var codeBlock = tokens.First(t => t.TokenType == MarkupTokenType.CodeBlock);
         Assert.Equal(string.Empty, codeBlock.Value); // Code blocks have empty value
         Assert.NotNull(codeBlock.Metadata);
-        Assert.IsType<CodeBlockMetadata>(codeBlock.Metadata);
-        Assert.Equal("javascript", ((CodeBlockMetadata)codeBlock.Metadata).Language);
+        
+        // For non-specialized languages like "javascript", metadata is CodeBlockMetadata<MarkupToken>
+        var codeMeta = codeBlock.Metadata as dynamic;
+        Assert.NotNull(codeMeta);
+        Assert.Equal("javascript", codeMeta.Language);
     }
 
     [Fact]

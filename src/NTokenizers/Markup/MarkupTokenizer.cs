@@ -433,18 +433,18 @@ public static class MarkupTokenizer
                 codeContent = codeContent.Substring(0, codeContent.Length - 1);
 
             // Create appropriate metadata based on language
-            CodeBlockMetadata? metadata = null;
+            MarkupMetadata? metadata = null;
 
             if (!string.IsNullOrEmpty(language))
             {
-                metadata = language switch
+                metadata = language.ToLowerInvariant() switch
                 {
                     "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(),
                     "json" => new JsonCodeBlockMetadata(),
                     "xml" => new XmlCodeBlockMetadata(),
                     "sql" => new SqlCodeBlockMetadata(),
                     "typescript" or "ts" => new TypeScriptCodeBlockMetadata(),
-                    _ => new CodeBlockMetadata(language)
+                    _ => new CodeBlockMetadata<MarkupToken>(language)
                 };
             }
 
@@ -457,9 +457,9 @@ public static class MarkupTokenizer
 
             // Check if client set OnInlineToken during the callback
             // If so, delegate to specialized tokenizer for syntax highlighting
-            if (metadata?.OnInlineToken != null)
+            if (metadata != null)
             {
-                DelegateToLanguageTokenizer(language, codeContent, metadata.OnInlineToken);
+                DelegateToLanguageTokenizer(language, codeContent, metadata);
             }
 
             return true;
@@ -467,92 +467,55 @@ public static class MarkupTokenizer
 
         /// <summary>
         /// Delegates code block content to the appropriate language tokenizer.
+        /// Emits language-specific tokens (e.g., CSharpToken, JsonToken) via the OnInlineToken callback.
         /// </summary>
-        private void DelegateToLanguageTokenizer(string language, string content, Action<MarkupToken> onInlineToken)
+        private void DelegateToLanguageTokenizer(string language, string content, MarkupMetadata metadata)
         {
             try
             {
                 using var memStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
                 
-                switch (language.ToLowerInvariant())
+                switch (metadata)
                 {
-                    case "csharp" or "cs" or "c#":
-                        // Delegate to CSharpTokenizer if available
+                    case CSharpCodeBlockMetadata csharpMeta when csharpMeta.OnInlineToken != null:
                         try
                         {
-                            CSharp.CSharpTokenizer.Parse(memStream, "```", token =>
-                            {
-                                // Emit C# token via callback for syntax highlighting
-                                onInlineToken(new MarkupToken(
-                                    MarkupTokenType.Text,
-                                    token.Value,
-                                    null
-                                ));
-                            });
+                            CSharp.CSharpTokenizer.Parse(memStream, "```", csharpMeta.OnInlineToken);
                         }
                         catch
                         {
-                            // Fallback: emit as plain text if tokenizer not available
+                            // Silently fail if tokenizer not available
                         }
                         break;
 
-                    case "json":
+                    case JsonCodeBlockMetadata jsonMeta when jsonMeta.OnInlineToken != null:
                         try
                         {
-                            Json.JsonTokenizer.Parse(memStream, "```", token =>
-                            {
-                                onInlineToken(new MarkupToken(
-                                    MarkupTokenType.Text,
-                                    token.Value,
-                                    null
-                                ));
-                            });
+                            Json.JsonTokenizer.Parse(memStream, "```", jsonMeta.OnInlineToken);
                         }
                         catch { }
                         break;
 
-                    case "xml":
+                    case XmlCodeBlockMetadata xmlMeta when xmlMeta.OnInlineToken != null:
                         try
                         {
-                            Xml.XmlTokenizer.Parse(memStream, "```", token =>
-                            {
-                                onInlineToken(new MarkupToken(
-                                    MarkupTokenType.Text,
-                                    token.Value,
-                                    null
-                                ));
-                            });
+                            Xml.XmlTokenizer.Parse(memStream, "```", xmlMeta.OnInlineToken);
                         }
                         catch { }
                         break;
 
-                    case "sql":
+                    case SqlCodeBlockMetadata sqlMeta when sqlMeta.OnInlineToken != null:
                         try
                         {
-                            Sql.SqlTokenizer.Parse(memStream, "```", token =>
-                            {
-                                onInlineToken(new MarkupToken(
-                                    MarkupTokenType.Text,
-                                    token.Value,
-                                    null
-                                ));
-                            });
+                            Sql.SqlTokenizer.Parse(memStream, "```", sqlMeta.OnInlineToken);
                         }
                         catch { }
                         break;
 
-                    case "typescript" or "ts":
+                    case TypeScriptCodeBlockMetadata tsMeta when tsMeta.OnInlineToken != null:
                         try
                         {
-                            // TypeScript tokenizer doesn't exist yet, skip for now
-                            // TypeScript.TypeScriptTokenizer.Parse(memStream, "```", token =>
-                            // {
-                            //     onInlineToken(new MarkupToken(
-                            //         MarkupTokenType.CodeBlockContent,
-                            //         token.Value,
-                            //         null
-                            //     ));
-                            // });
+                            Typescript.TypescriptTokenizer.Parse(memStream, "```", tsMeta.OnInlineToken);
                         }
                         catch { }
                         break;

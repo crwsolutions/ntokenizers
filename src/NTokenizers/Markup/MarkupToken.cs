@@ -21,40 +21,41 @@ public record HeadingMetadata(int Level) : MarkupMetadata
 /// <summary>
 /// Metadata for code block tokens, containing the language identifier.
 /// </summary>
+/// <typeparam name="TToken">The type of tokens emitted by the language-specific tokenizer.</typeparam>
 /// <param name="Language">The language identifier (e.g., "xml", "json", "csharp").</param>
-public record CodeBlockMetadata(string Language) : MarkupMetadata
+public record CodeBlockMetadata<TToken>(string Language) : MarkupMetadata
 {
     /// <summary>
     /// Optional callback to stream syntax-highlighted tokens from the code block.
     /// When set, the tokenizer will delegate to language-specific tokenizers and emit tokens via this callback.
     /// </summary>
-    public Action<MarkupToken>? OnInlineToken { get; set; }
+    public Action<TToken>? OnInlineToken { get; set; }
 }
 
 /// <summary>
 /// Metadata for C# code block tokens with syntax highlighting support.
 /// </summary>
-public record CSharpCodeBlockMetadata() : CodeBlockMetadata("csharp");
+public record CSharpCodeBlockMetadata() : CodeBlockMetadata<CSharp.CSharpToken>("csharp");
 
 /// <summary>
 /// Metadata for JSON code block tokens with syntax highlighting support.
 /// </summary>
-public record JsonCodeBlockMetadata() : CodeBlockMetadata("json");
+public record JsonCodeBlockMetadata() : CodeBlockMetadata<Json.JsonToken>("json");
 
 /// <summary>
 /// Metadata for XML code block tokens with syntax highlighting support.
 /// </summary>
-public record XmlCodeBlockMetadata() : CodeBlockMetadata("xml");
+public record XmlCodeBlockMetadata() : CodeBlockMetadata<Xml.XmlToken>("xml");
 
 /// <summary>
 /// Metadata for SQL code block tokens with syntax highlighting support.
 /// </summary>
-public record SqlCodeBlockMetadata() : CodeBlockMetadata("sql");
+public record SqlCodeBlockMetadata() : CodeBlockMetadata<Sql.SqlToken>("sql");
 
 /// <summary>
 /// Metadata for TypeScript code block tokens with syntax highlighting support.
 /// </summary>
-public record TypeScriptCodeBlockMetadata() : CodeBlockMetadata("typescript");
+public record TypeScriptCodeBlockMetadata() : CodeBlockMetadata<Typescript.TypescriptToken>("typescript");
 
 /// <summary>
 /// Metadata for link and image tokens, containing URL and optional title.
