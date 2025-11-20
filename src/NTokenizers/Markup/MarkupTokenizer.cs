@@ -186,6 +186,14 @@ public static class MarkupTokenizer
                 HandleHeadingState(c, ref state, sb, onToken, ref headingLevel);
                 break;
 
+            case State.InBold:
+                HandleBoldState(c, ref state, sb, onToken, ref prevChar);
+                break;
+
+            case State.InItalic:
+                HandleItalicState(c, ref state, sb, onToken);
+                break;
+
             case State.InCodeInline:
                 HandleCodeInlineState(c, ref state, sb, onToken);
                 break;
@@ -201,19 +209,19 @@ public static class MarkupTokenizer
                 break;
 
             case State.InLinkText:
-                HandleLinkTextState(c, ref state, sb, onToken, ref linkTextDepth, ref imageMode);
+                HandleLinkState(c, ref state, sb, onToken, ref linkTextDepth, ref imageMode);
                 break;
 
             case State.InLinkUrl:
-                HandleLinkUrlState(c, ref state, sb, onToken, ref imageMode);
+                HandleLinkState(c, ref state, sb, onToken, ref imageMode);
                 break;
 
             case State.InImageAlt:
-                HandleImageAltState(c, ref state, sb, onToken, ref linkTextDepth);
+                HandleImageState(c, ref state, sb, onToken, ref linkTextDepth);
                 break;
 
             case State.InImageUrl:
-                HandleImageUrlState(c, ref state, sb, onToken);
+                HandleImageState(c, ref state, sb, onToken);
                 break;
 
             case State.InEmoji:
@@ -250,6 +258,18 @@ public static class MarkupTokenizer
 
             case State.InCustomContainer:
                 HandleCustomContainerState(c, ref state, sb, onToken);
+                break;
+
+            case State.InUnorderedList:
+                HandleUnorderedListState(c, ref state, sb, onToken);
+                break;
+
+            case State.InOrderedList:
+                HandleOrderedListState(c, ref state, sb, onToken, ref headingLevel);
+                break;
+
+            case State.InTable:
+                HandleTableState(c, ref state, sb, onToken);
                 break;
 
             default:
@@ -305,7 +325,8 @@ public static class MarkupTokenizer
                 onToken(new MarkupToken(MarkupTokenType.Text, sb.ToString()));
                 sb.Clear();
             }
-            onToken(new MarkupToken(MarkupTokenType.BoldDelimiter, "**"));
+            // Transition to bold state instead of emitting delimiter
+            state = State.InBold;
             return;
         }
 
@@ -464,7 +485,7 @@ public static class MarkupTokenizer
         // Check for blockquote >
         if (c == '>')
         {
-            onToken(new MarkupToken(MarkupTokenType.BlockquoteDelimiter, ">"));
+            // Don't emit delimiter, just transition to blockquote state to collect content
             state = State.InBlockquote;
             return;
         }
@@ -482,7 +503,7 @@ public static class MarkupTokenizer
                 if (inCodeFence)
                 {
                     // End of code fence
-                    onToken(new MarkupToken(MarkupTokenType.CodeBlockFenceEnd, "```"));
+                    onToken(new MarkupToken(MarkupTokenType.CodeBlock, "```"));
                     inCodeFence = false;
                     codeFenceDelimiter = string.Empty;
                     codeFenceLanguage = string.Empty;
@@ -520,9 +541,9 @@ public static class MarkupTokenizer
             // Check if it's a list item (- or * followed by space)
             else if (reader.Peek(1, out var next1) && next1.Length == 1 && char.IsWhiteSpace(next1[0]))
             {
-                onToken(new MarkupToken(MarkupTokenType.UnorderedListDelimiter, c.ToString()));
+                // Consume the space and transition to collecting list item content
                 sb.Clear();
-                state = State.Text;
+                state = State.InUnorderedList;
                 return;
             }
             else
@@ -537,8 +558,9 @@ public static class MarkupTokenizer
         {
             if (reader.Peek(1, out var next1) && next1.Length == 1 && char.IsWhiteSpace(next1[0]))
             {
-                onToken(new MarkupToken(MarkupTokenType.UnorderedListDelimiter, c.ToString()));
-                state = State.Text;
+                // Transition to collecting list item content
+                sb.Clear();
+                state = State.InUnorderedList;
                 return;
             }
         }
@@ -567,19 +589,19 @@ public static class MarkupTokenizer
                 // Check if there's a space after the dot
                 if (reader.Peek(digitCount + 1, out var peekSpace) && peekSpace.Length == digitCount + 1 && char.IsWhiteSpace(peekSpace[digitCount]))
                 {
+                    // Extract the list item number
+                    int listItemNumber = int.Parse(sb.ToString());
+                    
                     // Consume all the digits and the dot
                     for (int i = 0; i < digitCount; i++)
                     {
-                        int ic = reader.Read();
-                        if (ic != -1)
-                        {
-                            sb.Append((char)ic);
-                        }
+                        reader.Read();
                     }
                     
-                    onToken(new MarkupToken(MarkupTokenType.OrderedListDelimiter, sb.ToString()));
                     sb.Clear();
-                    state = State.Text;
+                    // Store the item number in headingLevel temporarily (we'll use a better approach later)
+                    headingLevel = listItemNumber;
+                    state = State.InOrderedList;
                     return;
                 }
             }
@@ -602,7 +624,7 @@ public static class MarkupTokenizer
         // Check for table |
         if (c == '|')
         {
-            onToken(new MarkupToken(MarkupTokenType.TableDelimiter, "|"));
+            // Don't emit delimiter, transition to table state to collect cell content
             state = State.InTable;
             return;
         }
@@ -615,31 +637,65 @@ public static class MarkupTokenizer
     private static void HandleHeadingState(char c, ref State state, StringBuilder sb,
                                           Action<MarkupToken> onToken, ref int headingLevel)
     {
-        if (c == '#' && headingLevel < 6)
+        if (c == '#' && headingLevel < 6 && sb.Length == 0)
         {
+            // Still counting heading markers
             headingLevel++;
         }
-        else if (char.IsWhiteSpace(c) || c == '\n')
+        else if (c == '\n')
         {
+            // End of heading - emit the heading token with accumulated text
+            string headingText = sb.ToString().TrimStart(); // Remove leading whitespace after #
             onToken(new MarkupToken(
-                MarkupTokenType.HeadingDelimiter,
-                new string('#', headingLevel),
+                MarkupTokenType.Heading,
+                headingText,
                 new HeadingMetadata(headingLevel)
             ));
+            sb.Clear();
             headingLevel = 0;
-            state = c == '\n' ? State.LineStart : State.Text;
-            if (c != '\n')
-            {
-                sb.Append(c);
-            }
+            state = State.LineStart;
         }
         else
         {
-            // Not a valid heading, treat as text
-            sb.Append(new string('#', headingLevel));
+            // Accumulate heading text
             sb.Append(c);
-            headingLevel = 0;
+        }
+    }
+
+    private static void HandleBoldState(char c, ref State state, StringBuilder sb,
+                                       Action<MarkupToken> onToken, ref char prevChar)
+    {
+        if (c == '*' && prevChar == '*')
+        {
+            // Remove the previous * from bold text
+            if (sb.Length > 0 && sb[sb.Length - 1] == '*')
+            {
+                sb.Length--;
+            }
+            // Emit bold token with accumulated text
+            onToken(new MarkupToken(MarkupTokenType.Bold, sb.ToString()));
+            sb.Clear();
             state = State.Text;
+        }
+        else
+        {
+            sb.Append(c);
+        }
+    }
+
+    private static void HandleItalicState(char c, ref State state, StringBuilder sb,
+                                         Action<MarkupToken> onToken)
+    {
+        if (c == '*')
+        {
+            // End of italic - emit token with accumulated text
+            onToken(new MarkupToken(MarkupTokenType.Italic, sb.ToString()));
+            sb.Clear();
+            state = State.Text;
+        }
+        else
+        {
+            sb.Append(c);
         }
     }
 
@@ -682,10 +738,10 @@ public static class MarkupTokenizer
                     }
                     else
                     {
-                        onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, content));
+                        onToken(new MarkupToken(MarkupTokenType.CodeBlock, content));
                     }
                 }
-                onToken(new MarkupToken(MarkupTokenType.CodeBlockFenceEnd, "```"));
+                onToken(new MarkupToken(MarkupTokenType.CodeBlock, "```"));
                 sb.Clear();
                 inCodeFence = false;
                 codeFenceDelimiter = string.Empty;
@@ -703,9 +759,9 @@ public static class MarkupTokenizer
         {
             codeFenceLanguage = sb.ToString().Trim();
             onToken(new MarkupToken(
-                MarkupTokenType.CodeBlockFenceStart,
+                MarkupTokenType.CodeBlock,
                 "```" + (codeFenceLanguage.Length > 0 ? codeFenceLanguage : ""),
-                string.IsNullOrEmpty(codeFenceLanguage) ? null : new CodeFenceMetadata(codeFenceLanguage)
+                string.IsNullOrEmpty(codeFenceLanguage) ? null : new CodeBlockMetadata(codeFenceLanguage)
             ));
             sb.Clear();
             inCodeFence = true;
@@ -717,7 +773,7 @@ public static class MarkupTokenizer
         }
     }
 
-    private static void HandleLinkTextState(char c, ref State state, StringBuilder sb,
+    private static void HandleLinkState(char c, ref State state, StringBuilder sb,
                                            Action<MarkupToken> onToken, ref int linkTextDepth,
                                            ref bool imageMode)
     {
@@ -731,9 +787,9 @@ public static class MarkupTokenizer
             linkTextDepth--;
             if (linkTextDepth == 0)
             {
-                onToken(new MarkupToken(MarkupTokenType.LinkText, sb.ToString()));
+                onToken(new MarkupToken(MarkupTokenType.Link, sb.ToString()));
                 sb.Clear();
-                state = State.InLinkUrl;
+                state = State.InLinkText;
             }
             else
             {
@@ -746,7 +802,7 @@ public static class MarkupTokenizer
         }
     }
 
-    private static void HandleLinkUrlState(char c, ref State state, StringBuilder sb,
+    private static void HandleLinkState(char c, ref State state, StringBuilder sb,
                                           Action<MarkupToken> onToken, ref bool imageMode)
     {
         if (c == '(')
@@ -771,10 +827,10 @@ public static class MarkupTokenizer
                 }
             }
 
-            onToken(new MarkupToken(MarkupTokenType.LinkUrl, url, new LinkMetadata(url, title)));
+            onToken(new MarkupToken(MarkupTokenType.Link, url, new LinkMetadata(url, title)));
             if (title != null)
             {
-                onToken(new MarkupToken(MarkupTokenType.LinkTitle, title));
+                onToken(new MarkupToken(MarkupTokenType.Link, title));
             }
             sb.Clear();
             imageMode = false;
@@ -786,14 +842,14 @@ public static class MarkupTokenizer
         }
     }
 
-    private static void HandleImageAltState(char c, ref State state, StringBuilder sb,
+    private static void HandleImageState(char c, ref State state, StringBuilder sb,
                                            Action<MarkupToken> onToken, ref int linkTextDepth)
     {
         if (c == ']')
         {
-            onToken(new MarkupToken(MarkupTokenType.ImageAlt, sb.ToString()));
+            onToken(new MarkupToken(MarkupTokenType.Image, sb.ToString()));
             sb.Clear();
-            state = State.InImageUrl;
+            state = State.InImageAlt;
         }
         else
         {
@@ -801,7 +857,7 @@ public static class MarkupTokenizer
         }
     }
 
-    private static void HandleImageUrlState(char c, ref State state, StringBuilder sb,
+    private static void HandleImageState(char c, ref State state, StringBuilder sb,
                                            Action<MarkupToken> onToken)
     {
         if (c == '(')
@@ -826,10 +882,10 @@ public static class MarkupTokenizer
                 }
             }
 
-            onToken(new MarkupToken(MarkupTokenType.ImageUrl, url));
+            onToken(new MarkupToken(MarkupTokenType.Image, url));
             if (title != null)
             {
-                onToken(new MarkupToken(MarkupTokenType.ImageTitle, title));
+                onToken(new MarkupToken(MarkupTokenType.Image, title));
             }
             sb.Clear();
             state = State.Text;
@@ -874,12 +930,13 @@ public static class MarkupTokenizer
     {
         if (c == '\n')
         {
-            if (sb.Length > 0)
+            // End of blockquote line - emit blockquote token with accumulated content
+            string quoteText = sb.ToString().TrimStart(); // Remove leading whitespace after >
+            if (quoteText.Length > 0)
             {
-                onToken(new MarkupToken(MarkupTokenType.Text, sb.ToString()));
-                sb.Clear();
+                onToken(new MarkupToken(MarkupTokenType.Blockquote, quoteText));
             }
-            onToken(new MarkupToken(MarkupTokenType.Text, "\n"));
+            sb.Clear();
             state = State.LineStart;
         }
         else
@@ -993,7 +1050,88 @@ public static class MarkupTokenizer
     {
         if (c == '\n')
         {
-            onToken(new MarkupToken(MarkupTokenType.CustomContainer, ":::" + sb.ToString()));
+            // Emit custom container without ::: prefix
+            string containerType = sb.ToString().Trim();
+            onToken(new MarkupToken(MarkupTokenType.CustomContainer, containerType));
+            sb.Clear();
+            state = State.LineStart;
+        }
+        else
+        {
+            sb.Append(c);
+        }
+    }
+
+    private static void HandleUnorderedListState(char c, ref State state, StringBuilder sb,
+                                                  Action<MarkupToken> onToken)
+    {
+        if (c == '\n')
+        {
+            // End of list item - emit token with accumulated content
+            string itemText = sb.ToString().TrimStart(); // Remove leading whitespace
+            if (itemText.Length > 0)
+            {
+                onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, itemText));
+            }
+            sb.Clear();
+            state = State.LineStart;
+        }
+        else
+        {
+            sb.Append(c);
+        }
+    }
+
+    private static void HandleOrderedListState(char c, ref State state, StringBuilder sb,
+                                               Action<MarkupToken> onToken, ref int listItemNumber)
+    {
+        if (c == '\n')
+        {
+            // End of list item - emit token with accumulated content and item number in metadata
+            string itemText = sb.ToString().TrimStart(); // Remove leading whitespace
+            if (itemText.Length > 0)
+            {
+                onToken(new MarkupToken(
+                    MarkupTokenType.OrderedListItem,
+                    itemText,
+                    new ListItemMetadata(listItemNumber)
+                ));
+            }
+            sb.Clear();
+            listItemNumber = 0;
+            state = State.LineStart;
+        }
+        else
+        {
+            sb.Append(c);
+        }
+    }
+
+    private static void HandleTableState(char c, ref State state, StringBuilder sb,
+                                         Action<MarkupToken> onToken)
+    {
+        if (c == '|')
+        {
+            // End of table cell - emit cell token with accumulated content
+            string cellText = sb.ToString().Trim();
+            if (cellText.Length > 0)
+            {
+                onToken(new MarkupToken(MarkupTokenType.TableCell, cellText));
+            }
+            sb.Clear();
+            // Stay in table state for next cell
+        }
+        else if (c == '\n')
+        {
+            // End of table row
+            if (sb.Length > 0)
+            {
+                string cellText = sb.ToString().Trim();
+                if (cellText.Length > 0)
+                {
+                    onToken(new MarkupToken(MarkupTokenType.TableCell, cellText));
+                }
+            }
             sb.Clear();
             state = State.LineStart;
         }
@@ -1025,21 +1163,21 @@ public static class MarkupTokenizer
                     }
                     else
                     {
-                        onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, sb.ToString()));
+                        onToken(new MarkupToken(MarkupTokenType.CodeBlock, sb.ToString()));
                     }
                     break;
                 case State.InHeading:
                     onToken(new MarkupToken(
-                        MarkupTokenType.HeadingDelimiter,
+                        MarkupTokenType.Heading,
                         new string('#', headingLevel),
                         new HeadingMetadata(headingLevel)
                     ));
                     break;
                 case State.InLinkText:
-                    onToken(new MarkupToken(MarkupTokenType.LinkText, sb.ToString()));
+                    onToken(new MarkupToken(MarkupTokenType.Link, sb.ToString()));
                     break;
                 case State.InImageAlt:
-                    onToken(new MarkupToken(MarkupTokenType.ImageAlt, sb.ToString()));
+                    onToken(new MarkupToken(MarkupTokenType.Image, sb.ToString()));
                     break;
                 case State.InEmoji:
                     onToken(new MarkupToken(MarkupTokenType.Text, ":" + sb.ToString()));
@@ -1071,7 +1209,7 @@ public static class MarkupTokenizer
                     Xml.XmlTokenizer.Parse(ms, "```", token =>
                     {
                         // Wrap XML tokens as code block content
-                        onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, token.Value));
+                        onToken(new MarkupToken(MarkupTokenType.CodeBlock, token.Value));
                     });
                     break;
 
@@ -1079,7 +1217,7 @@ public static class MarkupTokenizer
                     Json.JsonTokenizer.Parse(ms, "```", token =>
                     {
                         // Wrap JSON tokens as code block content
-                        onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, token.Value));
+                        onToken(new MarkupToken(MarkupTokenType.CodeBlock, token.Value));
                     });
                     break;
 
@@ -1088,7 +1226,7 @@ public static class MarkupTokenizer
                     CSharp.CSharpTokenizer.Parse(ms, "```", token =>
                     {
                         // Wrap C# tokens as code block content
-                        onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, token.Value));
+                        onToken(new MarkupToken(MarkupTokenType.CodeBlock, token.Value));
                     });
                     break;
 
@@ -1099,7 +1237,7 @@ public static class MarkupTokenizer
                     Typescript.TypescriptTokenizer.Parse(ms, "```", token =>
                     {
                         // Wrap TypeScript tokens as code block content
-                        onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, token.Value));
+                        onToken(new MarkupToken(MarkupTokenType.CodeBlock, token.Value));
                     });
                     break;
 
@@ -1107,20 +1245,20 @@ public static class MarkupTokenizer
                     Sql.SqlTokenizer.Parse(ms, "```", token =>
                     {
                         // Wrap SQL tokens as code block content
-                        onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, token.Value));
+                        onToken(new MarkupToken(MarkupTokenType.CodeBlock, token.Value));
                     });
                     break;
 
                 default:
                     // Unknown language, just emit as plain content
-                    onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, content));
+                    onToken(new MarkupToken(MarkupTokenType.CodeBlock, content));
                     break;
             }
         }
         catch
         {
             // If delegation fails, emit as plain content
-            onToken(new MarkupToken(MarkupTokenType.CodeBlockContent, content));
+            onToken(new MarkupToken(MarkupTokenType.CodeBlock, content));
         }
     }
 }
