@@ -9,7 +9,7 @@ public static class CSharpTokenizer
 {
     private static readonly HashSet<string> Keywords = new(StringComparer.OrdinalIgnoreCase)
     {
-        "abstract", "as", "async", "await", "base", "bool", "break", "byte", "case", "catch", "char",
+        "abstract", "as", "async", "await", "base", "bool", "break", "byte", "case", "catch", "char", "var",
         "checked", "class", "const", "continue", "decimal", "default", "delegate",
         "do", "double", "else", "enum", "event", "explicit", "extern", "false",
         "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit",

@@ -344,7 +344,78 @@
 //        output.Close(); // EOF
 //    }
 //}
+//using NTokenizers.CSharp;
+//using Spectre.Console;
+//using System.IO.Pipes;
+//using System.Text;
+
+//class Program
+//{
+//    static async Task Main()
+//    {
+//        string cs = """
+//using System;
+//using System.Collections.Generic;
+
+//// Calculate sum of numbers
+//class Program
+//{
+//    static void Main()
+//    {
+//        var numbers = new List<int> { 1, 2, 3, 4 };
+//        int sum = 0;
+//        foreach (var n in numbers)
+//            sum += n;
+//        Console.WriteLine("Sum: " + sum);
+//    }
+//}
+//""";
+
+//        using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
+//        using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
+
+//        var writerTask = EmitSlowlyAsync(cs, pipe);
+
+//        CSharpTokenizer.Parse(reader, null, token =>
+//        {
+//            var value = Markup.Escape(token.Value);
+//            var colored = token.TokenType switch
+//            {
+//                CSharpTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
+//                CSharpTokenType.Identifier => new Markup($"[blue]{value}[/]"),
+//                CSharpTokenType.StringValue => new Markup($"[green]{value}[/]"),
+//                CSharpTokenType.Number => new Markup($"[green]{value}[/]"),
+//                CSharpTokenType.Operator => new Markup($"[red]{value}[/]"),
+//                CSharpTokenType.Comment => new Markup($"[grey]{value}[/]"),
+//                CSharpTokenType.Comma => new Markup($"[grey]{value}[/]"),
+//                CSharpTokenType.Dot => new Markup($"[grey]{value}[/]"),
+//                CSharpTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
+//                CSharpTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
+//                CSharpTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
+//                _ => new Markup(value)
+//            };
+//            AnsiConsole.Write(colored);
+//        });
+
+//        await writerTask;
+//        Console.WriteLine("\nDone.");
+//    }
+
+//    static async Task EmitSlowlyAsync(string text, Stream output)
+//    {
+//        var rng = new Random();
+//        byte[] bytes = Encoding.UTF8.GetBytes(text);
+//        foreach (var b in bytes)
+//        {
+//            await output.WriteAsync(new[] { b }.AsMemory(0, 1));
+//            await output.FlushAsync();
+//            await Task.Delay(rng.Next(10, 60));
+//        }
+//        output.Close();
+//    }
+//}
 using NTokenizers.CSharp;
+using NTokenizers.Markup;
 using Spectre.Console;
 using System.IO.Pipes;
 using System.Text;
@@ -353,48 +424,74 @@ class Program
 {
     static async Task Main()
     {
-        string cs = """
-using System;
-using System.Collections.Generic;
+        var markup = @"# My Document
 
-// Calculate sum of numbers
-class Program
-{
-    static void Main()
-    {
-        var numbers = new List<int> { 1, 2, 3, 4 };
-        int sum = 0;
-        foreach (var n in numbers)
-            sum += n;
-        Console.WriteLine("Sum: " + sum);
-    }
-}
-""";
+This is **bold** and *italic*.
+
+## Code **bold** Example
+
+```csharp
+var x = 1;
+```
+
+Visit [Google](https://google.com) for more.";
 
         using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
         using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
-        var writerTask = EmitSlowlyAsync(cs, pipe);
+        var writerTask = EmitSlowlyAsync(markup, pipe);
 
-        CSharpTokenizer.Parse(reader, null, token =>
+        MarkupTokenizer.Parse(reader, token =>
         {
-            var value = Markup.Escape(token.Value);
-            var colored = token.TokenType switch
+            if (token.Metadata is HeadingMetadata meta)
             {
-                CSharpTokenType.Keyword => new Markup($"[yellow]{value}[/]"),
-                CSharpTokenType.Identifier => new Markup($"[blue]{value}[/]"),
-                CSharpTokenType.StringValue => new Markup($"[green]{value}[/]"),
-                CSharpTokenType.Number => new Markup($"[green]{value}[/]"),
-                CSharpTokenType.Operator => new Markup($"[red]{value}[/]"),
-                CSharpTokenType.Comment => new Markup($"[grey]{value}[/]"),
-                CSharpTokenType.Comma => new Markup($"[grey]{value}[/]"),
-                CSharpTokenType.Dot => new Markup($"[grey]{value}[/]"),
-                CSharpTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
-                CSharpTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
-                CSharpTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
-                _ => new Markup(value)
-            };
-            AnsiConsole.Write(colored);
+                meta.OnInlineToken = inlineToken =>
+                {
+                    var inlineValue = Markup.Escape(inlineToken.Value);
+                    var inlineColored = inlineToken.TokenType switch
+                    {
+                        MarkupTokenType.Bold => new Markup($"[blue]{inlineValue}[/]"),
+                        _ => new Markup($"[yellow]{inlineValue}[/]")
+                    };
+                    AnsiConsole.Write(inlineColored);
+                };
+            }
+            else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
+            {
+                AnsiConsole.WriteLine($"{csharpMeta.Language}:");
+                csharpMeta.OnInlineToken = inlineToken =>
+                {
+                    var inlineValue = Markup.Escape(inlineToken.Value);
+                    var inlineColored = inlineToken.TokenType switch
+                    {
+                        CSharpTokenType.Keyword => new Markup($"[blue]{inlineValue}[/]"),
+                        CSharpTokenType.Number => new Markup($"[red]{inlineValue}[/]"),
+                        CSharpTokenType.Operator => new Markup($"[purple]{inlineValue}[/]"),
+                        _ => new Markup($"[white]{inlineValue}[/]")
+                    };
+                    AnsiConsole.Write(inlineColored);
+                };
+            }
+            else
+            {
+                var value = Markup.Escape(token.Value);
+                var colored = token.TokenType switch
+                {
+                    MarkupTokenType.Heading => new Markup($"[yellow]{value}[/]"),
+                    MarkupTokenType.Bold => new Markup($"[blue]{value}[/]"),
+                    MarkupTokenType.Italic => new Markup($"[green]{value}[/]"),
+                    //MarkupTokenType.Number => new Markup($"[green]{value}[/]"),
+                    //MarkupTokenType.Operator => new Markup($"[red]{value}[/]"),
+                    //MarkupTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                    //MarkupTokenType.Comma => new Markup($"[grey]{value}[/]"),
+                    //MarkupTokenType.Dot => new Markup($"[grey]{value}[/]"),
+                    //MarkupTokenType.OpenParenthesis => new Markup($"[cyan]{value}[/]"),
+                    //MarkupTokenType.CloseParenthesis => new Markup($"[cyan]{value}[/]"),
+                    //MarkupTokenType.SequenceTerminator => new Markup($"[yellow]{value}[/]"),
+                    _ => new Markup(value)
+                };
+                AnsiConsole.Write(colored);
+            }
         });
 
         await writerTask;
@@ -414,4 +511,3 @@ class Program
         output.Close();
     }
 }
-
