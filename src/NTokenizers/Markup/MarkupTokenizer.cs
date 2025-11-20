@@ -66,9 +66,6 @@ public static class MarkupTokenizer
 
     private static void ParseInternal(TextReader reader, Action<MarkupToken> onToken)
     {
-        // Read all content into a string for easier lookahead
-        string content = reader.ReadToEnd();
-        
         var sb = new StringBuilder();
         var state = State.LineStart;
         var prevChar = '\0';
@@ -79,11 +76,20 @@ public static class MarkupTokenizer
         var codeFenceDelimiter = string.Empty;
         var linkTextDepth = 0;
         var imageMode = false;
-        int pos = 0;
+        
+        // Create a buffered reader for lookahead
+        var bufferedReader = new BufferedCharReader(reader);
 
-        while (pos < content.Length)
+        while (true)
         {
-            char c = content[pos];
+            int ic = bufferedReader.Read();
+            if (ic == -1)
+            {
+                EmitPending(sb, state, onToken, headingLevel, codeFenceLanguage);
+                break;
+            }
+
+            char c = (char)ic;
             
             // Track if we're at the start of a line
             if (prevChar == '\n' || prevChar == '\0')
@@ -94,10 +100,9 @@ public static class MarkupTokenizer
             ProcessChar(c, ref state, sb, onToken, ref prevChar, ref lineStartPos, 
                        ref headingLevel, ref codeFenceLanguage, ref inCodeFence,
                        ref codeFenceDelimiter, ref linkTextDepth, ref imageMode, 
-                       content, ref pos);
+                       bufferedReader);
 
             prevChar = c;
-            pos++;
             
             if (c == '\n')
             {
@@ -108,8 +113,53 @@ public static class MarkupTokenizer
                 lineStartPos = false;
             }
         }
-        
-        EmitPending(sb, state, onToken, headingLevel, codeFenceLanguage);
+    }
+
+    // Helper class to provide lookahead capability while reading character-by-character
+    private class BufferedCharReader
+    {
+        private readonly TextReader _reader;
+        private readonly Queue<char> _buffer = new Queue<char>();
+
+        public BufferedCharReader(TextReader reader)
+        {
+            _reader = reader;
+        }
+
+        public int Read()
+        {
+            if (_buffer.Count > 0)
+            {
+                return _buffer.Dequeue();
+            }
+            return _reader.Read();
+        }
+
+        public bool Peek(int ahead, out char[] result)
+        {
+            // Fill buffer to have enough characters
+            while (_buffer.Count < ahead)
+            {
+                int ic = _reader.Read();
+                if (ic == -1)
+                {
+                    result = _buffer.ToArray();
+                    return false;
+                }
+                _buffer.Enqueue((char)ic);
+            }
+
+            result = _buffer.Take(ahead).ToArray();
+            return _buffer.Count >= ahead;
+        }
+
+        public void Consume(int count)
+        {
+            for (int i = 0; i < count && _buffer.Count > 0; i++)
+            {
+                _buffer.Dequeue();
+            }
+        }
     }
 
     private static void ProcessChar(char c, ref State state, StringBuilder sb, 
@@ -117,7 +167,7 @@ public static class MarkupTokenizer
                                     ref bool lineStartPos, ref int headingLevel,
                                     ref string codeFenceLanguage, ref bool inCodeFence,
                                     ref string codeFenceDelimiter, ref int linkTextDepth,
-                                    ref bool imageMode, string content, ref int pos)
+                                    ref bool imageMode, BufferedCharReader reader)
     {
         switch (state)
         {
@@ -129,7 +179,7 @@ public static class MarkupTokenizer
             case State.LineStart:
                 HandleLineStartState(c, ref state, sb, onToken, ref lineStartPos, 
                                     ref headingLevel, ref inCodeFence, ref codeFenceDelimiter,
-                                    ref codeFenceLanguage, content, ref pos);
+                                    ref codeFenceLanguage, reader);
                 break;
 
             case State.InHeading:
@@ -388,7 +438,7 @@ public static class MarkupTokenizer
                                             Action<MarkupToken> onToken, ref bool lineStartPos,
                                             ref int headingLevel, ref bool inCodeFence,
                                             ref string codeFenceDelimiter, ref string codeFenceLanguage,
-                                            string content, ref int pos)
+                                            BufferedCharReader reader)
     {
         // Handle newline - stay in LineStart
         if (c == '\n')
@@ -423,10 +473,12 @@ public static class MarkupTokenizer
         if (c == '`')
         {
             sb.Append(c);
-            // Check for ``` pattern
-            if (pos + 2 < content.Length && content[pos + 1] == '`' && content[pos + 2] == '`')
+            // Check for ``` pattern by peeking ahead
+            if (reader.Peek(2, out var next2) && next2.Length == 2 && next2[0] == '`' && next2[1] == '`')
             {
-                pos += 2; // skip next two `
+                // Consume the next two backticks
+                reader.Consume(2);
+                
                 if (inCodeFence)
                 {
                     // End of code fence
@@ -457,16 +509,16 @@ public static class MarkupTokenizer
         if (c == '-' || c == '*')
         {
             sb.Append(c);
-            if (pos + 2 < content.Length && content[pos + 1] == c && content[pos + 2] == c)
+            if (reader.Peek(2, out var next2) && next2.Length == 2 && next2[0] == c && next2[1] == c)
             {
-                pos += 2; // skip next two chars
+                reader.Consume(2);
                 onToken(new MarkupToken(MarkupTokenType.HorizontalRule, new string(c, 3)));
                 sb.Clear();
                 state = State.Text;
                 return;
             }
-            // Check if it's a list item (- or * or + followed by space)
-            else if (pos + 1 < content.Length && char.IsWhiteSpace(content[pos + 1]))
+            // Check if it's a list item (- or * followed by space)
+            else if (reader.Peek(1, out var next1) && next1.Length == 1 && char.IsWhiteSpace(next1[0]))
             {
                 onToken(new MarkupToken(MarkupTokenType.UnorderedListDelimiter, c.ToString()));
                 sb.Clear();
@@ -481,11 +533,14 @@ public static class MarkupTokenizer
         }
 
         // Check for unordered list + (separate check for +)
-        if (c == '+' && pos + 1 < content.Length && char.IsWhiteSpace(content[pos + 1]))
+        if (c == '+')
         {
-            onToken(new MarkupToken(MarkupTokenType.UnorderedListDelimiter, c.ToString()));
-            state = State.Text;
-            return;
+            if (reader.Peek(1, out var next1) && next1.Length == 1 && char.IsWhiteSpace(next1[0]))
+            {
+                onToken(new MarkupToken(MarkupTokenType.UnorderedListDelimiter, c.ToString()));
+                state = State.Text;
+                return;
+            }
         }
 
         // Check for ordered list 1., 2., etc.
@@ -493,36 +548,52 @@ public static class MarkupTokenizer
         {
             sb.Append(c);
             int digitCount = 1;
-            int checkPos = pos + 1;
-            while (checkPos < content.Length && char.IsDigit(content[checkPos]) && digitCount < 10)
+            
+            // Peek ahead to find more digits followed by '.' and space
+            while (digitCount < 10)
             {
-                sb.Append(content[checkPos]);
-                checkPos++;
-                digitCount++;
+                if (reader.Peek(digitCount, out var peek) && peek.Length == digitCount && char.IsDigit(peek[digitCount - 1]))
+                {
+                    digitCount++;
+                }
+                else
+                {
+                    break;
+                }
             }
-            if (checkPos < content.Length && content[checkPos] == '.' && 
-                checkPos + 1 < content.Length && char.IsWhiteSpace(content[checkPos + 1]))
+            
+            if (reader.Peek(digitCount, out var peekFinal) && peekFinal.Length == digitCount && peekFinal[digitCount - 1] == '.')
             {
-                sb.Append('.');
-                onToken(new MarkupToken(MarkupTokenType.OrderedListDelimiter, sb.ToString()));
-                sb.Clear();
-                pos = checkPos; // advance position
-                state = State.Text;
-                return;
+                // Check if there's a space after the dot
+                if (reader.Peek(digitCount + 1, out var peekSpace) && peekSpace.Length == digitCount + 1 && char.IsWhiteSpace(peekSpace[digitCount]))
+                {
+                    // Consume all the digits and the dot
+                    for (int i = 0; i < digitCount; i++)
+                    {
+                        int ic = reader.Read();
+                        if (ic != -1)
+                        {
+                            sb.Append((char)ic);
+                        }
+                    }
+                    
+                    onToken(new MarkupToken(MarkupTokenType.OrderedListDelimiter, sb.ToString()));
+                    sb.Clear();
+                    state = State.Text;
+                    return;
+                }
             }
-            else
-            {
-                state = State.Text;
-                return;
-            }
+            
+            state = State.Text;
+            return;
         }
 
         // Check for custom container :::
         if (c == ':')
         {
-            if (pos + 2 < content.Length && content[pos + 1] == ':' && content[pos + 2] == ':')
+            if (reader.Peek(2, out var next2) && next2.Length == 2 && next2[0] == ':' && next2[1] == ':')
             {
-                pos += 2; // skip next two :
+                reader.Consume(2);
                 state = State.InCustomContainer;
                 return;
             }
