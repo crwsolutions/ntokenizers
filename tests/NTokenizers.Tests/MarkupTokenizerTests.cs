@@ -291,6 +291,42 @@ public class MarkupTokenizerTests
     }
 
     [Fact]
+    public void TestHorizontalRuleDashLf()
+    {
+        var tokens = Tokenize("---\n");
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
+        Assert.Equal("---", tokens[0].Value);
+    }
+
+    [Fact]
+    public void TestHorizontalRuleAsteriskLf()
+    {
+        var tokens = Tokenize("***\n");
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
+        Assert.Equal("***", tokens[0].Value);
+    }
+
+    [Fact]
+    public void TestHorizontalRuleDashCrLf()
+    {
+        var tokens = Tokenize("---\r\n");
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
+        Assert.Equal("---", tokens[0].Value);
+    }
+
+    [Fact]
+    public void TestHorizontalRuleAsteriskCrLf()
+    {
+        var tokens = Tokenize("***\r\n");
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
+        Assert.Equal("***", tokens[0].Value);
+    }
+
+    [Fact]
     public void TestEmoji()
     {
         var tokens = Tokenize(":smile:");

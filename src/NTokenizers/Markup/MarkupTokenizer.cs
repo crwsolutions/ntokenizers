@@ -249,7 +249,7 @@ public static class MarkupTokenizer
 
             // Must be followed by newline or end of stream
             char next = PeekAhead(pos);
-            if (next != '\n' && next != '\0')
+            if (next != '\r' && next != '\n' && next != '\0')
                 return false;
 
             EmitText();
