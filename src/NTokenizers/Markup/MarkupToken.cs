@@ -9,13 +9,45 @@ public abstract record MarkupMetadata;
 /// Metadata for heading tokens, containing the heading level.
 /// </summary>
 /// <param name="Level">The heading level (1-6).</param>
-public record HeadingMetadata(int Level) : MarkupMetadata;
+/// <param name="OnInlineToken">Optional callback to stream inline tokens (bold, italic, etc.) within the heading.</param>
+public record HeadingMetadata(int Level, Action<MarkupToken>? OnInlineToken = null) : MarkupMetadata;
 
 /// <summary>
 /// Metadata for code block tokens, containing the language identifier.
 /// </summary>
 /// <param name="Language">The language identifier (e.g., "xml", "json", "csharp").</param>
-public record CodeBlockMetadata(string Language) : MarkupMetadata;
+/// <param name="OnInlineToken">Optional callback to stream syntax-highlighted tokens from the code block.</param>
+public record CodeBlockMetadata(string Language, Action<MarkupToken>? OnInlineToken = null) : MarkupMetadata;
+
+/// <summary>
+/// Metadata for C# code block tokens with syntax highlighting support.
+/// </summary>
+/// <param name="OnInlineToken">Callback to stream C# syntax tokens.</param>
+public record CSharpCodeBlockMetadata(Action<MarkupToken>? OnInlineToken = null) : CodeBlockMetadata("csharp", OnInlineToken);
+
+/// <summary>
+/// Metadata for JSON code block tokens with syntax highlighting support.
+/// </summary>
+/// <param name="OnInlineToken">Callback to stream JSON syntax tokens.</param>
+public record JsonCodeBlockMetadata(Action<MarkupToken>? OnInlineToken = null) : CodeBlockMetadata("json", OnInlineToken);
+
+/// <summary>
+/// Metadata for XML code block tokens with syntax highlighting support.
+/// </summary>
+/// <param name="OnInlineToken">Callback to stream XML syntax tokens.</param>
+public record XmlCodeBlockMetadata(Action<MarkupToken>? OnInlineToken = null) : CodeBlockMetadata("xml", OnInlineToken);
+
+/// <summary>
+/// Metadata for SQL code block tokens with syntax highlighting support.
+/// </summary>
+/// <param name="OnInlineToken">Callback to stream SQL syntax tokens.</param>
+public record SqlCodeBlockMetadata(Action<MarkupToken>? OnInlineToken = null) : CodeBlockMetadata("sql", OnInlineToken);
+
+/// <summary>
+/// Metadata for TypeScript code block tokens with syntax highlighting support.
+/// </summary>
+/// <param name="OnInlineToken">Callback to stream TypeScript syntax tokens.</param>
+public record TypeScriptCodeBlockMetadata(Action<MarkupToken>? OnInlineToken = null) : CodeBlockMetadata("typescript", OnInlineToken);
 
 /// <summary>
 /// Metadata for link and image tokens, containing URL and optional title.
@@ -23,6 +55,12 @@ public record CodeBlockMetadata(string Language) : MarkupMetadata;
 /// <param name="Url">The URL.</param>
 /// <param name="Title">Optional title.</param>
 public record LinkMetadata(string Url, string? Title = null) : MarkupMetadata;
+
+/// <summary>
+/// Metadata for blockquote tokens.
+/// </summary>
+/// <param name="OnInlineToken">Optional callback to stream inline tokens (bold, italic, etc.) within the blockquote.</param>
+public record BlockquoteMetadata(Action<MarkupToken>? OnInlineToken = null) : MarkupMetadata;
 
 /// <summary>
 /// Metadata for footnote tokens, containing the footnote identifier.
@@ -40,14 +78,17 @@ public record EmojiMetadata(string Name) : MarkupMetadata;
 /// Metadata for list item tokens, containing the item number for ordered lists.
 /// </summary>
 /// <param name="Number">The item number for ordered lists.</param>
-public record ListItemMetadata(int Number) : MarkupMetadata;
+/// <param name="OnInlineToken">Optional callback to stream inline tokens (bold, italic, etc.) within the list item.</param>
+public record ListItemMetadata(int Number, Action<MarkupToken>? OnInlineToken = null) : MarkupMetadata;
 
 /// <summary>
 /// Metadata for table tokens, containing column information.
 /// </summary>
 /// <param name="Columns">List of column metadata.</param>
+/// <param name="OnInlineToken">Optional callback to stream inline tokens (bold, italic, etc.) within table cells.</param>
 public record TableMetadata(
-    IReadOnlyList<TableColumnMetadata> Columns
+    IReadOnlyList<TableColumnMetadata> Columns,
+    Action<MarkupToken>? OnInlineToken = null
 ) : MarkupMetadata;
 
 /// <summary>

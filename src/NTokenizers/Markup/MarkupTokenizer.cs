@@ -209,11 +209,26 @@ public static class MarkupTokenizer
                 headingText.Append((char)Read());
             }
 
+            string content = headingText.ToString().Trim();
+
+            // Create metadata with OnInlineToken callback
+            Action<MarkupToken>? inlineCallback = null;
+            var callbacks = new List<MarkupToken>();
+            
+            inlineCallback = token => callbacks.Add(token);
+            var metadata = new HeadingMetadata(level, inlineCallback);
+
+            // Parse inline tokens if callback is set
+            if (inlineCallback != null)
+            {
+                ParseInlineTokens(content, inlineCallback);
+            }
+
             // Emit heading token
             _onToken(new MarkupToken(
                 MarkupTokenType.Heading,
-                headingText.ToString().Trim(),
-                new HeadingMetadata(level)
+                content,
+                metadata
             ));
 
             return true;
@@ -269,7 +284,20 @@ public static class MarkupTokenizer
                 quoteText.Append((char)Read());
             }
 
-            _onToken(new MarkupToken(MarkupTokenType.Blockquote, quoteText.ToString()));
+            string content = quoteText.ToString();
+
+            // Create metadata with OnInlineToken callback
+            Action<MarkupToken>? inlineCallback = null;
+            inlineCallback = token => { }; // Will be called during ParseInlineTokens
+            var metadata = new BlockquoteMetadata(inlineCallback);
+
+            // Parse inline tokens if callback is set
+            if (inlineCallback != null)
+            {
+                ParseInlineTokens(content, inlineCallback);
+            }
+
+            _onToken(new MarkupToken(MarkupTokenType.Blockquote, content, metadata));
 
             return true;
         }
@@ -296,7 +324,15 @@ public static class MarkupTokenizer
                     itemText.Append((char)Read());
                 }
 
-                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, itemText.ToString()));
+                string content = itemText.ToString();
+
+                // Create metadata with OnInlineToken callback
+                Action<MarkupToken>? inlineCallback = token => { };
+                
+                // Parse inline tokens
+                ParseInlineTokens(content, inlineCallback);
+
+                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, content));
                 return true;
             }
 
@@ -327,10 +363,19 @@ public static class MarkupTokenizer
                         itemText.Append((char)Read());
                     }
 
+                    string content = itemText.ToString();
+
+                    // Create metadata with OnInlineToken callback
+                    Action<MarkupToken>? inlineCallback = token => { };
+                    var metadata = new ListItemMetadata(number, inlineCallback);
+
+                    // Parse inline tokens
+                    ParseInlineTokens(content, inlineCallback);
+
                     _onToken(new MarkupToken(
                         MarkupTokenType.OrderedListItem,
-                        itemText.ToString(),
-                        new ListItemMetadata(number)
+                        content,
+                        metadata
                     ));
                     return true;
                 }
@@ -360,7 +405,7 @@ public static class MarkupTokenizer
             if (Peek() == '\n')
                 Read();
 
-            string language = lang.ToString().Trim();
+            string language = lang.ToString().Trim().ToLowerInvariant();
 
             // Read code block content until closing ```
             var code = new StringBuilder();
@@ -387,13 +432,137 @@ public static class MarkupTokenizer
             if (codeContent.EndsWith('\n'))
                 codeContent = codeContent.Substring(0, codeContent.Length - 1);
 
+            // Create appropriate metadata based on language
+            CodeBlockMetadata? metadata = null;
+            Action<MarkupToken>? inlineCallback = null;
+
+            if (!string.IsNullOrEmpty(language))
+            {
+                inlineCallback = token => { }; // Will be called during delegation
+                
+                metadata = language switch
+                {
+                    "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(inlineCallback),
+                    "json" => new JsonCodeBlockMetadata(inlineCallback),
+                    "xml" => new XmlCodeBlockMetadata(inlineCallback),
+                    "sql" => new SqlCodeBlockMetadata(inlineCallback),
+                    "typescript" or "ts" => new TypeScriptCodeBlockMetadata(inlineCallback),
+                    _ => new CodeBlockMetadata(language, inlineCallback)
+                };
+
+                // Delegate to specialized tokenizer if available and callback is set
+                if (inlineCallback != null)
+                {
+                    DelegateToLanguageTokenizer(language, codeContent, inlineCallback);
+                }
+            }
+
             _onToken(new MarkupToken(
                 MarkupTokenType.CodeBlock,
                 codeContent,
-                string.IsNullOrEmpty(language) ? null : new CodeBlockMetadata(language)
+                metadata
             ));
 
             return true;
+        }
+
+        /// <summary>
+        /// Delegates code block content to the appropriate language tokenizer.
+        /// </summary>
+        private void DelegateToLanguageTokenizer(string language, string content, Action<MarkupToken> onInlineToken)
+        {
+            try
+            {
+                using var memStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+                
+                switch (language.ToLowerInvariant())
+                {
+                    case "csharp" or "cs" or "c#":
+                        // Delegate to CSharpTokenizer if available
+                        try
+                        {
+                            CSharp.CSharpTokenizer.Parse(memStream, "```", token =>
+                            {
+                                // Emit C# token via callback for syntax highlighting
+                                onInlineToken(new MarkupToken(
+                                    MarkupTokenType.Text,
+                                    token.Value,
+                                    null
+                                ));
+                            });
+                        }
+                        catch
+                        {
+                            // Fallback: emit as plain text if tokenizer not available
+                        }
+                        break;
+
+                    case "json":
+                        try
+                        {
+                            Json.JsonTokenizer.Parse(memStream, "```", token =>
+                            {
+                                onInlineToken(new MarkupToken(
+                                    MarkupTokenType.Text,
+                                    token.Value,
+                                    null
+                                ));
+                            });
+                        }
+                        catch { }
+                        break;
+
+                    case "xml":
+                        try
+                        {
+                            Xml.XmlTokenizer.Parse(memStream, "```", token =>
+                            {
+                                onInlineToken(new MarkupToken(
+                                    MarkupTokenType.Text,
+                                    token.Value,
+                                    null
+                                ));
+                            });
+                        }
+                        catch { }
+                        break;
+
+                    case "sql":
+                        try
+                        {
+                            Sql.SqlTokenizer.Parse(memStream, "```", token =>
+                            {
+                                onInlineToken(new MarkupToken(
+                                    MarkupTokenType.Text,
+                                    token.Value,
+                                    null
+                                ));
+                            });
+                        }
+                        catch { }
+                        break;
+
+                    case "typescript" or "ts":
+                        try
+                        {
+                            // TypeScript tokenizer doesn't exist yet, skip for now
+                            // TypeScript.TypeScriptTokenizer.Parse(memStream, "```", token =>
+                            // {
+                            //     onInlineToken(new MarkupToken(
+                            //         MarkupTokenType.CodeBlockContent,
+                            //         token.Value,
+                            //         null
+                            //     ));
+                            // });
+                        }
+                        catch { }
+                        break;
+                }
+            }
+            catch
+            {
+                // Silently fail if delegation doesn't work
+            }
         }
 
         private bool TryParseCustomContainer()
@@ -837,9 +1006,321 @@ public static class MarkupTokenizer
                 cellContent.Append((char)Read());
             }
 
-            _onToken(new MarkupToken(MarkupTokenType.TableCell, cellContent.ToString().Trim()));
+            string content = cellContent.ToString().Trim();
+
+            // Create metadata with OnInlineToken callback
+            Action<MarkupToken>? inlineCallback = token => { };
+            
+            // Parse inline tokens
+            ParseInlineTokens(content, inlineCallback);
+
+            _onToken(new MarkupToken(MarkupTokenType.TableCell, content));
 
             return true;
+        }
+
+        /// <summary>
+        /// Parses inline tokens from a string and invokes the callback for each token found.
+        /// This enables streaming of inline markup (bold, italic, code, links, etc.) within other constructs.
+        /// </summary>
+        private void ParseInlineTokens(string content, Action<MarkupToken> onInlineToken)
+        {
+            if (string.IsNullOrEmpty(content))
+                return;
+
+            // Create a temporary stream from the content
+            using var memStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+            using var tempReader = new StreamReader(memStream);
+            var tempContext = new InlineParserContext(tempReader, onInlineToken);
+            tempContext.Parse();
+        }
+
+        /// <summary>
+        /// Specialized parser context for inline tokens only (no block-level constructs).
+        /// </summary>
+        private class InlineParserContext
+        {
+            private readonly StreamReader _reader;
+            private readonly Action<MarkupToken> _onToken;
+            private readonly StringBuilder _buffer = new();
+            private readonly Queue<char> _lookaheadBuffer = new();
+
+            public InlineParserContext(StreamReader reader, Action<MarkupToken> onToken)
+            {
+                _reader = reader;
+                _onToken = onToken;
+            }
+
+            public void Parse()
+            {
+                while (Peek() != -1)
+                {
+                    // Try inline constructs
+                    if (TryParseBoldOrItalic()) continue;
+                    if (TryParseInlineCode()) continue;
+                    if (TryParseLink()) continue;
+                    if (TryParseImage()) continue;
+                    if (TryParseEmoji()) continue;
+                    if (TryParseSubscript()) continue;
+                    if (TryParseSuperscript()) continue;
+                    if (TryParseInsertedText()) continue;
+                    if (TryParseMarkedText()) continue;
+
+                    // Regular character
+                    _buffer.Append((char)Read());
+                }
+
+                EmitText();
+            }
+
+            private int Peek()
+            {
+                if (_lookaheadBuffer.Count > 0)
+                    return _lookaheadBuffer.Peek();
+                return _reader.Peek();
+            }
+
+            private int Read()
+            {
+                if (_lookaheadBuffer.Count > 0)
+                    return _lookaheadBuffer.Dequeue();
+                return _reader.Read();
+            }
+
+            private char PeekAhead(int offset)
+            {
+                while (_lookaheadBuffer.Count <= offset)
+                {
+                    int next = _reader.Read();
+                    if (next == -1) return '\0';
+                    _lookaheadBuffer.Enqueue((char)next);
+                }
+                return _lookaheadBuffer.ElementAt(offset);
+            }
+
+            private bool TryParseBoldOrItalic()
+            {
+                if (PeekAhead(0) == '*' && PeekAhead(1) == '*')
+                {
+                    EmitText();
+                    Read(); Read();
+                    var boldText = new StringBuilder();
+                    while (Peek() != -1)
+                    {
+                        if (PeekAhead(0) == '*' && PeekAhead(1) == '*')
+                        {
+                            Read(); Read();
+                            _onToken(new MarkupToken(MarkupTokenType.Bold, boldText.ToString()));
+                            return true;
+                        }
+                        boldText.Append((char)Read());
+                    }
+                    _buffer.Append("**").Append(boldText);
+                    return false;
+                }
+                
+                if (PeekAhead(0) == '*' && PeekAhead(1) != '*')
+                {
+                    EmitText();
+                    Read();
+                    var italicText = new StringBuilder();
+                    while (Peek() != -1 && Peek() != '*')
+                    {
+                        italicText.Append((char)Read());
+                    }
+                    if (Peek() == '*')
+                    {
+                        Read();
+                        _onToken(new MarkupToken(MarkupTokenType.Italic, italicText.ToString()));
+                        return true;
+                    }
+                    _buffer.Append('*').Append(italicText);
+                    return false;
+                }
+                
+                return false;
+            }
+
+            private bool TryParseInlineCode()
+            {
+                if (Peek() != '`') return false;
+                EmitText();
+                Read();
+                var codeText = new StringBuilder();
+                while (Peek() != -1 && Peek() != '`' && Peek() != '\n')
+                {
+                    codeText.Append((char)Read());
+                }
+                if (Peek() == '`')
+                {
+                    Read();
+                    _onToken(new MarkupToken(MarkupTokenType.CodeInline, codeText.ToString()));
+                    return true;
+                }
+                _buffer.Append('`').Append(codeText);
+                return false;
+            }
+
+            private bool TryParseLink()
+            {
+                if (Peek() != '[') return false;
+                int pos = 1;
+                var text = new StringBuilder();
+                while (PeekAhead(pos) != ']' && PeekAhead(pos) != '\0' && PeekAhead(pos) != '\n')
+                {
+                    text.Append(PeekAhead(pos));
+                    pos++;
+                }
+                if (PeekAhead(pos) != ']' || PeekAhead(pos + 1) != '(') return false;
+                
+                pos += 2;
+                var url = new StringBuilder();
+                while (PeekAhead(pos) != ')' && PeekAhead(pos) != '\0' && PeekAhead(pos) != '\n')
+                {
+                    url.Append(PeekAhead(pos));
+                    pos++;
+                }
+                if (PeekAhead(pos) != ')') return false;
+                
+                EmitText();
+                for (int i = 0; i <= pos; i++) Read();
+                _onToken(new MarkupToken(MarkupTokenType.Link, text.ToString(), new LinkMetadata(url.ToString())));
+                return true;
+            }
+
+            private bool TryParseImage()
+            {
+                if (PeekAhead(0) != '!' || PeekAhead(1) != '[') return false;
+                int pos = 2;
+                var alt = new StringBuilder();
+                while (PeekAhead(pos) != ']' && PeekAhead(pos) != '\0')
+                {
+                    alt.Append(PeekAhead(pos));
+                    pos++;
+                }
+                if (PeekAhead(pos) != ']' || PeekAhead(pos + 1) != '(') return false;
+                
+                pos += 2;
+                var url = new StringBuilder();
+                while (PeekAhead(pos) != ')' && PeekAhead(pos) != '\0')
+                {
+                    url.Append(PeekAhead(pos));
+                    pos++;
+                }
+                if (PeekAhead(pos) != ')') return false;
+                
+                EmitText();
+                for (int i = 0; i <= pos; i++) Read();
+                _onToken(new MarkupToken(MarkupTokenType.Image, alt.ToString(), new LinkMetadata(url.ToString())));
+                return true;
+            }
+
+            private bool TryParseEmoji()
+            {
+                if (Peek() != ':') return false;
+                int pos = 1;
+                var name = new StringBuilder();
+                while (char.IsLetterOrDigit(PeekAhead(pos)) || PeekAhead(pos) == '_')
+                {
+                    name.Append(PeekAhead(pos));
+                    pos++;
+                }
+                if (PeekAhead(pos) != ':' || name.Length == 0) return false;
+                
+                EmitText();
+                for (int i = 0; i <= pos; i++) Read();
+                _onToken(new MarkupToken(MarkupTokenType.Emoji, name.ToString(), new EmojiMetadata(name.ToString())));
+                return true;
+            }
+
+            private bool TryParseSubscript()
+            {
+                if (Peek() != '~') return false;
+                EmitText();
+                Read();
+                var text = new StringBuilder();
+                while (Peek() != -1 && Peek() != '~' && Peek() != '\n')
+                {
+                    text.Append((char)Read());
+                }
+                if (Peek() == '~')
+                {
+                    Read();
+                    _onToken(new MarkupToken(MarkupTokenType.Subscript, text.ToString()));
+                    return true;
+                }
+                _buffer.Append('~').Append(text);
+                return false;
+            }
+
+            private bool TryParseSuperscript()
+            {
+                if (Peek() != '^') return false;
+                EmitText();
+                Read();
+                var text = new StringBuilder();
+                while (Peek() != -1 && Peek() != '^' && Peek() != '\n')
+                {
+                    text.Append((char)Read());
+                }
+                if (Peek() == '^')
+                {
+                    Read();
+                    _onToken(new MarkupToken(MarkupTokenType.Superscript, text.ToString()));
+                    return true;
+                }
+                _buffer.Append('^').Append(text);
+                return false;
+            }
+
+            private bool TryParseInsertedText()
+            {
+                if (PeekAhead(0) != '+' || PeekAhead(1) != '+') return false;
+                EmitText();
+                Read(); Read();
+                var text = new StringBuilder();
+                while (Peek() != -1)
+                {
+                    if (PeekAhead(0) == '+' && PeekAhead(1) == '+')
+                    {
+                        Read(); Read();
+                        _onToken(new MarkupToken(MarkupTokenType.InsertedText, text.ToString()));
+                        return true;
+                    }
+                    text.Append((char)Read());
+                }
+                _buffer.Append("++").Append(text);
+                return false;
+            }
+
+            private bool TryParseMarkedText()
+            {
+                if (PeekAhead(0) != '=' || PeekAhead(1) != '=') return false;
+                EmitText();
+                Read(); Read();
+                var text = new StringBuilder();
+                while (Peek() != -1)
+                {
+                    if (PeekAhead(0) == '=' && PeekAhead(1) == '=')
+                    {
+                        Read(); Read();
+                        _onToken(new MarkupToken(MarkupTokenType.MarkedText, text.ToString()));
+                        return true;
+                    }
+                    text.Append((char)Read());
+                }
+                _buffer.Append("==").Append(text);
+                return false;
+            }
+
+            private void EmitText()
+            {
+                if (_buffer.Length > 0)
+                {
+                    _onToken(new MarkupToken(MarkupTokenType.Text, _buffer.ToString()));
+                    _buffer.Clear();
+                }
+            }
         }
 
         private void EmitText()
