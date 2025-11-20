@@ -429,7 +429,7 @@ public static class MarkupTokenizer
 
             // Emit code block token
             string codeContent = code.ToString();
-            if (codeContent.EndsWith('\n'))
+            if (codeContent.EndsWith("\n"))
                 codeContent = codeContent.Substring(0, codeContent.Length - 1);
 
             // Create appropriate metadata based on language
