@@ -211,25 +211,22 @@ public static class MarkupTokenizer
 
             string content = headingText.ToString().Trim();
 
-            // Create metadata with OnInlineToken callback
-            Action<MarkupToken>? inlineCallback = null;
-            var callbacks = new List<MarkupToken>();
-            
-            inlineCallback = token => callbacks.Add(token);
-            var metadata = new HeadingMetadata(level, inlineCallback);
+            // Create metadata without inline callback initially
+            var metadata = new HeadingMetadata(level);
 
-            // Parse inline tokens if callback is set
-            if (inlineCallback != null)
-            {
-                ParseInlineTokens(content, inlineCallback);
-            }
-
-            // Emit heading token
+            // Emit heading token with empty value (client can set OnInlineToken to parse inline content)
             _onToken(new MarkupToken(
                 MarkupTokenType.Heading,
-                content,
+                string.Empty,
                 metadata
             ));
+
+            // Check if client set OnInlineToken during the callback
+            // If so, parse inline tokens and stream them
+            if (metadata.OnInlineToken != null)
+            {
+                ParseInlineTokens(content, metadata.OnInlineToken);
+            }
 
             return true;
         }
@@ -286,18 +283,18 @@ public static class MarkupTokenizer
 
             string content = quoteText.ToString();
 
-            // Create metadata with OnInlineToken callback
-            Action<MarkupToken>? inlineCallback = null;
-            inlineCallback = token => { }; // Will be called during ParseInlineTokens
-            var metadata = new BlockquoteMetadata(inlineCallback);
+            // Create metadata without inline callback initially
+            var metadata = new BlockquoteMetadata();
 
-            // Parse inline tokens if callback is set
-            if (inlineCallback != null)
+            // Emit blockquote token with empty value (client can set OnInlineToken to parse inline content)
+            _onToken(new MarkupToken(MarkupTokenType.Blockquote, string.Empty, metadata));
+
+            // Check if client set OnInlineToken during the callback
+            // If so, parse inline tokens and stream them
+            if (metadata.OnInlineToken != null)
             {
-                ParseInlineTokens(content, inlineCallback);
+                ParseInlineTokens(content, metadata.OnInlineToken);
             }
-
-            _onToken(new MarkupToken(MarkupTokenType.Blockquote, content, metadata));
 
             return true;
         }
@@ -326,13 +323,11 @@ public static class MarkupTokenizer
 
                 string content = itemText.ToString();
 
-                // Create metadata with OnInlineToken callback
-                Action<MarkupToken>? inlineCallback = token => { };
-                
-                // Parse inline tokens
-                ParseInlineTokens(content, inlineCallback);
+                // Emit unordered list item token with empty value
+                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, string.Empty));
 
-                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, content));
+                // No OnInlineToken support for unordered list items currently (no metadata)
+                // If needed, this could be added similar to ordered list items
                 return true;
             }
 
@@ -365,18 +360,23 @@ public static class MarkupTokenizer
 
                     string content = itemText.ToString();
 
-                    // Create metadata with OnInlineToken callback
-                    Action<MarkupToken>? inlineCallback = token => { };
-                    var metadata = new ListItemMetadata(number, inlineCallback);
+                    // Create metadata without inline callback initially
+                    var metadata = new ListItemMetadata(number);
 
-                    // Parse inline tokens
-                    ParseInlineTokens(content, inlineCallback);
-
+                    // Emit ordered list item token with empty value
                     _onToken(new MarkupToken(
                         MarkupTokenType.OrderedListItem,
-                        content,
+                        string.Empty,
                         metadata
                     ));
+
+                    // Check if client set OnInlineToken during the callback
+                    // If so, parse inline tokens and stream them
+                    if (metadata.OnInlineToken != null)
+                    {
+                        ParseInlineTokens(content, metadata.OnInlineToken);
+                    }
+
                     return true;
                 }
             }
@@ -434,34 +434,33 @@ public static class MarkupTokenizer
 
             // Create appropriate metadata based on language
             CodeBlockMetadata? metadata = null;
-            Action<MarkupToken>? inlineCallback = null;
 
             if (!string.IsNullOrEmpty(language))
             {
-                inlineCallback = token => { }; // Will be called during delegation
-                
                 metadata = language switch
                 {
-                    "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(inlineCallback),
-                    "json" => new JsonCodeBlockMetadata(inlineCallback),
-                    "xml" => new XmlCodeBlockMetadata(inlineCallback),
-                    "sql" => new SqlCodeBlockMetadata(inlineCallback),
-                    "typescript" or "ts" => new TypeScriptCodeBlockMetadata(inlineCallback),
-                    _ => new CodeBlockMetadata(language, inlineCallback)
+                    "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(),
+                    "json" => new JsonCodeBlockMetadata(),
+                    "xml" => new XmlCodeBlockMetadata(),
+                    "sql" => new SqlCodeBlockMetadata(),
+                    "typescript" or "ts" => new TypeScriptCodeBlockMetadata(),
+                    _ => new CodeBlockMetadata(language)
                 };
-
-                // Delegate to specialized tokenizer if available and callback is set
-                if (inlineCallback != null)
-                {
-                    DelegateToLanguageTokenizer(language, codeContent, inlineCallback);
-                }
             }
 
+            // Emit code block token with empty value (client can set OnInlineToken for syntax highlighting)
             _onToken(new MarkupToken(
                 MarkupTokenType.CodeBlock,
-                codeContent,
+                string.Empty,
                 metadata
             ));
+
+            // Check if client set OnInlineToken during the callback
+            // If so, delegate to specialized tokenizer for syntax highlighting
+            if (metadata?.OnInlineToken != null)
+            {
+                DelegateToLanguageTokenizer(language, codeContent, metadata.OnInlineToken);
+            }
 
             return true;
         }
@@ -1008,13 +1007,10 @@ public static class MarkupTokenizer
 
             string content = cellContent.ToString().Trim();
 
-            // Create metadata with OnInlineToken callback
-            Action<MarkupToken>? inlineCallback = token => { };
-            
-            // Parse inline tokens
-            ParseInlineTokens(content, inlineCallback);
-
-            _onToken(new MarkupToken(MarkupTokenType.TableCell, content));
+            // Emit table cell token with empty value
+            // Note: TableCell doesn't have metadata currently for OnInlineToken support
+            // This could be enhanced if needed
+            _onToken(new MarkupToken(MarkupTokenType.TableCell, string.Empty));
 
             return true;
         }
