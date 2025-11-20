@@ -6,24 +6,24 @@ namespace NTokenizers.Markup;
 public enum MarkupTokenType
 {
     /// <summary>
-    /// Represents plain text content between delimiters.
+    /// Represents plain text content.
     /// </summary>
     Text,
     
     /// <summary>
-    /// Represents a bold delimiter (**).
+    /// Represents bold text. Value contains only the text content without ** markers.
     /// </summary>
-    BoldDelimiter,
+    Bold,
     
     /// <summary>
-    /// Represents an italic delimiter (*).
+    /// Represents italic text. Value contains only the text content without * markers.
     /// </summary>
-    ItalicDelimiter,
+    Italic,
     
     /// <summary>
-    /// Represents a heading delimiter (#, ##, ### ... ######). Level is stored in Metadata.
+    /// Represents a heading. Value contains only the heading text without # markers. Level is stored in Metadata.
     /// </summary>
-    HeadingDelimiter,
+    Heading,
     
     /// <summary>
     /// Represents a horizontal rule (--- or ***).
@@ -41,107 +41,77 @@ public enum MarkupTokenType
     Emphasis,
     
     /// <summary>
-    /// Represents a blockquote delimiter (&gt;).
+    /// Represents a blockquote. Value contains the quoted text without > marker.
     /// </summary>
-    BlockquoteDelimiter,
+    Blockquote,
     
     /// <summary>
-    /// Represents an unordered list delimiter (+, -, *).
+    /// Represents an unordered list item. Value contains the item text without +, -, * markers.
     /// </summary>
-    UnorderedListDelimiter,
+    UnorderedListItem,
     
     /// <summary>
-    /// Represents an ordered list delimiter (1., 2., etc.).
+    /// Represents an ordered list item. Value contains the item text without number prefix. Item number is stored in Metadata.
     /// </summary>
-    OrderedListDelimiter,
+    OrderedListItem,
     
     /// <summary>
-    /// Represents inline code (`code`).
+    /// Represents inline code. Value contains the code content without ` markers.
     /// </summary>
     CodeInline,
     
     /// <summary>
-    /// Represents the start of a code block fence (```language).
+    /// Represents a code block. Value contains the code content without ``` markers. Language is stored in Metadata.
     /// </summary>
-    CodeBlockFenceStart,
+    CodeBlock,
     
     /// <summary>
-    /// Represents the end of a code block fence (```).
+    /// Represents a table cell. Value contains the cell content without | delimiters. Position and alignment stored in Metadata.
     /// </summary>
-    CodeBlockFenceEnd,
+    TableCell,
     
     /// <summary>
-    /// Represents content within a code block.
+    /// Represents a link. Value contains the link text without [ ] markers. URL and title stored in Metadata.
     /// </summary>
-    CodeBlockContent,
+    Link,
     
     /// <summary>
-    /// Represents a table delimiter (|).
+    /// Represents an image. Value contains the alt text without ![ ] markers. URL and title stored in Metadata.
     /// </summary>
-    TableDelimiter,
+    Image,
     
     /// <summary>
-    /// Represents link text ([link text]).
-    /// </summary>
-    LinkText,
-    
-    /// <summary>
-    /// Represents a link URL ((http://...)).
-    /// </summary>
-    LinkUrl,
-    
-    /// <summary>
-    /// Represents a link title ("title text").
-    /// </summary>
-    LinkTitle,
-    
-    /// <summary>
-    /// Represents image alt text (![alt]).
-    /// </summary>
-    ImageAlt,
-    
-    /// <summary>
-    /// Represents an image URL ((url)).
-    /// </summary>
-    ImageUrl,
-    
-    /// <summary>
-    /// Represents an image title ("title").
-    /// </summary>
-    ImageTitle,
-    
-    /// <summary>
-    /// Represents an emoji (:wink:).
+    /// Represents an emoji. Value contains the emoji name without : markers, stored in Metadata as well.
     /// </summary>
     Emoji,
     
     /// <summary>
-    /// Represents subscript text (^th^).
+    /// Represents subscript text. Value contains only the subscript content without ^ markers.
     /// </summary>
     Subscript,
     
     /// <summary>
-    /// Represents superscript text (~2~).
+    /// Represents superscript text. Value contains only the superscript content without ~ markers.
     /// </summary>
     Superscript,
     
     /// <summary>
-    /// Represents inserted text (++Inserted++).
+    /// Represents inserted text. Value contains only the content without ++ markers.
     /// </summary>
     InsertedText,
     
     /// <summary>
-    /// Represents marked text (==Marked==).
+    /// Represents marked text. Value contains only the content without == markers.
     /// </summary>
     MarkedText,
     
     /// <summary>
-    /// Represents a footnote reference ([^id]).
+    /// Represents a footnote reference. Value contains the reference ID without [^ ] markers.
     /// </summary>
     FootnoteReference,
     
     /// <summary>
-    /// Represents a footnote definition ([^id]: ...).
+    /// Represents a footnote definition. Value contains the definition content. ID stored in Metadata.
     /// </summary>
     FootnoteDefinition,
     
@@ -151,22 +121,22 @@ public enum MarkupTokenType
     DefinitionTerm,
     
     /// <summary>
-    /// Represents a definition description (: Definition).
+    /// Represents a definition description. Value contains the description without : marker.
     /// </summary>
     DefinitionDescription,
     
     /// <summary>
-    /// Represents an abbreviation (*[HTML]: ...).
+    /// Represents an abbreviation. Value contains the definition. Abbreviation stored in Metadata.
     /// </summary>
     Abbreviation,
     
     /// <summary>
-    /// Represents a custom container (::: warning).
+    /// Represents a custom container. Value contains the container type/name without ::: markers.
     /// </summary>
     CustomContainer,
     
     /// <summary>
-    /// Represents an HTML tag (&lt;html&gt;, &lt;/html&gt;, etc.).
+    /// Represents an HTML tag. Value contains the complete tag including &lt; &gt; markers as they are part of HTML syntax.
     /// </summary>
     HtmlTag
 }

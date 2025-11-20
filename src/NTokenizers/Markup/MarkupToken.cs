@@ -12,16 +12,16 @@ public abstract record MarkupMetadata;
 public record HeadingMetadata(int Level) : MarkupMetadata;
 
 /// <summary>
-/// Metadata for code fence tokens, containing the language identifier.
+/// Metadata for code block tokens, containing the language identifier.
 /// </summary>
 /// <param name="Language">The language identifier (e.g., "xml", "json", "csharp").</param>
-public record CodeFenceMetadata(string Language) : MarkupMetadata;
+public record CodeBlockMetadata(string Language) : MarkupMetadata;
 
 /// <summary>
-/// Metadata for link tokens, containing URL and optional title.
+/// Metadata for link and image tokens, containing URL and optional title.
 /// </summary>
-/// <param name="Url">The link URL.</param>
-/// <param name="Title">Optional link title.</param>
+/// <param name="Url">The URL.</param>
+/// <param name="Title">Optional title.</param>
 public record LinkMetadata(string Url, string? Title = null) : MarkupMetadata;
 
 /// <summary>
@@ -35,6 +35,12 @@ public record FootnoteMetadata(string Id) : MarkupMetadata;
 /// </summary>
 /// <param name="Name">The emoji name (e.g., "wink").</param>
 public record EmojiMetadata(string Name) : MarkupMetadata;
+
+/// <summary>
+/// Metadata for list item tokens, containing the item number for ordered lists.
+/// </summary>
+/// <param name="Number">The item number for ordered lists.</param>
+public record ListItemMetadata(int Number) : MarkupMetadata;
 
 /// <summary>
 /// Metadata for table tokens, containing column information.
@@ -81,7 +87,7 @@ public enum Justify
 /// Represents a markup token with its type, value, and optional metadata.
 /// </summary>
 /// <param name="TokenType">The type of the markup token.</param>
-/// <param name="Value">The string value of the markup token.</param>
+/// <param name="Value">The string value of the markup token (renderable content only, no syntax markers).</param>
 /// <param name="Metadata">Optional metadata associated with the token.</param>
 public record MarkupToken(
     MarkupTokenType TokenType,
