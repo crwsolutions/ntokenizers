@@ -1,5 +1,5 @@
 # NTokenizers
-Collection of tokenizers for XML, JSON, HTML, etc processing
+Collection of tokenizers for JSON, XML, SQL, Typescript, CSharp and Markup processing
 
 ## Overview
 
