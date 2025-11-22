@@ -29,6 +29,26 @@ internal static class MarkupWriter
         {
             SqlWriter.Write(sqlMeta);
         }
+        else if (token.Metadata is LinkMetadata linkMeta)
+        {
+            MarkupLinkWriter.Write(linkMeta);
+        }
+        else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
+        {
+            MarkupBlockquoteWriter.Write(blockquoteMeta);
+        }
+        else if (token.Metadata is FootnoteMetadata footnoteMeta)
+        {
+            MarkupFootnoteWriter.Write(footnoteMeta);
+        }
+        else if (token.Metadata is EmojiMetadata emojiMeta)
+        {
+            MarkupEmojiWriter.Write(emojiMeta);
+        }
+        else if (token.Metadata is ListItemMetadata listItemMeta)
+        {
+            MarkupListItemWriter.Write(listItemMeta);
+        }
         else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
         {
             var code = string.IsNullOrWhiteSpace(genericMeta.Language) ? "code" : genericMeta.Language;
@@ -77,3 +97,4 @@ internal static class MarkupWriter
         AnsiConsole.Write(colored);
     }
 }
+
