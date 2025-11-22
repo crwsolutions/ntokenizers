@@ -441,9 +441,9 @@ public static class MarkupTokenizer
                 {
                     "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(),
                     "json" => new JsonCodeBlockMetadata(),
-                    "xml" => new XmlCodeBlockMetadata(),
+                    "xml" or "html" => new XmlCodeBlockMetadata(),
                     "sql" => new SqlCodeBlockMetadata(),
-                    "typescript" or "ts" => new TypeScriptCodeBlockMetadata(),
+                    "typescript" or "ts" or "javascript" or "js" => new TypeScriptCodeBlockMetadata(),
                     _ => new CodeBlockMetadata<MarkupToken>(language)
                 };
             }
