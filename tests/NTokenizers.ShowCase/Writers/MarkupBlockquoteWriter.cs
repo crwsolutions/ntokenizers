@@ -6,6 +6,6 @@ internal static class MarkupBlockquoteWriter
     internal static void Write(BlockquoteMetadata meta)
     {
         AnsiConsole.WriteLine($"> ");
-        //meta.OnInlineToken = MarkupWriter.Write;
+        meta.OnInlineToken = MarkupWriter.Write;
     }
 }
