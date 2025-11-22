@@ -408,29 +408,29 @@ public static class MarkupTokenizer
             string language = lang.ToString().Trim().ToLowerInvariant();
 
             // Read code block content until closing ```
-            var code = new StringBuilder();
+            //var code = new StringBuilder();
 
-            while (Peek() != -1)
-            {
-                // Check if we're at the start of a line with ```
-                if (code.Length == 0 || (code.Length > 0 && code[code.Length - 1] == '\n'))
-                {
-                    if (PeekAhead(0) == '`' && PeekAhead(1) == '`' && PeekAhead(2) == '`')
-                    {
-                        Read();
-                        Read();
-                        Read();
-                        break;
-                    }
-                }
+            //while (Peek() != -1)
+            //{
+            //    // Check if we're at the start of a line with ```
+            //    if (code.Length == 0 || (code.Length > 0 && code[code.Length - 1] == '\n'))
+            //    {
+            //        if (PeekAhead(0) == '`' && PeekAhead(1) == '`' && PeekAhead(2) == '`')
+            //        {
+            //            Read();
+            //            Read();
+            //            Read();
+            //            break;
+            //        }
+            //    }
 
-                code.Append((char)Read());
-            }
+            //    code.Append((char)Read());
+            //}
 
-            // Emit code block token
-            string codeContent = code.ToString();
-            if (codeContent.EndsWith("\n"))
-                codeContent = codeContent.Substring(0, codeContent.Length - 1);
+            //// Emit code block token
+            //string codeContent = code.ToString();
+            //if (codeContent.EndsWith("\n"))
+            //    codeContent = codeContent.Substring(0, codeContent.Length - 1);
 
             // Create appropriate metadata based on language
             MarkupMetadata? metadata = null;
@@ -459,7 +459,7 @@ public static class MarkupTokenizer
             // If so, delegate to specialized tokenizer for syntax highlighting
             if (metadata != null)
             {
-                DelegateToLanguageTokenizer(language, codeContent, metadata);
+                DelegateToLanguageTokenizer(language, metadata);
             }
 
             return true;
@@ -469,18 +469,17 @@ public static class MarkupTokenizer
         /// Delegates code block content to the appropriate language tokenizer.
         /// Emits language-specific tokens (e.g., CSharpToken, JsonToken) via the OnInlineToken callback.
         /// </summary>
-        private void DelegateToLanguageTokenizer(string language, string content, MarkupMetadata metadata)
+        private void DelegateToLanguageTokenizer(string language, MarkupMetadata metadata)
         {
             try
             {
-                using var memStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
-                
+               
                 switch (metadata)
                 {
                     case CSharpCodeBlockMetadata csharpMeta when csharpMeta.OnInlineToken != null:
                         try
                         {
-                            CSharp.CSharpTokenizer.Parse(memStream, "```", csharpMeta.OnInlineToken);
+                            CSharp.CSharpTokenizer.Parse(_reader, "```", csharpMeta.OnInlineToken);
                         }
                         catch
                         {
@@ -491,7 +490,7 @@ public static class MarkupTokenizer
                     case JsonCodeBlockMetadata jsonMeta when jsonMeta.OnInlineToken != null:
                         try
                         {
-                            Json.JsonTokenizer.Parse(memStream, "```", jsonMeta.OnInlineToken);
+                            Json.JsonTokenizer.Parse(_reader, "```", jsonMeta.OnInlineToken);
                         }
                         catch { }
                         break;
@@ -499,7 +498,7 @@ public static class MarkupTokenizer
                     case XmlCodeBlockMetadata xmlMeta when xmlMeta.OnInlineToken != null:
                         try
                         {
-                            Xml.XmlTokenizer.Parse(memStream, "```", xmlMeta.OnInlineToken);
+                            Xml.XmlTokenizer.Parse(_reader, "```", xmlMeta.OnInlineToken);
                         }
                         catch { }
                         break;
@@ -507,7 +506,7 @@ public static class MarkupTokenizer
                     case SqlCodeBlockMetadata sqlMeta when sqlMeta.OnInlineToken != null:
                         try
                         {
-                            Sql.SqlTokenizer.Parse(memStream, "```", sqlMeta.OnInlineToken);
+                            Sql.SqlTokenizer.Parse(_reader, "```", sqlMeta.OnInlineToken);
                         }
                         catch { }
                         break;
@@ -515,7 +514,7 @@ public static class MarkupTokenizer
                     case TypeScriptCodeBlockMetadata tsMeta when tsMeta.OnInlineToken != null:
                         try
                         {
-                            Typescript.TypescriptTokenizer.Parse(memStream, "```", tsMeta.OnInlineToken);
+                            Typescript.TypescriptTokenizer.Parse(_reader, "```", tsMeta.OnInlineToken);
                         }
                         catch { }
                         break;

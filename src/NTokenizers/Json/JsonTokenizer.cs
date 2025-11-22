@@ -15,15 +15,6 @@ public static class JsonTokenizer
     /// The input stream containing the text to tokenize.  
     /// The stream is read as UTF-8.
     /// </param>
-    /// <param name="stopDelimiter">
-    /// An optional string that, when encountered in the input, instructs the tokenizer
-    /// to stop parsing and return control to the caller.  
-    /// This is typically used when the tokenizer is operating as a sub-tokenizer
-    /// inside another language (for example, JSON inside Markdown or another format),
-    /// where parsing should stop when reaching a delimiter such as a Markdown code
-    /// fence (<c>```</c>).
-    /// If <c>null</c>, the tokenizer parses until the end of the stream.
-    /// </param>
     /// <param name="onToken">
     /// A callback invoked for each <see cref="JsonToken"/> produced during parsing.
     /// This delegate must not be <c>null</c>.
@@ -37,7 +28,7 @@ public static class JsonTokenizer
     /// var json = "{ \"name\": \"Alice\", \"age\": 30 }";
     /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
     ///
-    /// JsonTokenizer.Parse(ms, null, token =>
+    /// JsonTokenizer.Parse(ms, token =>
     /// {
     ///     Console.WriteLine($"{token.Kind}: {token.Value}");
     /// });
@@ -56,13 +47,36 @@ public static class JsonTokenizer
     /// });
     /// </code>
     /// </example>
-    public static void Parse(Stream stream, string? stopDelimiter, Action<JsonToken> onToken)
+    public static void Parse(Stream stream, Action<JsonToken> onToken)
     {
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        ParseInternal(reader, stopDelimiter, onToken);
+        Parse(reader, null, onToken);
     }
 
-    private static void ParseInternal(TextReader reader, string? stopDelimiter, Action<JsonToken> onToken)
+    /// <summary>
+    /// Parses JSON or JSON-like content from the given <see cref="TextReader"/> and
+    /// produces a sequence of <see cref="JsonToken"/> objects.
+    /// </summary>
+    /// <param name="reader">
+    /// The input reader containing the text to tokenize.
+    /// </param>
+    /// <param name="stopDelimiter">
+    /// An optional string that, when encountered in the input, instructs the tokenizer
+    /// to stop parsing and return control to the caller.  
+    /// This is typically used when the tokenizer is operating as a sub-tokenizer
+    /// inside another language (for example, JSON inside Markdown or another format),
+    /// where parsing should stop when reaching a delimiter such as a Markdown code
+    /// fence (<c>```</c>).
+    /// If <c>null</c>, the tokenizer parses until the end of the stream.
+    /// </param>
+    /// <param name="onToken">
+    /// A callback invoked for each <see cref="JsonToken"/> produced during parsing.
+    /// This delegate must not be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="reader"/> or <paramref name="onToken"/> is <c>null</c>.
+    /// </exception>
+    public static void Parse(TextReader reader, string? stopDelimiter, Action<JsonToken> onToken)
     {
         var sb = new StringBuilder();
         var stack = new Stack<ContainerType>();

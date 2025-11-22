@@ -28,24 +28,49 @@ public static class SqlTokenizer
     };
 
     /// <summary>
-    /// Parses SQL content from the given <see cref="Stream"/> and produces a sequence of <see cref="SqlToken"/> objects.
+    /// Parses SQL content from the given <see cref="Stream"/> and produces a sequence
+    /// of <see cref="SqlToken"/> objects.
     /// </summary>
-    /// <param name="stream">The input stream containing the SQL text to tokenize. The stream is read as UTF-8.</param>
-    /// <param name="stopDelimiter">An optional string that, when encountered in the input, instructs the tokenizer
-    /// to stop parsing and return control to the caller. If <c>null</c>, the tokenizer parses until the end of the stream.</param>
-    /// <param name="onToken">A callback invoked for each <see cref="SqlToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.</exception>
-    public static void Parse(Stream stream, string? stopDelimiter, Action<SqlToken> onToken)
+    /// <param name="stream">
+    /// The input stream containing the SQL text to tokenize. The stream is read as UTF-8.
+    /// </param>
+    /// <param name="onToken">
+    /// A callback invoked for each <see cref="SqlToken"/> produced during parsing.
+    /// This delegate must not be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.
+    /// </exception>
+    public static void Parse(Stream stream, Action<SqlToken> onToken)
     {
         if (stream == null) throw new ArgumentNullException(nameof(stream));
         if (onToken == null) throw new ArgumentNullException(nameof(onToken));
 
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        ParseInternal(reader, stopDelimiter, onToken);
+        Parse(reader, null, onToken);
     }
 
-    private static void ParseInternal(TextReader reader, string? stopDelimiter, Action<SqlToken> onToken)
+    /// <summary>
+    /// Parses SQL content from the given <see cref="TextReader"/> and produces a sequence
+    /// of <see cref="SqlToken"/> objects.
+    /// </summary>
+    /// <param name="reader">
+    /// The <see cref="TextReader"/> providing the SQL text to tokenize.
+    /// This parameter must not be <c>null</c>.
+    /// </param>
+    /// <param name="stopDelimiter">
+    /// An optional string that, when encountered in the input, instructs the tokenizer
+    /// to stop parsing and return control to the caller. If <c>null</c>, parsing continues
+    /// until the end of the reader.
+    /// </param>
+    /// <param name="onToken">
+    /// A callback invoked for each <see cref="SqlToken"/> produced during parsing.
+    /// This delegate must not be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if <paramref name="reader"/> or <paramref name="onToken"/> is <c>null</c>.
+    /// </exception>
+    public static void Parse(TextReader reader, string? stopDelimiter, Action<SqlToken> onToken)
     {
         var state = State.Start;
         var sb = new StringBuilder();
