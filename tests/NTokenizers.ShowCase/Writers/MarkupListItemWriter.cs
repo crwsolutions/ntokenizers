@@ -5,7 +5,7 @@ internal static class MarkupListItemWriter
 {
     internal static void Write(ListItemMetadata listItemMeta)
     {
-        AnsiConsole.Write($"{listItemMeta.Number} ");
+        AnsiConsole.Write($"{listItemMeta.Marker} ");
         listItemMeta.OnInlineToken = MarkupWriter.Write;
     }
 }

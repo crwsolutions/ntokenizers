@@ -130,10 +130,27 @@ public class EmojiMetadata(string Name) : MarkupMetadata
 }
 
 /// <summary>
+/// Metadata for unordered list item tokens
+/// </summary>
+/// <param name="Marker">The marker of the lists.</param>
+public class ListItemMetadata(char Marker) : MarkupMetadata
+{
+    /// <summary>
+    /// Gets the marker of the list.
+    /// </summary>
+    public char Marker { get; } = Marker;
+    /// <summary>
+    /// Optional callback to stream inline tokens (bold, italic, etc.) within the list item.
+    /// When set, the tokenizer will parse inline content and emit tokens via this callback.
+    /// </summary>
+    public Action<MarkupToken>? OnInlineToken { get; set; }
+}
+
+/// <summary>
 /// Metadata for list item tokens, containing the item number for ordered lists.
 /// </summary>
 /// <param name="Number">The item number for ordered lists.</param>
-public class ListItemMetadata(int Number) : MarkupMetadata
+public class OrderedListItemMetadata(int Number) : MarkupMetadata
 {
     /// <summary>
     /// Gets the current number value within the list.

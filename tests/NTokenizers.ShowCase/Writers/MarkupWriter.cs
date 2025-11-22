@@ -45,6 +45,10 @@ internal static class MarkupWriter
         {
             MarkupEmojiWriter.Write(emojiMeta);
         }
+        else if (token.Metadata is OrderedListItemMetadata orderedListItemMeta)
+        {
+            MarkupOrderedListItemWriter.Write(orderedListItemMeta);
+        }
         else if (token.Metadata is ListItemMetadata listItemMeta)
         {
             MarkupListItemWriter.Write(listItemMeta);

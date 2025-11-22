@@ -23,7 +23,7 @@ public class MarkupTokenizerTests
             {
                 blockquoteMeta.OnInlineToken = tokens.Add;
             }
-            else if (token.Metadata is ListItemMetadata listMeta)
+            else if (token.Metadata is OrderedListItemMetadata listMeta)
             {
                 listMeta.OnInlineToken = tokens.Add;
             }
@@ -241,8 +241,8 @@ public class MarkupTokenizerTests
         Assert.Equal(MarkupTokenType.OrderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.NotNull(tokens[0].Metadata);
-        Assert.IsType<ListItemMetadata>(tokens[0].Metadata);
-        Assert.Equal(1, ((ListItemMetadata)tokens[0].Metadata).Number);
+        Assert.IsType<OrderedListItemMetadata>(tokens[0].Metadata);
+        Assert.Equal(1, ((OrderedListItemMetadata)tokens[0].Metadata).Number);
         
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
@@ -256,7 +256,7 @@ public class MarkupTokenizerTests
         Assert.Equal(2, tokens.Count); // OrderedListItem token + inline text token
         Assert.Equal(MarkupTokenType.OrderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
-        Assert.Equal(42, ((ListItemMetadata)tokens[0].Metadata!).Number);
+        Assert.Equal(42, ((OrderedListItemMetadata)tokens[0].Metadata!).Number);
         
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);

@@ -310,6 +310,8 @@ public static class MarkupTokenizer
                 if (PeekAhead(1) != ' ')
                     return false;
 
+                var marker = c;
+
                 EmitText();
                 Read(); // Consume marker
                 Read(); // Consume space
@@ -323,11 +325,18 @@ public static class MarkupTokenizer
 
                 string content = itemText.ToString();
 
-                // Emit unordered list item token with empty value
-                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, string.Empty));
+                var metadata = new ListItemMetadata(marker);
 
-                // No OnInlineToken support for unordered list items currently (no metadata)
-                // If needed, this could be added similar to ordered list items
+                // Emit unordered list item token with empty value
+                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, string.Empty, metadata));
+
+                // Check if client set OnInlineToken during the callback
+                // If so, parse inline tokens and stream them
+                if (metadata.OnInlineToken != null)
+                {
+                    ParseInlineTokens(content, metadata.OnInlineToken);
+                }
+
                 return true;
             }
 
@@ -361,7 +370,7 @@ public static class MarkupTokenizer
                     string content = itemText.ToString();
 
                     // Create metadata without inline callback initially
-                    var metadata = new ListItemMetadata(number);
+                    var metadata = new OrderedListItemMetadata(number);
 
                     // Emit ordered list item token with empty value
                     _onToken(new MarkupToken(
