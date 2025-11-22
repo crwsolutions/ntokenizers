@@ -407,46 +407,16 @@ public static class MarkupTokenizer
 
             string language = lang.ToString().Trim().ToLowerInvariant();
 
-            // Read code block content until closing ```
-            //var code = new StringBuilder();
-
-            //while (Peek() != -1)
-            //{
-            //    // Check if we're at the start of a line with ```
-            //    if (code.Length == 0 || (code.Length > 0 && code[code.Length - 1] == '\n'))
-            //    {
-            //        if (PeekAhead(0) == '`' && PeekAhead(1) == '`' && PeekAhead(2) == '`')
-            //        {
-            //            Read();
-            //            Read();
-            //            Read();
-            //            break;
-            //        }
-            //    }
-
-            //    code.Append((char)Read());
-            //}
-
-            //// Emit code block token
-            //string codeContent = code.ToString();
-            //if (codeContent.EndsWith("\n"))
-            //    codeContent = codeContent.Substring(0, codeContent.Length - 1);
-
             // Create appropriate metadata based on language
-            MarkupMetadata? metadata = null;
-
-            if (!string.IsNullOrEmpty(language))
+            MarkupMetadata? metadata = language.ToLowerInvariant() switch
             {
-                metadata = language.ToLowerInvariant() switch
-                {
-                    "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(),
-                    "json" => new JsonCodeBlockMetadata(),
-                    "xml" or "html" => new XmlCodeBlockMetadata(),
-                    "sql" => new SqlCodeBlockMetadata(),
-                    "typescript" or "ts" or "javascript" or "js" => new TypeScriptCodeBlockMetadata(),
-                    _ => new CodeBlockMetadata<MarkupToken>(language)
-                };
-            }
+                "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(language),
+                "json" => new JsonCodeBlockMetadata(language),
+                "xml" or "html" => new XmlCodeBlockMetadata(language),
+                "sql" => new SqlCodeBlockMetadata(language),
+                "typescript" or "ts" or "javascript" or "js" => new TypeScriptCodeBlockMetadata(language),
+                _ => new GenericCodeBlockMetadata(language)
+            };
 
             // Emit code block token with empty value (client can set OnInlineToken for syntax highlighting)
             _onToken(new MarkupToken(
@@ -473,7 +443,6 @@ public static class MarkupTokenizer
         {
             try
             {
-               
                 switch (metadata)
                 {
                     case CSharpCodeBlockMetadata csharpMeta when csharpMeta.OnInlineToken != null:
@@ -515,6 +484,13 @@ public static class MarkupTokenizer
                         try
                         {
                             Typescript.TypescriptTokenizer.Parse(_reader, "```", tsMeta.OnInlineToken);
+                        }
+                        catch { }
+                        break;
+                    case GenericCodeBlockMetadata gMeta when gMeta.OnInlineToken != null:
+                        try
+                        {
+                            Generic.GenericTokenizer.Parse(_reader, "```", gMeta.OnInlineToken);
                         }
                         catch { }
                         break;

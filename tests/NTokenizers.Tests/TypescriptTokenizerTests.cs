@@ -558,7 +558,7 @@ public class TypescriptTokenizerTests
     {
         var tokens = new List<TypescriptToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        TypescriptTokenizer.Parse(stream, null, token => tokens.Add(token));
+        TypescriptTokenizer.Parse(stream, token => tokens.Add(token));
         return tokens;
     }
 
@@ -566,7 +566,8 @@ public class TypescriptTokenizerTests
     {
         var tokens = new List<TypescriptToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        TypescriptTokenizer.Parse(stream, stopDelimiter, token => tokens.Add(token));
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        TypescriptTokenizer.Parse(reader, stopDelimiter, token => tokens.Add(token));
         return tokens;
     }
 }

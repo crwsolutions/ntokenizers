@@ -387,7 +387,7 @@ public class XmlTokenizerTests
     {
         var tokens = new List<XmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        XmlTokenizer.Parse(stream, null, token => tokens.Add(token));
+        XmlTokenizer.Parse(stream, token => tokens.Add(token));
         return tokens;
     }
 
@@ -395,7 +395,8 @@ public class XmlTokenizerTests
     {
         var tokens = new List<XmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        XmlTokenizer.Parse(stream, stopDelimiter, token => tokens.Add(token));
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        XmlTokenizer.Parse(reader, stopDelimiter, token => tokens.Add(token));
         return tokens;
     }
 }

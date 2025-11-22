@@ -28,7 +28,7 @@ public class HeadingMetadata(int Level) : MarkupMetadata
 /// </summary>
 /// <typeparam name="TToken">The type of tokens emitted by the language-specific tokenizer.</typeparam>
 /// <param name="Language">The language identifier (e.g., "xml", "json", "csharp").</param>
-public class CodeBlockMetadata<TToken>(string Language) : MarkupMetadata
+public abstract class CodeBlockMetadata<TToken>(string Language) : MarkupMetadata
 {
     /// <summary>
     /// Gets the language code representing the current language setting.
@@ -43,29 +43,38 @@ public class CodeBlockMetadata<TToken>(string Language) : MarkupMetadata
 }
 
 /// <summary>
+/// Represents metadata for a generic code block, including its associated code content.
+/// </summary>
+/// <remarks>This class is a specialized implementation of <see cref="CodeBlockMetadata{MarkupToken}"/> designed
+/// to handle generic code blocks. It provides functionality to manage and process the code content associated with the
+/// block.</remarks>
+/// <param name="language">The code content associated with the generic code block.</param>
+public class GenericCodeBlockMetadata(string language) : CodeBlockMetadata<MarkupToken>(language);
+
+/// <summary>
 /// Metadata for C# code block tokens with syntax highlighting support.
 /// </summary>
-public class CSharpCodeBlockMetadata() : CodeBlockMetadata<CSharp.CSharpToken>("csharp");
+public class CSharpCodeBlockMetadata(string language) : CodeBlockMetadata<CSharp.CSharpToken>(language);
 
 /// <summary>
 /// Metadata for JSON code block tokens with syntax highlighting support.
 /// </summary>
-public class JsonCodeBlockMetadata() : CodeBlockMetadata<Json.JsonToken>("json");
+public class JsonCodeBlockMetadata(string language) : CodeBlockMetadata<Json.JsonToken>(language);
 
 /// <summary>
 /// Metadata for XML code block tokens with syntax highlighting support.
 /// </summary>
-public class XmlCodeBlockMetadata() : CodeBlockMetadata<Xml.XmlToken>("xml");
+public class XmlCodeBlockMetadata(string language) : CodeBlockMetadata<Xml.XmlToken>(language);
 
 /// <summary>
 /// Metadata for SQL code block tokens with syntax highlighting support.
 /// </summary>
-public class SqlCodeBlockMetadata() : CodeBlockMetadata<Sql.SqlToken>("sql");
+public class SqlCodeBlockMetadata(string language) : CodeBlockMetadata<Sql.SqlToken>(language);
 
 /// <summary>
 /// Metadata for TypeScript code block tokens with syntax highlighting support.
 /// </summary>
-public class TypeScriptCodeBlockMetadata() : CodeBlockMetadata<Typescript.TypescriptToken>("typescript");
+public class TypeScriptCodeBlockMetadata(string language) : CodeBlockMetadata<Typescript.TypescriptToken>(language);
 
 /// <summary>
 /// Metadata for link and image tokens, containing URL and optional title.

@@ -669,7 +669,7 @@ int x = 5; /* Block comment */ int y = 10;";
     {
         var tokens = new List<CSharpToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        CSharpTokenizer.Parse(stream, null, token => tokens.Add(token));
+        CSharpTokenizer.Parse(stream, token => tokens.Add(token));
         return tokens;
     }
 
@@ -677,7 +677,8 @@ int x = 5; /* Block comment */ int y = 10;";
     {
         var tokens = new List<CSharpToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        CSharpTokenizer.Parse(stream, stopDelimiter, token => tokens.Add(token));
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        CSharpTokenizer.Parse(reader, stopDelimiter, token => tokens.Add(token));
         return tokens;
     }
 }

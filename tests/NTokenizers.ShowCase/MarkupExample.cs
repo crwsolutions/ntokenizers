@@ -88,7 +88,11 @@ internal static class MarkupExample
         Block code "fences"
 
         ```
-        Sample text here...
+        Some long Sample text can be found here...
+        ```
+
+        ```console
+        C:\Users\username> ping google.com
         ```
 
         Syntax highlighting

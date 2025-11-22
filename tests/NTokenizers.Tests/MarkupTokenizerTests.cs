@@ -13,7 +13,7 @@ public class MarkupTokenizerTests
         MarkupTokenizer.Parse(stream, token =>
         {
             tokens.Add(token);
-            
+
             // Automatically set OnInlineToken to capture inline tokens
             if (token.Metadata is HeadingMetadata headingMeta)
             {
@@ -55,6 +55,10 @@ public class MarkupTokenizerTests
             else if (token.Metadata is TableMetadata tableMeta)
             {
                 tableMeta.OnInlineToken = tokens.Add;
+            }
+            else if (token.Metadata is GenericCodeBlockMetadata gMeta)
+            {
+                gMeta.OnInlineToken = gToken => { /* Capture generic tokens if needed */ };
             }
         });
         return tokens;

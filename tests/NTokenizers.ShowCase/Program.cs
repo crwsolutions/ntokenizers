@@ -185,45 +185,59 @@ class Program
                     AnsiConsole.Write(inlineColored);
                 };
             }
+            else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
+            {
+                var code = string.IsNullOrWhiteSpace(genericMeta.Language) ? "code" : genericMeta.Language;
+                AnsiConsole.WriteLine($"{code}:");
+                genericMeta.OnInlineToken = inlineToken =>
+                {
+                    WriteMarkup(inlineToken);
+                };
+            }
             else
             {
-                var value = Markup.Escape(token.Value);
-                var colored = token.TokenType switch
-                {
-                    MarkupTokenType.Heading => new Markup($"[yellow]{value}[/]"),
-                    MarkupTokenType.Bold => new Markup($"[blue]{value}[/]"),
-                    MarkupTokenType.Italic => new Markup($"[green]{value}[/]"),
-                    MarkupTokenType.HorizontalRule => new Markup($"[grey]====================================[/]"),
-                    MarkupTokenType.CodeInline => new Markup($"[cyan]{value}[/]"),
-                    MarkupTokenType.CodeBlock => new Markup($"[magenta]{value}[/]"),
-                    MarkupTokenType.Link => new Markup($"[blue underline]{value}[/]"),
-                    MarkupTokenType.Image => new Markup($"[purple]{value}[/]"),
-                    MarkupTokenType.Blockquote => new Markup($"[orange1]{value}[/]"),
-                    MarkupTokenType.UnorderedListItem => new Markup($"[red]{value}[/]"),
-                    MarkupTokenType.OrderedListItem => new Markup($"[red]{value}[/]"),
-                    MarkupTokenType.TableCell => new Markup($"[lime]{value}[/]"),
-                    MarkupTokenType.Emphasis => new Markup($"[yellow]{value}[/]"),
-                    MarkupTokenType.TypographicReplacement => new Markup($"[grey]{value}[/]"),
-                    MarkupTokenType.FootnoteReference => new Markup($"[pink]{value}[/]"),
-                    MarkupTokenType.FootnoteDefinition => new Markup($"[pink]{value}[/]"),
-                    MarkupTokenType.DefinitionTerm => new Markup($"[bold]{value}[/]"),
-                    MarkupTokenType.DefinitionDescription => new Markup($"[italic]{value}[/]"),
-                    MarkupTokenType.Abbreviation => new Markup($"[underline]{value}[/]"),
-                    MarkupTokenType.CustomContainer => new Markup($"[teal]{value}[/]"),
-                    MarkupTokenType.HtmlTag => new Markup($"[orange1]{value}[/]"),
-                    MarkupTokenType.Subscript => new Markup($"[gray]{value}[/]"),
-                    MarkupTokenType.Superscript => new Markup($"[white]{value}[/]"),
-                    MarkupTokenType.InsertedText => new Markup($"[green]{value}[/]"),
-                    MarkupTokenType.MarkedText => new Markup($"[yellow]{value}[/]"),
-                    MarkupTokenType.Emoji => new Markup($"[yellow]{value}[/]"),
-                    _ => new Markup(value)
-                };
-                AnsiConsole.Write(colored);
+                WriteMarkup(token);
             }
         });
 
         await writerTask;
         Console.WriteLine("\nDone.");
+    }
+
+    private static void WriteMarkup(MarkupToken token)
+    {
+        var value = Markup.Escape(token.Value);
+        var colored = token.TokenType switch
+        {
+            MarkupTokenType.Heading => new Markup($"[yellow]{value}[/]"),
+            MarkupTokenType.Bold => new Markup($"[blue]{value}[/]"),
+            MarkupTokenType.Italic => new Markup($"[green]{value}[/]"),
+            MarkupTokenType.HorizontalRule => new Markup($"[grey]====================================[/]"),
+            MarkupTokenType.CodeInline => new Markup($"[cyan]{value}[/]"),
+            MarkupTokenType.CodeBlock => new Markup($"[magenta]{value}[/]"),
+            MarkupTokenType.Link => new Markup($"[blue underline]{value}[/]"),
+            MarkupTokenType.Image => new Markup($"[purple]{value}[/]"),
+            MarkupTokenType.Blockquote => new Markup($"[orange1]{value}[/]"),
+            MarkupTokenType.UnorderedListItem => new Markup($"[red]{value}[/]"),
+            MarkupTokenType.OrderedListItem => new Markup($"[red]{value}[/]"),
+            MarkupTokenType.TableCell => new Markup($"[lime]{value}[/]"),
+            MarkupTokenType.Emphasis => new Markup($"[yellow]{value}[/]"),
+            MarkupTokenType.TypographicReplacement => new Markup($"[grey]{value}[/]"),
+            MarkupTokenType.FootnoteReference => new Markup($"[pink]{value}[/]"),
+            MarkupTokenType.FootnoteDefinition => new Markup($"[pink]{value}[/]"),
+            MarkupTokenType.DefinitionTerm => new Markup($"[bold]{value}[/]"),
+            MarkupTokenType.DefinitionDescription => new Markup($"[italic]{value}[/]"),
+            MarkupTokenType.Abbreviation => new Markup($"[underline]{value}[/]"),
+            MarkupTokenType.CustomContainer => new Markup($"[teal]{value}[/]"),
+            MarkupTokenType.HtmlTag => new Markup($"[orange1]{value}[/]"),
+            MarkupTokenType.Subscript => new Markup($"[gray]{value}[/]"),
+            MarkupTokenType.Superscript => new Markup($"[white]{value}[/]"),
+            MarkupTokenType.InsertedText => new Markup($"[green]{value}[/]"),
+            MarkupTokenType.MarkedText => new Markup($"[yellow]{value}[/]"),
+            MarkupTokenType.Emoji => new Markup($"[yellow]{value}[/]"),
+            _ => new Markup(value)
+        };
+        AnsiConsole.Write(colored);
     }
 
     static async Task EmitSlowlyAsync(string text, Stream output)
