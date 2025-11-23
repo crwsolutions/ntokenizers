@@ -202,15 +202,6 @@ public static class MarkupTokenizer
             while (char.IsWhiteSpace((char)Peek()) && Peek() != '\n')
                 Read();
 
-            // Read heading text until end of line
-            var headingText = new StringBuilder();
-            while (Peek() != -1 && Peek() != '\n')
-            {
-                headingText.Append((char)Read());
-            }
-
-            string content = headingText.ToString().Trim();
-
             // Create metadata without inline callback initially
             var metadata = new HeadingMetadata(level);
 
@@ -225,7 +216,7 @@ public static class MarkupTokenizer
             // If so, parse inline tokens and stream them
             if (metadata.OnInlineToken != null)
             {
-                ParseInlineTokens(content, metadata.OnInlineToken);
+                ParseInlineTokens(metadata.OnInlineToken);
             }
 
             return true;
@@ -274,15 +265,6 @@ public static class MarkupTokenizer
             if (Peek() == ' ')
                 Read();
 
-            // Read quoted text until end of line
-            var quoteText = new StringBuilder();
-            while (Peek() != -1 && Peek() != '\n')
-            {
-                quoteText.Append((char)Read());
-            }
-
-            string content = quoteText.ToString();
-
             // Create metadata without inline callback initially
             var metadata = new BlockquoteMetadata();
 
@@ -293,7 +275,7 @@ public static class MarkupTokenizer
             // If so, parse inline tokens and stream them
             if (metadata.OnInlineToken != null)
             {
-                ParseInlineTokens(content, metadata.OnInlineToken);
+                ParseInlineTokens(metadata.OnInlineToken);
             }
 
             return true;
@@ -316,15 +298,6 @@ public static class MarkupTokenizer
                 Read(); // Consume marker
                 Read(); // Consume space
 
-                // Read item text
-                var itemText = new StringBuilder();
-                while (Peek() != -1 && Peek() != '\n')
-                {
-                    itemText.Append((char)Read());
-                }
-
-                string content = itemText.ToString();
-
                 var metadata = new ListItemMetadata(marker);
 
                 // Emit unordered list item token with empty value
@@ -334,7 +307,7 @@ public static class MarkupTokenizer
                 // If so, parse inline tokens and stream them
                 if (metadata.OnInlineToken != null)
                 {
-                    ParseInlineTokens(content, metadata.OnInlineToken);
+                    ParseInlineTokens(metadata.OnInlineToken);
                 }
 
                 return true;
@@ -360,15 +333,6 @@ public static class MarkupTokenizer
                         Read();
                     Read(); // Consume space
 
-                    // Read item text
-                    var itemText = new StringBuilder();
-                    while (Peek() != -1 && Peek() != '\n')
-                    {
-                        itemText.Append((char)Read());
-                    }
-
-                    string content = itemText.ToString();
-
                     // Create metadata without inline callback initially
                     var metadata = new OrderedListItemMetadata(number);
 
@@ -383,7 +347,7 @@ public static class MarkupTokenizer
                     // If so, parse inline tokens and stream them
                     if (metadata.OnInlineToken != null)
                     {
-                        ParseInlineTokens(content, metadata.OnInlineToken);
+                        ParseInlineTokens(metadata.OnInlineToken);
                     }
 
                     return true;
@@ -966,15 +930,9 @@ public static class MarkupTokenizer
         /// Parses inline tokens from a string and invokes the callback for each token found.
         /// This enables streaming of inline markup (bold, italic, code, links, etc.) within other constructs.
         /// </summary>
-        private void ParseInlineTokens(string content, Action<MarkupToken> onInlineToken)
+        private void ParseInlineTokens(Action<MarkupToken> onInlineToken)
         {
-            if (string.IsNullOrEmpty(content))
-                return;
-
-            // Create a temporary stream from the content
-            using var memStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
-            using var tempReader = new StreamReader(memStream);
-            var tempContext = new InlineParserContext(tempReader, onInlineToken);
+            var tempContext = new InlineParserContext(_reader, onInlineToken);
             tempContext.Parse();
         }
 
@@ -996,7 +954,7 @@ public static class MarkupTokenizer
 
             public void Parse()
             {
-                while (Peek() != -1)
+                while (Peek() != -1 && Peek() != '\n')
                 {
                     // Try inline constructs
                     if (TryParseBoldOrItalic()) continue;
