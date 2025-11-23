@@ -138,5 +138,11 @@ public enum MarkupTokenType
     /// <summary>
     /// Represents an HTML tag. Value contains the complete tag including &lt; &gt; markers as they are part of HTML syntax.
     /// </summary>
-    HtmlTag
+    HtmlTag,
+
+    /// <summary>
+    /// Represents the end of an inline element in a document or text processing context. It signals the end of a segment of inline content.
+    /// </summary>
+    /// <remarks>This marker is typically used to signify the conclusion of an inline content segment.</remarks>
+    EndOfInline
 }

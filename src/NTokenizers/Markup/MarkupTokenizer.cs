@@ -972,6 +972,7 @@ public static class MarkupTokenizer
                 }
 
                 EmitText();
+                _onToken(new MarkupToken(MarkupTokenType.EndOfInline, string.Empty));
             }
 
             private int Peek()
