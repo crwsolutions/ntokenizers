@@ -954,7 +954,7 @@ public static class MarkupTokenizer
 
             public void Parse()
             {
-                while (Peek() != -1 && Peek() != '\n')
+                while (Peek() != -1 && Peek() != '\n' && Peek() != '\r')
                 {
                     // Try inline constructs
                     if (TryParseBoldOrItalic()) continue;
