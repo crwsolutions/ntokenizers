@@ -122,7 +122,7 @@ internal static class MarkupWriter
 
         if (token.TokenType == MarkupTokenType.HorizontalRule)
         {
-            var value = new string('=', 40);
+            var value = new string('─', Console.WindowWidth);
             Write(liveTarget, value, style);
         }
         else
