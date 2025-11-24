@@ -27,12 +27,6 @@ internal static class MarkupHeadingWriter
             var inlineValue = Markup.Escape(inlineToken.Value);
             lenght += inlineToken.Value.Length;
             MarkupWriter.Write(inlineToken);
-            //var inlineColored = inlineToken.TokenType switch
-            //{
-            //    MarkupTokenType.Bold => new Markup($"[blue]{inlineValue}[/]"),
-            //    _ => new Markup($"[yellow]{inlineValue}[/]")
-            //};
-            //AnsiConsole.Write(inlineColored);
 
             if (inlineToken.TokenType == MarkupTokenType.EndOfInline)
             {
