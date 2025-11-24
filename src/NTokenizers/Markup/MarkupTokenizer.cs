@@ -81,7 +81,7 @@ public static class MarkupTokenizer
         {
             if (_lookaheadBuffer.Count > 0)
                 return _lookaheadBuffer.Peek();
-            
+
             return _reader.Peek();
         }
 
@@ -89,7 +89,7 @@ public static class MarkupTokenizer
         {
             if (_lookaheadBuffer.Count > 0)
                 return _lookaheadBuffer.Dequeue();
-            
+
             return _reader.Read();
         }
 
@@ -112,19 +112,19 @@ public static class MarkupTokenizer
         {
             // Try heading
             if (TryParseHeading()) return true;
-            
+
             // Try horizontal rule
             if (TryParseHorizontalRule()) return true;
-            
+
             // Try blockquote
             if (TryParseBlockquote()) return true;
-            
+
             // Try list items
             if (TryParseListItem()) return true;
-            
+
             // Try code fence
             if (TryParseCodeFence()) return true;
-            
+
             // Try custom container
             if (TryParseCustomContainer()) return true;
 
@@ -141,32 +141,32 @@ public static class MarkupTokenizer
             // Try bold/italic
             if (ch == '*' && TryParseBoldOrItalic()) return true;
             if (ch == '_' && TryParseBoldOrItalic()) return true;
-            
+
             // Try inline code
             if (ch == '`' && TryParseInlineCode()) return true;
-            
+
             // Try link or image
             if (ch == '[' && TryParseLink()) return true;
             if (ch == '!' && PeekAhead(1) == '[' && TryParseImage()) return true;
-            
+
             // Try emoji
             if (ch == ':' && TryParseEmoji()) return true;
-            
+
             // Try subscript
             if (ch == '^' && TryParseSubscript()) return true;
-            
+
             // Try superscript
             if (ch == '~' && TryParseSuperscript()) return true;
-            
+
             // Try inserted text
             if (ch == '+' && PeekAhead(1) == '+' && TryParseInsertedText()) return true;
-            
+
             // Try marked text
             if (ch == '=' && PeekAhead(1) == '=' && TryParseMarkedText()) return true;
-            
+
             // Try HTML tag
             if (ch == '<' && TryParseHtmlTag()) return true;
-            
+
             // Try table delimiter
             if (ch == '|' && TryParseTableCell()) return true;
 
@@ -420,53 +420,22 @@ public static class MarkupTokenizer
                 switch (metadata)
                 {
                     case CSharpCodeBlockMetadata csharpMeta when csharpMeta.OnInlineToken != null:
-                        try
-                        {
-                            CSharp.CSharpTokenizer.Parse(_reader, "```", csharpMeta.OnInlineToken);
-                        }
-                        catch
-                        {
-                            // Silently fail if tokenizer not available
-                        }
+                        CSharp.CSharpTokenizer.Parse(_reader, "```", csharpMeta.OnInlineToken);
                         break;
-
                     case JsonCodeBlockMetadata jsonMeta when jsonMeta.OnInlineToken != null:
-                        try
-                        {
-                            Json.JsonTokenizer.Parse(_reader, "```", jsonMeta.OnInlineToken);
-                        }
-                        catch { }
+                        Json.JsonTokenizer.Parse(_reader, "```", jsonMeta.OnInlineToken);
                         break;
-
                     case XmlCodeBlockMetadata xmlMeta when xmlMeta.OnInlineToken != null:
-                        try
-                        {
-                            Xml.XmlTokenizer.Parse(_reader, "```", xmlMeta.OnInlineToken);
-                        }
-                        catch { }
+                        Xml.XmlTokenizer.Parse(_reader, "```", xmlMeta.OnInlineToken);
                         break;
-
                     case SqlCodeBlockMetadata sqlMeta when sqlMeta.OnInlineToken != null:
-                        try
-                        {
-                            Sql.SqlTokenizer.Parse(_reader, "```", sqlMeta.OnInlineToken);
-                        }
-                        catch { }
+                        Sql.SqlTokenizer.Parse(_reader, "```", sqlMeta.OnInlineToken);
                         break;
-
                     case TypeScriptCodeBlockMetadata tsMeta when tsMeta.OnInlineToken != null:
-                        try
-                        {
-                            Typescript.TypescriptTokenizer.Parse(_reader, "```", tsMeta.OnInlineToken);
-                        }
-                        catch { }
+                        Typescript.TypescriptTokenizer.Parse(_reader, "```", tsMeta.OnInlineToken);
                         break;
                     case GenericCodeBlockMetadata gMeta when gMeta.OnInlineToken != null:
-                        try
-                        {
-                            Generic.GenericTokenizer.Parse(_reader, "```", gMeta.OnInlineToken);
-                        }
-                        catch { }
+                        Generic.GenericTokenizer.Parse(_reader, "```", gMeta.OnInlineToken);
                         break;
                 }
             }
@@ -662,7 +631,7 @@ public static class MarkupTokenizer
             while (Peek() != -1 && Peek() != ')')
             {
                 char c = (char)Read();
-                
+
                 if (c == '"' && !inQuote)
                 {
                     inQuote = true;
@@ -729,7 +698,7 @@ public static class MarkupTokenizer
             while (Peek() != -1 && Peek() != ')')
             {
                 char c = (char)Read();
-                
+
                 if (c == '"' && !inQuote)
                 {
                     inQuote = true;
@@ -915,7 +884,7 @@ public static class MarkupTokenizer
 
             // Check if it looks like an HTML tag
             char next = PeekAhead(1);
-            
+
             // Must start with letter or / for closing tags
             if (!char.IsLetter(next) && next != '/')
                 return false;
@@ -931,7 +900,7 @@ public static class MarkupTokenizer
             {
                 char c = (char)Read();
                 tagContent.Append(c);
-                
+
                 if (c == '>')
                 {
                     _onToken(new MarkupToken(MarkupTokenType.HtmlTag, tagContent.ToString()));
@@ -1063,7 +1032,7 @@ public static class MarkupTokenizer
                     _buffer.Append("**").Append(boldText);
                     return false;
                 }
-                
+
                 // Handle __bold__ syntax
                 if (PeekAhead(0) == '_' && PeekAhead(1) == '_')
                 {
@@ -1083,7 +1052,7 @@ public static class MarkupTokenizer
                     _buffer.Append("__").Append(boldText);
                     return false;
                 }
-                
+
                 // Handle *italic* syntax
                 if (PeekAhead(0) == '*' && PeekAhead(1) != '*')
                 {
@@ -1103,7 +1072,7 @@ public static class MarkupTokenizer
                     _buffer.Append('*').Append(italicText);
                     return false;
                 }
-                
+
                 // Handle _italic_ syntax
                 if (PeekAhead(0) == '_' && PeekAhead(1) != '_')
                 {
@@ -1123,7 +1092,7 @@ public static class MarkupTokenizer
                     _buffer.Append('_').Append(italicText);
                     return false;
                 }
-                
+
                 return false;
             }
 
@@ -1158,7 +1127,7 @@ public static class MarkupTokenizer
                     pos++;
                 }
                 if (PeekAhead(pos) != ']' || PeekAhead(pos + 1) != '(') return false;
-                
+
                 pos += 2;
                 var url = new StringBuilder();
                 while (PeekAhead(pos) != ')' && PeekAhead(pos) != '\0' && PeekAhead(pos) != '\n')
@@ -1167,7 +1136,7 @@ public static class MarkupTokenizer
                     pos++;
                 }
                 if (PeekAhead(pos) != ')') return false;
-                
+
                 EmitText();
                 for (int i = 0; i <= pos; i++) Read();
                 _onToken(new MarkupToken(MarkupTokenType.Link, text.ToString(), new LinkMetadata(url.ToString())));
@@ -1185,7 +1154,7 @@ public static class MarkupTokenizer
                     pos++;
                 }
                 if (PeekAhead(pos) != ']' || PeekAhead(pos + 1) != '(') return false;
-                
+
                 pos += 2;
                 var url = new StringBuilder();
                 while (PeekAhead(pos) != ')' && PeekAhead(pos) != '\0')
@@ -1194,7 +1163,7 @@ public static class MarkupTokenizer
                     pos++;
                 }
                 if (PeekAhead(pos) != ')') return false;
-                
+
                 EmitText();
                 for (int i = 0; i <= pos; i++) Read();
                 _onToken(new MarkupToken(MarkupTokenType.Image, alt.ToString(), new LinkMetadata(url.ToString())));
@@ -1212,7 +1181,7 @@ public static class MarkupTokenizer
                     pos++;
                 }
                 if (PeekAhead(pos) != ':' || name.Length == 0) return false;
-                
+
                 EmitText();
                 for (int i = 0; i <= pos; i++) Read();
                 _onToken(new MarkupToken(MarkupTokenType.Emoji, name.ToString(), new EmojiMetadata(name.ToString())));
