@@ -16,6 +16,8 @@ var writerTask = Task.Run(async () =>
         await pipe.FlushAsync();
         await Task.Delay(rng.Next(1, 5));
     }
+
+    pipe.Close();
 });
 
 MarkupTokenizer.Parse(reader, MarkupWriter.Write);
