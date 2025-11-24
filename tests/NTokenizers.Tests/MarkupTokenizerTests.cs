@@ -131,9 +131,27 @@ public class MarkupTokenizerTests
     }
 
     [Fact]
+    public void TestBoldAlternativeText()
+    {
+        var tokens = Tokenize("__bold text__");
+        Assert.Single(tokens);
+        Assert.Equal(MarkupTokenType.Bold, tokens[0].TokenType);
+        Assert.Equal("bold text", tokens[0].Value);
+    }
+
+    [Fact]
     public void TestItalicText()
     {
         var tokens = Tokenize("*italic text*");
+        Assert.Single(tokens);
+        Assert.Equal(MarkupTokenType.Italic, tokens[0].TokenType);
+        Assert.Equal("italic text", tokens[0].Value);
+    }
+
+    [Fact]
+    public void TestItalicAlternativeText()
+    {
+        var tokens = Tokenize("_italic text_");
         Assert.Single(tokens);
         Assert.Equal(MarkupTokenType.Italic, tokens[0].TokenType);
         Assert.Equal("italic text", tokens[0].Value);

@@ -140,6 +140,7 @@ public static class MarkupTokenizer
 
             // Try bold/italic
             if (ch == '*' && TryParseBoldOrItalic()) return true;
+            if (ch == '_' && TryParseBoldOrItalic()) return true;
             
             // Try inline code
             if (ch == '`' && TryParseInlineCode()) return true;
@@ -531,6 +532,27 @@ public static class MarkupTokenizer
                 return true;
             }
 
+            // Handle __bold__ syntax
+            if (PeekAhead(0) == '_' && PeekAhead(1) == '_')
+            {
+                EmitText();
+                Read();
+                Read();
+                var boldText = new StringBuilder();
+                while (Peek() != -1)
+                {
+                    if (PeekAhead(0) == '_' && PeekAhead(1) == '_')
+                    {
+                        Read(); Read();
+                        _onToken(new MarkupToken(MarkupTokenType.Bold, boldText.ToString()));
+                        return true;
+                    }
+                    boldText.Append((char)Read());
+                }
+                _buffer.Append("__").Append(boldText);
+                return false;
+            }
+
             // Check for single *
             if (PeekAhead(0) == '*')
             {
@@ -553,6 +575,26 @@ public static class MarkupTokenizer
                 // No closing found, treat as text
                 _buffer.Append('*').Append(italicText);
                 return true;
+            }
+
+            // Handle _italic_ syntax
+            if (PeekAhead(0) == '_' && PeekAhead(1) != '_')
+            {
+                EmitText();
+                Read();
+                var italicText = new StringBuilder();
+                while (Peek() != -1 && Peek() != '_')
+                {
+                    italicText.Append((char)Read());
+                }
+                if (Peek() == '_')
+                {
+                    Read();
+                    _onToken(new MarkupToken(MarkupTokenType.Italic, italicText.ToString()));
+                    return true;
+                }
+                _buffer.Append('_').Append(italicText);
+                return false;
             }
 
             return false;
@@ -1002,6 +1044,7 @@ public static class MarkupTokenizer
 
             private bool TryParseBoldOrItalic()
             {
+                // Handle **bold** syntax
                 if (PeekAhead(0) == '*' && PeekAhead(1) == '*')
                 {
                     EmitText();
@@ -1021,6 +1064,27 @@ public static class MarkupTokenizer
                     return false;
                 }
                 
+                // Handle __bold__ syntax
+                if (PeekAhead(0) == '_' && PeekAhead(1) == '_')
+                {
+                    EmitText();
+                    Read(); Read();
+                    var boldText = new StringBuilder();
+                    while (Peek() != -1)
+                    {
+                        if (PeekAhead(0) == '_' && PeekAhead(1) == '_')
+                        {
+                            Read(); Read();
+                            _onToken(new MarkupToken(MarkupTokenType.Bold, boldText.ToString()));
+                            return true;
+                        }
+                        boldText.Append((char)Read());
+                    }
+                    _buffer.Append("__").Append(boldText);
+                    return false;
+                }
+                
+                // Handle *italic* syntax
                 if (PeekAhead(0) == '*' && PeekAhead(1) != '*')
                 {
                     EmitText();
@@ -1037,6 +1101,26 @@ public static class MarkupTokenizer
                         return true;
                     }
                     _buffer.Append('*').Append(italicText);
+                    return false;
+                }
+                
+                // Handle _italic_ syntax
+                if (PeekAhead(0) == '_' && PeekAhead(1) != '_')
+                {
+                    EmitText();
+                    Read();
+                    var italicText = new StringBuilder();
+                    while (Peek() != -1 && Peek() != '_')
+                    {
+                        italicText.Append((char)Read());
+                    }
+                    if (Peek() == '_')
+                    {
+                        Read();
+                        _onToken(new MarkupToken(MarkupTokenType.Italic, italicText.ToString()));
+                        return true;
+                    }
+                    _buffer.Append('_').Append(italicText);
                     return false;
                 }
                 

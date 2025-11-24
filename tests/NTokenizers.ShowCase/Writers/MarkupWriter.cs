@@ -70,8 +70,9 @@ internal static class MarkupWriter
         }
     }
 
-    private static void Write(Paragraph? liveTarget, string text, Style? style = null)
+    private static void Write(Paragraph? liveTarget, string value, Style? style = null)
     {
+        var text = Markup.Escape(value);
         if (liveTarget is not null)
         {
             liveTarget.Append(text, style);
@@ -88,7 +89,6 @@ internal static class MarkupWriter
 
     private static void WriteMarkup(Paragraph? liveTarget, MarkupToken token)
     {
-        var value = Markup.Escape(token.Value);
         var style = token.TokenType switch
         {
             MarkupTokenType.Heading => new Style(Color.Yellow),
@@ -122,7 +122,7 @@ internal static class MarkupWriter
 
         if (token.TokenType == MarkupTokenType.HorizontalRule)
         {
-            value = new string('=', 40);
+            var value = new string('=', 40);
             Write(liveTarget, value, style);
         }
         else
