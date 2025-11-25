@@ -128,6 +128,23 @@ public static class CSharpTokenizer
                     ProcessChar(toProcess, ref state, ref escape, sb, onToken, reader);
                 }
             }
+
+            if (stoppedByDelimiter && sb.Length > 0)
+            {
+                if (sb[sb.Length - 1] == '\n')
+                {
+                    sb.Length -= 1;
+                    if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
+                    {
+                        sb.Length -= 1;
+                    }
+                }
+                else if (sb[sb.Length - 1] == '\r')
+                {
+                    sb.Length -= 1;
+                }
+            }
+
             EmitPending(sb, ref state, onToken);
         }
     }
