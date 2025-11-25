@@ -234,7 +234,7 @@ public enum Justify
 /// <param name="Value">The string value of the markup token (renderable content only, no syntax markers).</param>
 /// <param name="Metadata">Optional metadata associated with the token.</param>
 [DebuggerDisplay("MarkupToken: {TokenType} {Value}")]
-public class MarkupToken(
+public sealed class MarkupToken(
     MarkupTokenType TokenType,
     string Value,
     MarkupMetadata? Metadata = null
