@@ -138,5 +138,10 @@ public enum CSharpTokenType
     /// <summary>
     /// Represents whitespace characters (spaces, tabs, newlines).
     /// </summary>
-    Whitespace
+    Whitespace,
+
+    /// <summary>
+    /// Indicates that tokenization was stopped by a delimiter.
+    /// </summary>
+    StoppedByDelimiter
 }
