@@ -3,7 +3,7 @@ namespace NTokenizers.CSharp;
 /// <summary>
 /// Represents a C# token with its type and value.
 /// </summary>
-public class CSharpToken
+public class CSharpToken : IToken<CSharpTokenType>
 {
     /// <summary>
     /// Gets the type of the C# token represented by this instance.
