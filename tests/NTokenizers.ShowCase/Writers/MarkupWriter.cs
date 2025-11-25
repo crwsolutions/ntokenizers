@@ -16,7 +16,8 @@ internal static class MarkupWriter
         }
         else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
         {
-            CSharpWriter.Write(csharpMeta);
+            var writer = new CSharpWriter();
+            writer.Write(csharpMeta);
         }
         else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
         {

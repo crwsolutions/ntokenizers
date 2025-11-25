@@ -1,3 +1,4 @@
+using NTokenizers.CSharp;
 using System.Text;
 
 namespace NTokenizers.Markup;
@@ -420,7 +421,8 @@ public static class MarkupTokenizer
                 switch (metadata)
                 {
                     case CSharpCodeBlockMetadata csharpMeta when csharpMeta.OnInlineToken != null:
-                        CSharp.CSharpTokenizer.Parse(_reader, "```", csharpMeta.OnInlineToken);
+                        CSharpTokenizer.Parse(_reader, "```", csharpMeta.OnInlineToken);
+                        csharpMeta.IsProcessing = false;
                         break;
                     case JsonCodeBlockMetadata jsonMeta when jsonMeta.OnInlineToken != null:
                         Json.JsonTokenizer.Parse(_reader, "```", jsonMeta.OnInlineToken);
