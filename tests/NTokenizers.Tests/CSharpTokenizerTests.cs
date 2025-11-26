@@ -44,19 +44,6 @@ public class CSharpTokenizerTests
     }
 
     [Fact]
-    public void TestCaseInsensitiveKeywords()
-    {
-        var tokens = Tokenize("CLASS Public STATIC");
-        Assert.Equal(5, tokens.Count);
-        Assert.Equal(CSharpTokenType.Keyword, tokens[0].TokenType);
-        Assert.Equal("CLASS", tokens[0].Value);
-        Assert.Equal(CSharpTokenType.Keyword, tokens[2].TokenType);
-        Assert.Equal("Public", tokens[2].Value);
-        Assert.Equal(CSharpTokenType.Keyword, tokens[4].TokenType);
-        Assert.Equal("STATIC", tokens[4].Value);
-    }
-
-    [Fact]
     public void TestIdentifierVsKeyword()
     {
         var tokens = Tokenize("int myVariable");

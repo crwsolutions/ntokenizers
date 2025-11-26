@@ -81,7 +81,7 @@ public class MarkupTokenizerTests
     public void TestHeadingLevel1()
     {
         var tokens = Tokenize("# Heading 1");
-        Assert.Equal(3, tokens.Count); // Heading token + inline text token
+        Assert.Equal(2, tokens.Count); // Heading token + inline text token
         Assert.Equal(MarkupTokenType.Heading, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.NotNull(tokens[0].Metadata);
@@ -97,7 +97,7 @@ public class MarkupTokenizerTests
     public void TestHeadingLevel2()
     {
         var tokens = Tokenize("## Heading 2");
-        Assert.Equal(3, tokens.Count); // Heading token + inline text token
+        Assert.Equal(2, tokens.Count); // Heading token + inline text token
         Assert.Equal(MarkupTokenType.Heading, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.Equal(2, ((HeadingMetadata)tokens[0].Metadata!).Level);
@@ -111,7 +111,7 @@ public class MarkupTokenizerTests
     public void TestHeadingLevel6()
     {
         var tokens = Tokenize("###### Heading 6");
-        Assert.Equal(3, tokens.Count); // Heading token + inline text token
+        Assert.Equal(2, tokens.Count); // Heading token + inline text token
         Assert.Equal(MarkupTokenType.Heading, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.Equal(6, ((HeadingMetadata)tokens[0].Metadata!).Level);
@@ -259,7 +259,7 @@ public class MarkupTokenizerTests
     public void TestOrderedList()
     {
         var tokens = Tokenize("1. item 1");
-        Assert.Equal(3, tokens.Count); // OrderedListItem token + inline text token
+        Assert.Equal(2, tokens.Count); // OrderedListItem token + inline text token
         Assert.Equal(MarkupTokenType.OrderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.NotNull(tokens[0].Metadata);
@@ -275,7 +275,7 @@ public class MarkupTokenizerTests
     public void TestOrderedListMultipleDigits()
     {
         var tokens = Tokenize("42. item");
-        Assert.Equal(3, tokens.Count); // OrderedListItem token + inline text token
+        Assert.Equal(2, tokens.Count); // OrderedListItem token + inline text token
         Assert.Equal(MarkupTokenType.OrderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.Equal(42, ((OrderedListItemMetadata)tokens[0].Metadata!).Number);
@@ -289,7 +289,7 @@ public class MarkupTokenizerTests
     public void TestBlockquote()
     {
         var tokens = Tokenize("> quoted text");
-        Assert.Equal(3, tokens.Count); // Blockquote token + inline text token
+        Assert.Equal(2, tokens.Count); // Blockquote token + inline text token
         Assert.Equal(MarkupTokenType.Blockquote, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         
