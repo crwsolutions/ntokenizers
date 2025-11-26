@@ -4,10 +4,8 @@ using Spectre.Console;
 
 internal static class JsonWriter
 {
-
     internal static void Write(JsonCodeBlockMetadata jsonMeta)
     {
-        AnsiConsole.WriteLine($"{jsonMeta.Language}:");
         jsonMeta.OnInlineToken = inlineToken =>
         {
             var inlineValue = Markup.Escape(inlineToken.Value);

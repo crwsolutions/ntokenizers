@@ -41,7 +41,7 @@ public class HeadingMetadata(int Level) : InlineMarkupMetadata<MarkupToken>
 /// </summary>
 /// <typeparam name="TToken">The type of tokens emitted by the language-specific tokenizer.</typeparam>
 /// <param name="Language">The language identifier (e.g., "xml", "json", "csharp").</param>
-public abstract class CodeBlockMetadata<TToken>(string Language) : InlineMarkupMetadata<TToken>
+public abstract class CodeBlockMetadata<TToken>(string Language) : InlineMarkupMetadata<TToken>, ICodeBlockMetadata
 {
     /// <summary>
     /// Gets the language code representing the current language setting.

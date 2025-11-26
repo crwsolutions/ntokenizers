@@ -7,7 +7,6 @@ internal static class TypescriptWriter
 
     internal static void Write(TypeScriptCodeBlockMetadata tsMeta)
     {
-        AnsiConsole.WriteLine($"TypeScript:");
         tsMeta.OnInlineToken = inlineToken =>
         {
             var inlineValue = Markup.Escape(inlineToken.Value);

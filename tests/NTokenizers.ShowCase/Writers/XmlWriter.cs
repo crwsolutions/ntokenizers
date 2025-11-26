@@ -6,7 +6,6 @@ internal static class XmlWriter
 {
     internal static void Write(XmlCodeBlockMetadata xmlMeta)
     {
-        AnsiConsole.WriteLine($"{xmlMeta.Language}:");
         xmlMeta.OnInlineToken = inlineToken =>
         {
             var inlineValue = Markup.Escape(inlineToken.Value);

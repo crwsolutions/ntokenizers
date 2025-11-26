@@ -4,10 +4,8 @@ using Spectre.Console;
 
 internal static class SqlWriter
 {
-
     internal static void Write(SqlCodeBlockMetadata sqlMeta)
     {
-        AnsiConsole.WriteLine($"{sqlMeta.Language}:");
         sqlMeta.OnInlineToken = inlineToken =>
         {
             var inlineValue = Markup.Escape(inlineToken.Value);

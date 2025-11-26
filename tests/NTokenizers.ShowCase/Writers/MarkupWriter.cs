@@ -10,6 +10,14 @@ internal static class MarkupWriter
 
     internal static void Write(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
+        if (token.Metadata is ICodeBlockMetadata codeBlockMetadata)
+        {
+            if (!string.IsNullOrEmpty(codeBlockMetadata.Language))
+            { 
+                AnsiConsole.WriteLine($"{codeBlockMetadata.Language}:");
+            }
+        }
+
         if (token.Metadata is HeadingMetadata meta)
         {
             var writer = new MarkupHeadingWriter();
