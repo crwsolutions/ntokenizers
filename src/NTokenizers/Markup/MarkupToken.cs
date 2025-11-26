@@ -103,14 +103,7 @@ public sealed class LinkMetadata(string Url, string? Title = null) : MarkupMetad
 /// <summary>
 /// Metadata for blockquote tokens.
 /// </summary>
-public sealed class BlockquoteMetadata() : MarkupMetadata
-{
-    /// <summary>
-    /// Optional callback to stream inline tokens (bold, italic, etc.) within the blockquote.
-    /// When set, the tokenizer will parse inline content and emit tokens via this callback.
-    /// </summary>
-    public Action<MarkupToken>? OnInlineToken { get; set; }
-}
+public sealed class BlockquoteMetadata() : InlineMarkupMetadata<MarkupToken> { }
 
 /// <summary>
 /// Metadata for footnote tokens, containing the footnote identifier.
@@ -233,7 +226,7 @@ public sealed class MarkupToken(
     MarkupTokenType TokenType,
     string Value,
     MarkupMetadata? Metadata = null
-)
+) : IToken<MarkupTokenType>
 {
     /// <summary>
     /// Gets the type of the markup token.
