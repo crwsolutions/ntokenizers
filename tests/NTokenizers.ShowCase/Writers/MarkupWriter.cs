@@ -5,14 +5,15 @@ internal static class MarkupWriter
 {
     internal static void Write(MarkupToken token)
     {
-        Write(null, token);
+        Write(null, token, null);
     }
 
-    internal static void Write(Paragraph? liveTarget, MarkupToken token)
+    internal static void Write(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
         if (token.Metadata is HeadingMetadata meta)
         {
-            MarkupHeadingWriter.Write(meta);
+            var writer = new MarkupHeadingWriter();
+            writer.Write(meta);
         }
         else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
         {
@@ -41,7 +42,8 @@ internal static class MarkupWriter
         }
         else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
         {
-            MarkupBlockquoteWriter.Write(blockquoteMeta);
+            var writer = new MarkupBlockquoteWriter();
+            writer.Write(blockquoteMeta);
         }
         else if (token.Metadata is FootnoteMetadata footnoteMeta)
         {
@@ -63,11 +65,11 @@ internal static class MarkupWriter
         {
             var code = string.IsNullOrWhiteSpace(genericMeta.Language) ? "code" : genericMeta.Language;
             Write(liveTarget, $"{code}:");
-            genericMeta.OnInlineToken = (token) => WriteMarkup(liveTarget, token);
+            genericMeta.OnInlineToken = (token) => WriteMarkup(liveTarget, token, defaultStyle);
         }
         else
         {
-            WriteMarkup(liveTarget, token);
+            WriteMarkup(liveTarget, token, defaultStyle);
         }
     }
 
@@ -88,7 +90,7 @@ internal static class MarkupWriter
         }
     }
 
-    private static void WriteMarkup(Paragraph? liveTarget, MarkupToken token)
+    private static void WriteMarkup(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
         var style = token.TokenType switch
         {
@@ -118,7 +120,7 @@ internal static class MarkupWriter
             MarkupTokenType.InsertedText => new Style(Color.Green),
             MarkupTokenType.MarkedText => new Style(Color.Yellow),
             MarkupTokenType.Emoji => new Style(Color.Yellow),
-            _ => new Style() // default style
+            _ => defaultStyle ?? new Style() // default style
         };
 
         if (token.TokenType == MarkupTokenType.HorizontalRule)

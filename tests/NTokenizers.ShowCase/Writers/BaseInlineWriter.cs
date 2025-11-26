@@ -1,45 +1,54 @@
 ﻿using NTokenizers.Markup;
 using Spectre.Console;
-using System.Collections.Concurrent;
+using Spectre.Console.Rendering;
 
 namespace NTokenizers.ShowCase.Writers;
 public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
 {
-    protected abstract Style GetStyle(TTokentype token);
+    protected virtual Style GetStyle(TTokentype token) => Style.Plain;
+
+    protected readonly Paragraph _liveParagraph = new("");
 
     public void Write(InlineMarkupMetadata<TToken> metadata)
     {
-        var started = false;
-        var tokenQueue = new ConcurrentQueue<TToken>();
-        var liveParagraph = new Paragraph("");
-
-        metadata.OnInlineToken = async inlineToken =>
+        AnsiConsole.Live(GetIRendable())
+        .Start(ctx =>
         {
-            tokenQueue.Enqueue(inlineToken);
-
-            if (!started)
+            Started(metadata);
+            metadata.OnInlineToken = inlineToken =>
             {
-                started = true;
+                WriteToken(_liveParagraph, inlineToken);
+                ctx.Refresh();
+            };
 
-                await AnsiConsole.Live(
-                    new Panel(liveParagraph)
-                        .Border(new LeftBoxBorder())
-                        .BorderStyle(new Style(Color.Blue))
-                )
-                .StartAsync(async ctx =>
-                {
-                    while (metadata.IsProcessing || !tokenQueue.IsEmpty)
-                    {
-                        while (tokenQueue.TryDequeue(out var token))
-                        {
-                            liveParagraph.Append(Spectre.Console.Markup.Escape(token.Value), GetStyle(token.TokenType));
-                            ctx.Refresh();
-                        }
-
-                        await Task.Delay(2);
-                    }
-                });
+            while (metadata.IsProcessing)
+            {
+                Thread.Sleep(3);
             }
-        };
+            Finalize(metadata);
+            ctx.Refresh();
+        });
+    }
+
+    protected virtual IRenderable GetIRendable()
+    {
+        return new Panel(_liveParagraph)
+            .Border(new LeftBoxBorder())
+            .BorderStyle(new Style(Color.Blue));
+    }
+
+    protected virtual void Started(InlineMarkupMetadata<TToken> metadata)
+    {
+
+    }
+
+    protected virtual void Finalize(InlineMarkupMetadata<TToken> metadata)
+    {
+
+    }
+
+    protected virtual void WriteToken(Paragraph liveParagraph, TToken token)
+    {
+        liveParagraph.Append(Spectre.Console.Markup.Escape(token.Value), GetStyle(token.TokenType));
     }
 }
