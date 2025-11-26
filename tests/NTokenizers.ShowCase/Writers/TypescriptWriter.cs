@@ -1,43 +1,35 @@
-﻿using NTokenizers.Markup;
-using NTokenizers.Typescript;
+﻿using NTokenizers.Typescript;
 using Spectre.Console;
 
-internal static class TypescriptWriter
-{
+namespace NTokenizers.ShowCase.Writers;
 
-    internal static void Write(TypeScriptCodeBlockMetadata tsMeta)
+internal sealed class TypescriptWriter : BaseInlineWriter<TypescriptToken, TypescriptTokenType>
+{
+    protected override Style GetStyle(TypescriptTokenType token) => token switch
     {
-        tsMeta.OnInlineToken = inlineToken =>
-        {
-            var inlineValue = Markup.Escape(inlineToken.Value);
-            var inlineColored = inlineToken.TokenType switch
-            {
-                TypescriptTokenType.OpenParenthesis or TypescriptTokenType.CloseParenthesis => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                TypescriptTokenType.Comma => new Markup($"[yellow]{inlineValue}[/]"),
-                TypescriptTokenType.StringValue => new Markup($"[darkslategray1]{inlineValue}[/]"),
-                TypescriptTokenType.Number => new Markup($"[blue]{inlineValue}[/]"),
-                TypescriptTokenType.Keyword => new Markup($"[turquoise2]{inlineValue}[/]"),
-                TypescriptTokenType.Identifier => new Markup($"[white]{inlineValue}[/]"),
-                TypescriptTokenType.Comment => new Markup($"[green]{inlineValue}[/]"),
-                TypescriptTokenType.Operator => new Markup($"[deepskyblue4_2]{inlineValue}[/]"),
-                TypescriptTokenType.And or TypescriptTokenType.Or => new Markup($"[deepskyblue4_2]{inlineValue}[/]"),
-                TypescriptTokenType.Equals or TypescriptTokenType.NotEquals => new Markup($"[deepskyblue4_2]{inlineValue}[/]"),
-                TypescriptTokenType.In or TypescriptTokenType.NotIn => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                TypescriptTokenType.Like or TypescriptTokenType.NotLike => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                TypescriptTokenType.Limit => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                TypescriptTokenType.Match => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                TypescriptTokenType.SequenceTerminator => new Markup($"[yellow]{inlineValue}[/]"),
-                TypescriptTokenType.Dot => new Markup($"[yellow]{inlineValue}[/]"),
-                TypescriptTokenType.Whitespace => new Markup($"[yellow]{inlineValue}[/]"),
-                TypescriptTokenType.DateTimeValue => new Markup($"[blue]{inlineValue}[/]"),
-                TypescriptTokenType.Fingerprint or TypescriptTokenType.Message or TypescriptTokenType.StackFrame or TypescriptTokenType.ExceptionType => new Markup($"[deepskyblue3_1]{inlineValue}[/]"),
-                TypescriptTokenType.Application => new Markup($"[deepskyblue3_1]{inlineValue}[/]"),
-                TypescriptTokenType.Between => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                TypescriptTokenType.NotDefined => new Markup(inlineValue),
-                TypescriptTokenType.Invalid => new Markup(inlineValue),
-                _ => new Markup(inlineValue)
-            };
-            AnsiConsole.Write(inlineColored);
-        };
-    }
+        TypescriptTokenType.OpenParenthesis or TypescriptTokenType.CloseParenthesis => new Style(Color.DeepSkyBlue4_1),
+        TypescriptTokenType.Comma => new Style(Color.Yellow),
+        TypescriptTokenType.StringValue => new Style(Color.DarkSlateGray1),
+        TypescriptTokenType.Number => new Style(Color.Blue),
+        TypescriptTokenType.Keyword => new Style(Color.Turquoise2),
+        TypescriptTokenType.Identifier => new Style(Color.White),
+        TypescriptTokenType.Comment => new Style(Color.Green),
+        TypescriptTokenType.Operator => new Style(Color.DeepSkyBlue4_2),
+        TypescriptTokenType.And or TypescriptTokenType.Or => new Style(Color.DeepSkyBlue4_2),
+        TypescriptTokenType.Equals or TypescriptTokenType.NotEquals => new Style(Color.DeepSkyBlue4_2),
+        TypescriptTokenType.In or TypescriptTokenType.NotIn => new Style(Color.DeepSkyBlue4_1),
+        TypescriptTokenType.Like or TypescriptTokenType.NotLike => new Style(Color.DeepSkyBlue4_1),
+        TypescriptTokenType.Limit => new Style(Color.DeepSkyBlue4_1),
+        TypescriptTokenType.Match => new Style(Color.DeepSkyBlue4_1),
+        TypescriptTokenType.SequenceTerminator => new Style(Color.Yellow),
+        TypescriptTokenType.Dot => new Style(Color.Yellow),
+        TypescriptTokenType.Whitespace => new Style(Color.Yellow),
+        TypescriptTokenType.DateTimeValue => new Style(Color.Blue),
+        TypescriptTokenType.Fingerprint or TypescriptTokenType.Message or TypescriptTokenType.StackFrame or TypescriptTokenType.ExceptionType => new Style(Color.DeepSkyBlue3_1),
+        TypescriptTokenType.Application => new Style(Color.DeepSkyBlue3_1),
+        TypescriptTokenType.Between => new Style(Color.DeepSkyBlue4_1),
+        TypescriptTokenType.NotDefined => new Style(),
+        TypescriptTokenType.Invalid => new Style(),
+        _ => new Style()
+    };
 }

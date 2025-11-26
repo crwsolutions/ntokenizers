@@ -5,7 +5,7 @@
 /// </summary>
 /// <param name="TokenType">The type of the XML token.</param>
 /// <param name="Value">The string value of the XML token.</param>
-public class XmlToken(XmlTokenType TokenType, string Value)
+public class XmlToken(XmlTokenType TokenType, string Value) : IToken<XmlTokenType>
 {
     /// <summary>
     /// Gets the type of the XML token.

@@ -3,7 +3,7 @@ namespace NTokenizers.Json;
 /// <summary>
 /// Represents a JSON token with its type and value.
 /// </summary>
-public class JsonToken
+public class JsonToken : IToken<JsonTokenType>
 {
     /// <summary>
     /// Gets the type of the current JSON token.

@@ -1,7 +1,8 @@
 ﻿using NTokenizers.Markup;
-using NTokenizers.ShowCase.Writers;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+
+namespace NTokenizers.ShowCase.Writers;
 
 internal sealed class MarkupHeadingWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
@@ -61,7 +62,7 @@ internal sealed class MarkupHeadingWriter : BaseInlineWriter<MarkupToken, Markup
 
     protected override void WriteToken(Paragraph liveParagraph, MarkupToken token)
     {
-        var inlineValue = Markup.Escape(token.Value);
+        var inlineValue = Spectre.Console.Markup.Escape(token.Value);
         _lenght += token.Value.Length;
         MarkupWriter.Write(liveParagraph, token, _style);
     }

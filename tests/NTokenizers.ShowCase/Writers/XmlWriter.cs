@@ -1,34 +1,27 @@
-﻿using NTokenizers.Markup;
-using NTokenizers.Xml;
+﻿using NTokenizers.Xml;
 using Spectre.Console;
 
-internal static class XmlWriter
+namespace NTokenizers.ShowCase.Writers;
+
+internal sealed class XmlWriter : BaseInlineWriter<XmlToken, XmlTokenType>
 {
-    internal static void Write(XmlCodeBlockMetadata xmlMeta)
+    protected override Style GetStyle(XmlTokenType token) => token switch
     {
-        xmlMeta.OnInlineToken = inlineToken =>
-        {
-            var inlineValue = Markup.Escape(inlineToken.Value);
-            var inlineColored = inlineToken.TokenType switch
-            {
-                XmlTokenType.ElementName => new Markup($"[deepskyblue3_1]{inlineValue}[/]"),
-                XmlTokenType.Text => new Markup($"[darkslategray1]{inlineValue}[/]"),
-                XmlTokenType.Comment => new Markup($"[green]{inlineValue}[/]"),
-                XmlTokenType.ProcessingInstruction => new Markup($"[turquoise2]{inlineValue}[/]"),
-                XmlTokenType.DocumentTypeDeclaration => new Markup($"[turquoise2]{inlineValue}[/]"),
-                XmlTokenType.CData => new Markup($"[magenta1]{inlineValue}[/]"),
-                XmlTokenType.Whitespace => new Markup($"[yellow]{inlineValue}[/]"),
-                XmlTokenType.EndElement => new Markup($"[deepskyblue3_1]{inlineValue}[/]"),
-                XmlTokenType.OpeningAngleBracket => new Markup($"[deepskyblue4_2]{inlineValue}[/]"),
-                XmlTokenType.ClosingAngleBracket => new Markup($"[deepskyblue4_2]{inlineValue}[/]"),
-                XmlTokenType.AttributeName => new Markup($"[turquoise2]{inlineValue}[/]"),
-                XmlTokenType.AttributeEquals => new Markup($"[deepskyblue4_2]{inlineValue}[/]"),
-                XmlTokenType.AttributeValue => new Markup($"[white]{inlineValue}[/]"),
-                XmlTokenType.AttributeQuote => new Markup($"[deepskyblue3_1]{inlineValue}[/]"),
-                XmlTokenType.SelfClosingSlash => new Markup($"[deepskyblue4_2]{inlineValue}[/]"),
-                _ => new Markup(inlineValue)
-            };
-            AnsiConsole.Write(inlineColored);
-        };
-    }
+        XmlTokenType.ElementName => new Style(Color.DeepSkyBlue3_1),
+        XmlTokenType.Text => new Style(Color.DarkSlateGray1),
+        XmlTokenType.Comment => new Style(Color.Green),
+        XmlTokenType.ProcessingInstruction => new Style(Color.Turquoise2),
+        XmlTokenType.DocumentTypeDeclaration => new Style(Color.Turquoise2),
+        XmlTokenType.CData => new Style(Color.Magenta1),
+        XmlTokenType.Whitespace => new Style(Color.Yellow),
+        XmlTokenType.EndElement => new Style(Color.DeepSkyBlue3_1),
+        XmlTokenType.OpeningAngleBracket => new Style(Color.DeepSkyBlue4_2),
+        XmlTokenType.ClosingAngleBracket => new Style(Color.DeepSkyBlue4_2),
+        XmlTokenType.AttributeName => new Style(Color.Turquoise2),
+        XmlTokenType.AttributeEquals => new Style(Color.DeepSkyBlue4_2),
+        XmlTokenType.AttributeValue => new Style(Color.White),
+        XmlTokenType.AttributeQuote => new Style(Color.DeepSkyBlue3_1),
+        XmlTokenType.SelfClosingSlash => new Style(Color.DeepSkyBlue4_2),
+        _ => new Style(),
+    };
 }

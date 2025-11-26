@@ -1,6 +1,8 @@
 ﻿using NTokenizers.Markup;
 using Spectre.Console;
 
+namespace NTokenizers.ShowCase.Writers;
+
 internal static class MarkupWriter
 {
     internal static void Write(MarkupToken token)
@@ -30,19 +32,23 @@ internal static class MarkupWriter
         }
         else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
         {
-            XmlWriter.Write(xmlMeta);
+            var writer = new XmlWriter();
+            writer.Write(xmlMeta);
         }
         else if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
         {
-            TypescriptWriter.Write(tsMeta);
+            var writer = new TypescriptWriter();
+            writer.Write(tsMeta);
         }
         else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
         {
-            JsonWriter.Write(jsonMeta);
+            var writer = new JsonWriter();
+            writer.Write(jsonMeta);
         }
         else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
         {
-            SqlWriter.Write(sqlMeta);
+            var writer = new SqlWriter();
+            writer.Write(sqlMeta);
         }
         else if (token.Metadata is LinkMetadata linkMeta)
         {
@@ -63,11 +69,13 @@ internal static class MarkupWriter
         }
         else if (token.Metadata is OrderedListItemMetadata orderedListItemMeta)
         {
-            MarkupOrderedListItemWriter.Write(orderedListItemMeta);
+            var writer = new MarkupOrderedListItemWriter();
+            writer.Write(orderedListItemMeta);
         }
         else if (token.Metadata is ListItemMetadata listItemMeta)
         {
-            MarkupListItemWriter.Write(listItemMeta);
+            var writer = new MarkupListItemWriter();
+            writer.Write(listItemMeta);
         }
         else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
         {
@@ -83,14 +91,14 @@ internal static class MarkupWriter
 
     private static void Write(Paragraph? liveTarget, string value, Style? style = null)
     {
-        var text = Markup.Escape(value);
+        var text = Spectre.Console.Markup.Escape(value);
         if (liveTarget is not null)
         {
             liveTarget.Append(text, style);
         }
         else if (style is not null)
         {
-            AnsiConsole.Write(new Markup(text, style));
+            AnsiConsole.Write(new Spectre.Console.Markup(text, style));
         }
         else
         {

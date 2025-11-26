@@ -3,13 +3,14 @@ using Spectre.Console;
 using Spectre.Console.Rendering;
 
 namespace NTokenizers.ShowCase.Writers;
-public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
+
+internal abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
 {
     protected virtual Style GetStyle(TTokentype token) => Style.Plain;
 
     protected readonly Paragraph _liveParagraph = new("");
 
-    public void Write(InlineMarkupMetadata<TToken> metadata)
+    internal void Write(InlineMarkupMetadata<TToken> metadata)
     {
         AnsiConsole.Live(GetIRendable())
         .Start(ctx =>

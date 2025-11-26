@@ -1,31 +1,24 @@
 ﻿using NTokenizers.Json;
-using NTokenizers.Markup;
 using Spectre.Console;
 
-internal static class JsonWriter
+namespace NTokenizers.ShowCase.Writers;
+
+internal sealed class JsonWriter : BaseInlineWriter<JsonToken, JsonTokenType>
 {
-    internal static void Write(JsonCodeBlockMetadata jsonMeta)
+    protected override Style GetStyle(JsonTokenType token) => token switch
     {
-        jsonMeta.OnInlineToken = inlineToken =>
-        {
-            var inlineValue = Markup.Escape(inlineToken.Value);
-            var inlineColored = inlineToken.TokenType switch
-            {
-                JsonTokenType.StartObject => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                JsonTokenType.EndObject => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                JsonTokenType.StartArray => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                JsonTokenType.EndArray => new Markup($"[deepskyblue4_1]{inlineValue}[/]"),
-                JsonTokenType.PropertyName => new Markup($"[deepskyblue3_1]{inlineValue}[/]"),
-                JsonTokenType.Colon => new Markup($"[yellow]{inlineValue}[/]"),
-                JsonTokenType.Comma => new Markup($"[yellow]{inlineValue}[/]"),
-                JsonTokenType.StringValue => new Markup($"[darkslategray1]{inlineValue}[/]"),
-                JsonTokenType.Number => new Markup($"[blue]{inlineValue}[/]"),
-                JsonTokenType.True => new Markup($"[blue]{inlineValue}[/]"),
-                JsonTokenType.False => new Markup($"[blue]{inlineValue}[/]"),
-                JsonTokenType.Null => new Markup($"[blue]{inlineValue}[/]"),
-                _ => new Markup(inlineValue)
-            };
-            AnsiConsole.Write(inlineColored);
-        };
-    }
+        JsonTokenType.StartObject => new Style(Color.DeepSkyBlue4_1),
+        JsonTokenType.EndObject => new Style(Color.DeepSkyBlue4_1),
+        JsonTokenType.StartArray => new Style(Color.DeepSkyBlue4_1),
+        JsonTokenType.EndArray => new Style(Color.DeepSkyBlue4_1),
+        JsonTokenType.PropertyName => new Style(Color.DeepSkyBlue3_1),
+        JsonTokenType.Colon => new Style(Color.Yellow),
+        JsonTokenType.Comma => new Style(Color.Yellow),
+        JsonTokenType.StringValue => new Style(Color.DarkSlateGray1),
+        JsonTokenType.Number => new Style(Color.Blue),
+        JsonTokenType.True => new Style(Color.Blue),
+        JsonTokenType.False => new Style(Color.Blue),
+        JsonTokenType.Null => new Style(Color.Blue),
+        _ => new Style()
+    };
 }

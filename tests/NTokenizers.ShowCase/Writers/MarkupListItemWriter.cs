@@ -1,11 +1,24 @@
 ﻿using NTokenizers.Markup;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
-internal static class MarkupListItemWriter
+namespace NTokenizers.ShowCase.Writers;
+
+internal sealed class MarkupListItemWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
-    internal static void Write(ListItemMetadata listItemMeta)
+    protected override void Started(InlineMarkupMetadata<MarkupToken> metadata)
     {
-        AnsiConsole.Write(new Markup($"{listItemMeta.Marker} ", new Style(Color.Turquoise2)));
-        listItemMeta.OnInlineToken = MarkupWriter.Write;
+        if (metadata is not ListItemMetadata listItemMeta)
+        {
+            return;
+        }
+        _liveParagraph.Append($"\n{listItemMeta.Marker} ", new Style(Color.Turquoise2));
     }
+
+    protected override void Finalize(InlineMarkupMetadata<MarkupToken> metadata)
+    {
+        _liveParagraph.Append("koekoek");
+    }
+
+    protected override IRenderable GetIRendable() => _liveParagraph;
 }

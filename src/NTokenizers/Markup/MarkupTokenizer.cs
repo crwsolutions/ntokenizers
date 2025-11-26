@@ -460,6 +460,7 @@ public static class MarkupTokenizer
                             Thread.Sleep(3);
                         }
                         Json.JsonTokenizer.Parse(_reader, "```", jsonMeta.OnInlineToken);
+                        jsonMeta.IsProcessing = false;
                         break;
                     case XmlCodeBlockMetadata xmlMeta:
                         while (xmlMeta.OnInlineToken is null)
@@ -467,6 +468,7 @@ public static class MarkupTokenizer
                             Thread.Sleep(3);
                         }
                         Xml.XmlTokenizer.Parse(_reader, "```", xmlMeta.OnInlineToken);
+                        xmlMeta.IsProcessing = false;
                         break;
                     case SqlCodeBlockMetadata sqlMeta:
                         while (sqlMeta.OnInlineToken is null)
@@ -474,6 +476,7 @@ public static class MarkupTokenizer
                             Thread.Sleep(3);
                         }
                         Sql.SqlTokenizer.Parse(_reader, "```", sqlMeta.OnInlineToken);
+                        sqlMeta.IsProcessing = false;
                         break;
                     case TypeScriptCodeBlockMetadata tsMeta:
                         while (tsMeta.OnInlineToken is null)
@@ -481,6 +484,7 @@ public static class MarkupTokenizer
                             Thread.Sleep(3);
                         }
                         Typescript.TypescriptTokenizer.Parse(_reader, "```", tsMeta.OnInlineToken);
+                        tsMeta.IsProcessing = false;
                         break;
                     case GenericCodeBlockMetadata gMeta:
                         while (gMeta.OnInlineToken is null)
@@ -488,6 +492,7 @@ public static class MarkupTokenizer
                             Thread.Sleep(3);
                         }
                         Generic.GenericTokenizer.Parse(_reader, "```", gMeta.OnInlineToken);
+                        gMeta.IsProcessing = false;
                         break;
                 }
             }

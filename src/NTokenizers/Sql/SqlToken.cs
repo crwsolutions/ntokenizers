@@ -3,7 +3,7 @@ namespace NTokenizers.Sql;
 /// <summary>
 /// Represents a SQL token with its type and value.
 /// </summary>
-public class SqlToken
+public class SqlToken : IToken<SqlTokenType>
 {
     /// <summary>
     /// Gets the type of the SQL token.

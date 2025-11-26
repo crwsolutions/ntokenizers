@@ -3,7 +3,7 @@ namespace NTokenizers.Typescript;
 /// <summary>
 /// Represents a TypeScript token with its type and value.
 /// </summary>
-public class TypescriptToken
+public class TypescriptToken : IToken<TypescriptTokenType>
 {
     /// <summary>
     /// Gets the type of the TypeScript token.
