@@ -1,3 +1,4 @@
+using NTokenizers.Core;
 using System.Text;
 
 namespace NTokenizers.CSharp;
@@ -5,8 +6,10 @@ namespace NTokenizers.CSharp;
 /// <summary>
 /// Provides functionality for tokenizing C# source code text.
 /// </summary>
-public static class CSharpTokenizer
+public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
 {
+    public static CSharpTokenizer Create() => new();
+
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
     {
         "abstract", "as", "async", "await", "base", "bool", "break", "byte", "case", "catch", "char", "var",
@@ -21,27 +24,6 @@ public static class CSharpTokenizer
         "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
     };
 
-    /// <summary>
-    /// Parses C# source code from the given <see cref="Stream"/> and
-    /// produces a sequence of <see cref="CSharpToken"/> objects.
-    /// </summary>
-    /// <param name="stream">
-    /// The input stream containing the text to tokenize.  
-    /// The stream is read as UTF-8.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="CSharpToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    public static void Parse(Stream stream, Action<CSharpToken> onToken)
-    {
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-        Parse(reader, null, onToken);
-    }
-
     private enum State
     {
         Start,
@@ -55,31 +37,14 @@ public static class CSharpTokenizer
         InOperator
     }
 
-    /// <summary>
-    /// Parses C# source code from the given <see cref="TextReader"/> and
-    /// produces a sequence of <see cref="CSharpToken"/> objects.
-    /// </summary>
-    /// <param name="reader">
-    /// The input reader containing the text to tokenize.
-    /// </param>
-    /// <param name="stopDelimiter">
-    /// An optional string that, when encountered in the input, instructs the tokenizer
-    /// to stop parsing and return control to the caller.  
-    /// If <c>null</c>, the tokenizer parses until the end of the stream.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="CSharpToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="reader"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    public static void Parse(TextReader reader, string? stopDelimiter, Action<CSharpToken> onToken)
+    internal protected override void Parse()
     {
+        var reader = _reader;
+        var onToken = _onToken;
         var sb = new StringBuilder();
         State state = State.Start;
         bool escape = false;
-        string delimiter = stopDelimiter ?? string.Empty;
+        string delimiter = _stopDelimiter ?? string.Empty;
         int delLength = delimiter.Length;
 
         if (delLength == 0)

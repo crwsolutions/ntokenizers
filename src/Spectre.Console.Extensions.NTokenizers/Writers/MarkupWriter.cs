@@ -1,4 +1,5 @@
 ﻿using NTokenizers.Markup;
+using NTokenizers.Markup.Metadata;
 using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;

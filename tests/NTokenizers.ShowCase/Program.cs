@@ -23,7 +23,7 @@ var writerTask = Task.Run(async () =>
     pipe.Close();
 });
 
-MarkupTokenizer.Parse(reader, MarkupWriter.Write);
+MarkupTokenizer.Create().Parse(reader, MarkupWriter.Write);
 
 await writerTask;
 

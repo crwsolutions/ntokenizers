@@ -10,7 +10,7 @@ public class MarkupTokenizerTests
     {
         var tokens = new List<MarkupToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markup));
-        MarkupTokenizer.Parse(stream, token =>
+        MarkupTokenizer.Create().Parse(stream, token =>
         {
             tokens.Add(token);
 
