@@ -104,4 +104,4 @@ class Program
 
 This gives the following output:
 
-![XML Example](art/xml_example.png)
+![XML Example](https://github.com/crwsolutions/ntokenizers/raw/main/art/xml_example.png)
