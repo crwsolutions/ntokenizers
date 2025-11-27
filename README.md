@@ -47,7 +47,7 @@ class Program
         var writerTask = EmitSlowlyAsync(xml, pipe);
 
         // Start parsing XML
-        XmlTokenizer.Parse(reader, null, onToken: token =>
+        XmlTokenizer.Parse(reader, onToken: token =>
         {
             var value = Markup.Escape(token.Value);
 
@@ -101,3 +101,7 @@ class Program
     }
 }
 ```
+
+This gives the following output:
+
+![XML Example](art/xml_example.png)

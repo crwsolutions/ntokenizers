@@ -10,7 +10,7 @@
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
 		<VersionSuffix Condition="'$(VersionSuffix)' == ''">preview</VersionSuffix>
-		<Version>0.1-$(VersionSuffix)</Version>
+		<Version>0.2-$(VersionSuffix)</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -22,7 +22,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/crwsolutions/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>Initial preview release: XML and JSON stream tokenizers.</PackageReleaseNotes>
+		<PackageReleaseNotes>Added CSharp, Typescript, Sql and Markup stream tokenizers.</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
