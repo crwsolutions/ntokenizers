@@ -1,9 +1,12 @@
 ﻿using NTokenizers.Markup;
+using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
 public static class MarkupWriter
 {
+    public static MarkupStyles MarkupStyles { get; } = MarkupStyles.Default;
+
     public static void Write(MarkupToken token)
     {
         Write(null, token, null);
@@ -21,32 +24,32 @@ public static class MarkupWriter
 
         if (token.Metadata is HeadingMetadata meta)
         {
-            var writer = new MarkupHeadingWriter();
+            var writer = new MarkupHeadingWriter(MarkupStyles.MarkupHeadingStyles);
             writer.Write(meta);
         }
         else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
         {
-            var writer = new CSharpWriter();
+            var writer = new CSharpWriter(MarkupStyles.CSharpStyles);
             writer.Write(csharpMeta);
         }
         else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
         {
-            var writer = new XmlWriter();
+            var writer = new XmlWriter(MarkupStyles.XmlStyles);
             writer.Write(xmlMeta);
         }
         else if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
         {
-            var writer = new TypescriptWriter();
+            var writer = new TypescriptWriter(MarkupStyles.TypescriptStyles);
             writer.Write(tsMeta);
         }
         else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
         {
-            var writer = new JsonWriter();
+            var writer = new JsonWriter(MarkupStyles.JsonStyles);
             writer.Write(jsonMeta);
         }
         else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
         {
-            var writer = new SqlWriter();
+            var writer = new SqlWriter(MarkupStyles.SqlStyles);
             writer.Write(sqlMeta);
         }
         else if (token.Metadata is LinkMetadata linkMeta)
@@ -68,12 +71,12 @@ public static class MarkupWriter
         }
         else if (token.Metadata is OrderedListItemMetadata orderedListItemMeta)
         {
-            var writer = new MarkupOrderedListItemWriter();
+            var writer = new MarkupOrderedListItemWriter(MarkupStyles.MarkupOrderedListItemStyles);
             writer.Write(orderedListItemMeta);
         }
         else if (token.Metadata is ListItemMetadata listItemMeta)
         {
-            var writer = new MarkupListItemWriter();
+            var writer = new MarkupListItemWriter(MarkupStyles.MarkupListItemStyles);
             writer.Write(listItemMeta);
         }
         else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
@@ -109,33 +112,33 @@ public static class MarkupWriter
     {
         var style = token.TokenType switch
         {
-            MarkupTokenType.Heading => new Style(Color.Yellow),
-            MarkupTokenType.Bold => new Style(Color.Blue, decoration: Decoration.Bold),
-            MarkupTokenType.Italic => new Style(Color.Green, decoration: Decoration.Italic),
-            MarkupTokenType.HorizontalRule => new Style(Color.Grey),
-            MarkupTokenType.CodeInline => new Style(Color.Cyan),
-            MarkupTokenType.CodeBlock => new Style(Color.Magenta),
-            MarkupTokenType.Link => new Style(Color.Blue, decoration: Decoration.Underline),
-            MarkupTokenType.Image => new Style(Color.Purple),
-            MarkupTokenType.Blockquote => new Style(Color.Orange1),
-            MarkupTokenType.UnorderedListItem => new Style(Color.Red),
-            MarkupTokenType.OrderedListItem => new Style(Color.Red),
-            MarkupTokenType.TableCell => new Style(Color.Lime),
-            MarkupTokenType.Emphasis => new Style(Color.Yellow, decoration: Decoration.Italic),
-            MarkupTokenType.TypographicReplacement => new Style(Color.Grey),
-            MarkupTokenType.FootnoteReference => new Style(Color.Pink1),
-            MarkupTokenType.FootnoteDefinition => new Style(Color.Pink1),
-            MarkupTokenType.DefinitionTerm => new Style(decoration: Decoration.Bold),
-            MarkupTokenType.DefinitionDescription => new Style(decoration: Decoration.Italic),
-            MarkupTokenType.Abbreviation => new Style(decoration: Decoration.Underline),
-            MarkupTokenType.CustomContainer => new Style(Color.Teal),
-            MarkupTokenType.HtmlTag => new Style(Color.Orange1),
-            MarkupTokenType.Subscript => new Style(Color.Grey),
-            MarkupTokenType.Superscript => new Style(Color.White),
-            MarkupTokenType.InsertedText => new Style(Color.Green),
-            MarkupTokenType.MarkedText => new Style(Color.Yellow),
-            MarkupTokenType.Emoji => new Style(Color.Yellow),
-            _ => defaultStyle ?? new Style() // default style
+            MarkupTokenType.Heading => MarkupStyles.Heading,
+            MarkupTokenType.Bold => MarkupStyles.Bold,
+            MarkupTokenType.Italic => MarkupStyles.Italic,
+            MarkupTokenType.HorizontalRule => MarkupStyles.HorizontalRule,
+            MarkupTokenType.CodeInline => MarkupStyles.CodeInline,
+            MarkupTokenType.CodeBlock => MarkupStyles.CodeBlock,
+            MarkupTokenType.Link => MarkupStyles.Link,
+            MarkupTokenType.Image => MarkupStyles.Image,
+            MarkupTokenType.Blockquote => MarkupStyles.Blockquote,
+            MarkupTokenType.UnorderedListItem => MarkupStyles.UnorderedListItem,
+            MarkupTokenType.OrderedListItem => MarkupStyles.OrderedListItem,
+            MarkupTokenType.TableCell => MarkupStyles.TableCell,
+            MarkupTokenType.Emphasis => MarkupStyles.Emphasis,
+            MarkupTokenType.TypographicReplacement => MarkupStyles.TypographicReplacement,
+            MarkupTokenType.FootnoteReference => MarkupStyles.FootnoteReference,
+            MarkupTokenType.FootnoteDefinition => MarkupStyles.FootnoteDefinition,
+            MarkupTokenType.DefinitionTerm => MarkupStyles.DefinitionTerm,
+            MarkupTokenType.DefinitionDescription => MarkupStyles.DefinitionDescription,
+            MarkupTokenType.Abbreviation => MarkupStyles.Abbreviation,
+            MarkupTokenType.CustomContainer => MarkupStyles.CustomContainer,
+            MarkupTokenType.HtmlTag => MarkupStyles.HtmlTag,
+            MarkupTokenType.Subscript => MarkupStyles.Subscript,
+            MarkupTokenType.Superscript => MarkupStyles.Superscript,
+            MarkupTokenType.InsertedText => MarkupStyles.InsertedText,
+            MarkupTokenType.MarkedText => MarkupStyles.MarkedText,
+            MarkupTokenType.Emoji => MarkupStyles.Emoji,
+            _ => defaultStyle ?? MarkupStyles.DefaultStyle
         };
 
         if (token.TokenType == MarkupTokenType.HorizontalRule)

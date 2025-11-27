@@ -1,14 +1,11 @@
 ﻿using NTokenizers.Markup;
+using Spectre.Console.Extensions.NTokenizers.Styles;
 using Spectre.Console.Rendering;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class MarkupHeadingWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
+public sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
-    private static readonly Style HeadingLevel1Color = Color.Yellow2;
-    private static readonly Style HeadingLevel2To4Style = Color.DarkOliveGreen1_1;
-    private static readonly Style HeadingLevel5AndAboveStyle = Color.DarkSeaGreen1_1;
-
     private Style _style = default!;
     private int _lenght = 0;
 
@@ -23,9 +20,9 @@ public sealed class MarkupHeadingWriter : BaseInlineWriter<MarkupToken, MarkupTo
         {
             _style = meta.Level switch
             {
-                1 => HeadingLevel1Color,
-                >= 2 and <= 4 => HeadingLevel2To4Style,
-                _ => HeadingLevel5AndAboveStyle
+                1 => styles.Level1,
+                >= 2 and <= 4 => styles.Level2To4,
+                _ => styles.Level5AndAbove
             };
             if (meta.Level == 1)
             {

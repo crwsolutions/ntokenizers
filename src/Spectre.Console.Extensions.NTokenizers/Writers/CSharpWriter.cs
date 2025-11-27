@@ -1,34 +1,39 @@
 ﻿using NTokenizers.CSharp;
+using Spectre.Console;
+using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class CSharpWriter : BaseInlineWriter<CSharpToken, CSharpTokenType>
+public sealed class CSharpWriter(CSharpStyles styles) : BaseInlineWriter<CSharpToken, CSharpTokenType>
 {
     protected override Style GetStyle(CSharpTokenType token) => token switch
     {
-        CSharpTokenType.Keyword => new Style(Color.Turquoise2),
-        CSharpTokenType.Number => new Style(Color.Blue),
-        CSharpTokenType.StringValue => new Style(Color.DarkSlateGray2),
-        CSharpTokenType.Comment => new Style(Color.Green),
-        CSharpTokenType.Identifier => new Style(Color.White),
-
-        CSharpTokenType.And or CSharpTokenType.Or or CSharpTokenType.Not or
-        CSharpTokenType.Equals or CSharpTokenType.NotEquals or
-        CSharpTokenType.GreaterThan or CSharpTokenType.LessThan or
-        CSharpTokenType.GreaterThanOrEqual or CSharpTokenType.LessThanOrEqual or
-        CSharpTokenType.Plus or CSharpTokenType.Minus or
-        CSharpTokenType.Multiply or CSharpTokenType.Divide or
-        CSharpTokenType.Modulo or CSharpTokenType.Operator
-            => new Style(Color.DeepSkyBlue4_2),
-
-        CSharpTokenType.OpenParenthesis or
-        CSharpTokenType.CloseParenthesis or
-        CSharpTokenType.Comma or
-        CSharpTokenType.Dot or
-        CSharpTokenType.SequenceTerminator
-            => new Style(Color.Yellow),
-
-        CSharpTokenType.Whitespace => new Style(Color.White),
+        CSharpTokenType.Keyword => styles.Keyword,
+        CSharpTokenType.Number => styles.Number,
+        CSharpTokenType.StringValue => styles.StringValue,
+        CSharpTokenType.Comment => styles.Comment,
+        CSharpTokenType.Identifier => styles.Identifier,
+        CSharpTokenType.And => styles.And,
+        CSharpTokenType.Or => styles.Or,
+        CSharpTokenType.Not => styles.Not,
+        CSharpTokenType.Equals => styles.EqualsStyle,
+        CSharpTokenType.NotEquals => styles.NotEquals,
+        CSharpTokenType.GreaterThan => styles.GreaterThan,
+        CSharpTokenType.LessThan => styles.LessThan,
+        CSharpTokenType.GreaterThanOrEqual => styles.GreaterThanOrEqual,
+        CSharpTokenType.LessThanOrEqual => styles.LessThanOrEqual,
+        CSharpTokenType.Plus => styles.Plus,
+        CSharpTokenType.Minus => styles.Minus,
+        CSharpTokenType.Multiply => styles.Multiply,
+        CSharpTokenType.Divide => styles.Divide,
+        CSharpTokenType.Modulo => styles.Modulo,
+        CSharpTokenType.Operator => styles.Operator,
+        CSharpTokenType.OpenParenthesis => styles.OpenParenthesis,
+        CSharpTokenType.CloseParenthesis => styles.CloseParenthesis,
+        CSharpTokenType.Comma => styles.Comma,
+        CSharpTokenType.Dot => styles.Dot,
+        CSharpTokenType.SequenceTerminator => styles.SequenceTerminator,
+        CSharpTokenType.Whitespace => styles.Whitespace,
         _ => new Style(Color.White)
     };
 }

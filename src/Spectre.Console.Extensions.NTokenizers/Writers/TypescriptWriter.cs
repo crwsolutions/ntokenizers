@@ -1,34 +1,43 @@
 ﻿using NTokenizers.Typescript;
+using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class TypescriptWriter : BaseInlineWriter<TypescriptToken, TypescriptTokenType>
+public sealed class TypescriptWriter(TypescriptStyles styles) : BaseInlineWriter<TypescriptToken, TypescriptTokenType>
 {
     protected override Style GetStyle(TypescriptTokenType token) => token switch
     {
-        TypescriptTokenType.OpenParenthesis or TypescriptTokenType.CloseParenthesis => new Style(Color.DeepSkyBlue4_1),
-        TypescriptTokenType.Comma => new Style(Color.Yellow),
-        TypescriptTokenType.StringValue => new Style(Color.DarkSlateGray1),
-        TypescriptTokenType.Number => new Style(Color.Blue),
-        TypescriptTokenType.Keyword => new Style(Color.Turquoise2),
-        TypescriptTokenType.Identifier => new Style(Color.White),
-        TypescriptTokenType.Comment => new Style(Color.Green),
-        TypescriptTokenType.Operator => new Style(Color.DeepSkyBlue4_2),
-        TypescriptTokenType.And or TypescriptTokenType.Or => new Style(Color.DeepSkyBlue4_2),
-        TypescriptTokenType.Equals or TypescriptTokenType.NotEquals => new Style(Color.DeepSkyBlue4_2),
-        TypescriptTokenType.In or TypescriptTokenType.NotIn => new Style(Color.DeepSkyBlue4_1),
-        TypescriptTokenType.Like or TypescriptTokenType.NotLike => new Style(Color.DeepSkyBlue4_1),
-        TypescriptTokenType.Limit => new Style(Color.DeepSkyBlue4_1),
-        TypescriptTokenType.Match => new Style(Color.DeepSkyBlue4_1),
-        TypescriptTokenType.SequenceTerminator => new Style(Color.Yellow),
-        TypescriptTokenType.Dot => new Style(Color.Yellow),
-        TypescriptTokenType.Whitespace => new Style(Color.Yellow),
-        TypescriptTokenType.DateTimeValue => new Style(Color.Blue),
-        TypescriptTokenType.Fingerprint or TypescriptTokenType.Message or TypescriptTokenType.StackFrame or TypescriptTokenType.ExceptionType => new Style(Color.DeepSkyBlue3_1),
-        TypescriptTokenType.Application => new Style(Color.DeepSkyBlue3_1),
-        TypescriptTokenType.Between => new Style(Color.DeepSkyBlue4_1),
-        TypescriptTokenType.NotDefined => new Style(),
-        TypescriptTokenType.Invalid => new Style(),
+        TypescriptTokenType.OpenParenthesis => styles.OpenParenthesis,
+        TypescriptTokenType.CloseParenthesis => styles.CloseParenthesis,
+        TypescriptTokenType.Comma => styles.Comma,
+        TypescriptTokenType.StringValue => styles.StringValue,
+        TypescriptTokenType.Number => styles.Number,
+        TypescriptTokenType.Keyword => styles.Keyword,
+        TypescriptTokenType.Identifier => styles.Identifier,
+        TypescriptTokenType.Comment => styles.Comment,
+        TypescriptTokenType.Operator => styles.Operator,
+        TypescriptTokenType.And => styles.And,
+        TypescriptTokenType.Or => styles.Or,
+        TypescriptTokenType.Equals => styles.EqualsStyle,
+        TypescriptTokenType.NotEquals => styles.NotEquals,
+        TypescriptTokenType.In => styles.In,
+        TypescriptTokenType.NotIn => styles.NotIn,
+        TypescriptTokenType.Like => styles.Like,
+        TypescriptTokenType.NotLike => styles.NotLike,
+        TypescriptTokenType.Limit => styles.Limit,
+        TypescriptTokenType.Match => styles.Match,
+        TypescriptTokenType.SequenceTerminator => styles.SequenceTerminator,
+        TypescriptTokenType.Dot => styles.Dot,
+        TypescriptTokenType.Whitespace => styles.Whitespace,
+        TypescriptTokenType.DateTimeValue => styles.DateTimeValue,
+        TypescriptTokenType.Fingerprint => styles.Fingerprint,
+        TypescriptTokenType.Message => styles.Message,
+        TypescriptTokenType.StackFrame => styles.StackFrame,
+        TypescriptTokenType.ExceptionType => styles.ExceptionType,
+        TypescriptTokenType.Application => styles.Application,
+        TypescriptTokenType.Between => styles.Between,
+        TypescriptTokenType.NotDefined => styles.NotDefined,
+        TypescriptTokenType.Invalid => styles.Invalid,
         _ => new Style()
     };
 }
