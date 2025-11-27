@@ -50,6 +50,6 @@ public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken
 
     protected virtual void WriteToken(Paragraph liveParagraph, TToken token)
     {
-        liveParagraph.Append(Markup.Escape(token.Value), GetStyle(token.TokenType));
+        liveParagraph.Append(token.Value, GetStyle(token.TokenType));
     }
 }
