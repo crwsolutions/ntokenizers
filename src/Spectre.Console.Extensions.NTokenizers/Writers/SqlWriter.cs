@@ -1,9 +1,8 @@
 ﻿using NTokenizers.Sql;
-using Spectre.Console;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class SqlWriter : BaseInlineWriter<SqlToken, SqlTokenType>
+public sealed class SqlWriter : BaseInlineWriter<SqlToken, SqlTokenType>
 {
     protected override Style GetStyle(SqlTokenType token) => token switch
     {

@@ -1,9 +1,8 @@
 ﻿using NTokenizers.CSharp;
-using Spectre.Console;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class CSharpWriter : BaseInlineWriter<CSharpToken, CSharpTokenType>
+public sealed class CSharpWriter : BaseInlineWriter<CSharpToken, CSharpTokenType>
 {
     protected override Style GetStyle(CSharpTokenType token) => token switch
     {

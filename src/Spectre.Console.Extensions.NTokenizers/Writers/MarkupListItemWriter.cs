@@ -1,10 +1,9 @@
 ﻿using NTokenizers.Markup;
-using Spectre.Console;
 using Spectre.Console.Rendering;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class MarkupListItemWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
+public sealed class MarkupListItemWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
     protected override void Started(InlineMarkupMetadata<MarkupToken> metadata)
     {
@@ -17,7 +16,7 @@ internal sealed class MarkupListItemWriter : BaseInlineWriter<MarkupToken, Marku
 
     protected override void Finalize(InlineMarkupMetadata<MarkupToken> metadata)
     {
-        _liveParagraph.Append("koekoek");
+        //_liveParagraph.Append("koekoek");
     }
 
     protected override IRenderable GetIRendable() => _liveParagraph;

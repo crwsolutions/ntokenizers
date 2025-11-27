@@ -1,10 +1,9 @@
 ﻿using NTokenizers.Markup;
-using Spectre.Console;
 using Spectre.Console.Rendering;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class MarkupHeadingWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
+public sealed class MarkupHeadingWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
     private static readonly Style HeadingLevel1Color = Color.Yellow2;
     private static readonly Style HeadingLevel2To4Style = Color.DarkOliveGreen1_1;
@@ -62,7 +61,7 @@ internal sealed class MarkupHeadingWriter : BaseInlineWriter<MarkupToken, Markup
 
     protected override void WriteToken(Paragraph liveParagraph, MarkupToken token)
     {
-        var inlineValue = Spectre.Console.Markup.Escape(token.Value);
+        var inlineValue = Markup.Escape(token.Value);
         _lenght += token.Value.Length;
         MarkupWriter.Write(liveParagraph, token, _style);
     }

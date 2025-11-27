@@ -1,21 +1,20 @@
 ﻿using NTokenizers.Markup;
-using Spectre.Console;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal static class MarkupWriter
+public static class MarkupWriter
 {
-    internal static void Write(MarkupToken token)
+    public static void Write(MarkupToken token)
     {
         Write(null, token, null);
     }
 
-    internal static void Write(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
+    public static void Write(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
         if (token.Metadata is ICodeBlockMetadata codeBlockMetadata)
         {
             if (!string.IsNullOrEmpty(codeBlockMetadata.Language))
-            { 
+            {
                 AnsiConsole.WriteLine($"{codeBlockMetadata.Language}:");
             }
         }
@@ -91,14 +90,14 @@ internal static class MarkupWriter
 
     private static void Write(Paragraph? liveTarget, string value, Style? style = null)
     {
-        var text = Spectre.Console.Markup.Escape(value);
+        var text = Markup.Escape(value);
         if (liveTarget is not null)
         {
             liveTarget.Append(text, style);
         }
         else if (style is not null)
         {
-            AnsiConsole.Write(new Spectre.Console.Markup(text, style));
+            AnsiConsole.Write(new Markup(text, style));
         }
         else
         {
@@ -141,11 +140,11 @@ internal static class MarkupWriter
 
         if (token.TokenType == MarkupTokenType.HorizontalRule)
         {
-            var value = new string('─', Console.WindowWidth);
+            var value = new string('─', System.Console.WindowWidth);
             Write(liveTarget, value, style);
         }
         else
-        { 
+        {
             Write(liveTarget, token.Value, style);
         }
     }

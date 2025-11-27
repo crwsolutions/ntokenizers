@@ -1,10 +1,9 @@
 ﻿using NTokenizers.Markup;
-using Spectre.Console;
 using Spectre.Console.Rendering;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class MarkupOrderedListItemWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
+public sealed class MarkupOrderedListItemWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
     protected override void Started(InlineMarkupMetadata<MarkupToken> metadata)
     {

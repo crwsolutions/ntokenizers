@@ -1,9 +1,8 @@
 ﻿using NTokenizers.Xml;
-using Spectre.Console;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class XmlWriter : BaseInlineWriter<XmlToken, XmlTokenType>
+public sealed class XmlWriter : BaseInlineWriter<XmlToken, XmlTokenType>
 {
     protected override Style GetStyle(XmlTokenType token) => token switch
     {

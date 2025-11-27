@@ -1,9 +1,8 @@
 ﻿using NTokenizers.Typescript;
-using Spectre.Console;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class TypescriptWriter : BaseInlineWriter<TypescriptToken, TypescriptTokenType>
+public sealed class TypescriptWriter : BaseInlineWriter<TypescriptToken, TypescriptTokenType>
 {
     protected override Style GetStyle(TypescriptTokenType token) => token switch
     {

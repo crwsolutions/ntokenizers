@@ -1,10 +1,10 @@
-﻿using NTokenizers.Markup;
-using Spectre.Console;
+﻿using NTokenizers;
+using NTokenizers.Markup;
 using Spectre.Console.Rendering;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
+public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
 {
     protected virtual Style GetStyle(TTokentype token) => Style.Plain;
 
@@ -50,6 +50,6 @@ internal abstract class BaseInlineWriter<TToken, TTokentype> where TToken : ITok
 
     protected virtual void WriteToken(Paragraph liveParagraph, TToken token)
     {
-        liveParagraph.Append(Spectre.Console.Markup.Escape(token.Value), GetStyle(token.TokenType));
+        liveParagraph.Append(Markup.Escape(token.Value), GetStyle(token.TokenType));
     }
 }

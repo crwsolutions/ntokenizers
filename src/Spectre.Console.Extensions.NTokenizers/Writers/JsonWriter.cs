@@ -1,9 +1,8 @@
 ﻿using NTokenizers.Json;
-using Spectre.Console;
 
-namespace NTokenizers.ShowCase.Writers;
+namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class JsonWriter : BaseInlineWriter<JsonToken, JsonTokenType>
+public sealed class JsonWriter : BaseInlineWriter<JsonToken, JsonTokenType>
 {
     protected override Style GetStyle(JsonTokenType token) => token switch
     {

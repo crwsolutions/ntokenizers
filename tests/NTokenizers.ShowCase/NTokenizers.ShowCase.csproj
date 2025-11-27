@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NTokenizers\NTokenizers.csproj" />
+    <ProjectReference Include="..\..\src\Spectre.Console.Extensions.NTokenizers\Spectre.Console.Extensions.NTokenizers.csproj" />
   </ItemGroup>
 
 </Project>

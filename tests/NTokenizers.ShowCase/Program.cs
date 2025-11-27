@@ -1,6 +1,6 @@
 ﻿using NTokenizers.Markup;
 using NTokenizers.ShowCase;
-using NTokenizers.ShowCase.Writers;
+using Spectre.Console.Extensions.NTokenizers.Writers;
 using System.IO.Pipes;
 using System.Text;
 
