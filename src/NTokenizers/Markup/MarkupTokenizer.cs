@@ -468,7 +468,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     {
                         Thread.Sleep(3);
                     }
-                    Typescript.TypescriptTokenizer.Parse(_reader, "```", tsMeta.OnInlineToken);
+                    Typescript.TypescriptTokenizer.Create().Parse(_reader, "```", tsMeta.OnInlineToken);
                     tsMeta.IsProcessing = false;
                     break;
                 case GenericCodeBlockMetadata gMeta:
