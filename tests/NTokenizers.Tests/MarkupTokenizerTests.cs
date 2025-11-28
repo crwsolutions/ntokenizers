@@ -320,7 +320,7 @@ public class MarkupTokenizerTests
     public void TestHorizontalRuleDashLf()
     {
         var tokens = Tokenize("---\n");
-        Assert.Equal(2, tokens.Count);
+        Assert.Equal(1, tokens.Count);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("---", tokens[0].Value);
     }
@@ -329,7 +329,7 @@ public class MarkupTokenizerTests
     public void TestHorizontalRuleAsteriskLf()
     {
         var tokens = Tokenize("***\n");
-        Assert.Equal(2, tokens.Count);
+        Assert.Equal(1, tokens.Count);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("***", tokens[0].Value);
     }
@@ -338,7 +338,7 @@ public class MarkupTokenizerTests
     public void TestHorizontalRuleDashCrLf()
     {
         var tokens = Tokenize("---\r\n");
-        Assert.Equal(2, tokens.Count);
+        Assert.Equal(1, tokens.Count);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("---", tokens[0].Value);
     }
@@ -347,7 +347,7 @@ public class MarkupTokenizerTests
     public void TestHorizontalRuleAsteriskCrLf()
     {
         var tokens = Tokenize("***\r\n");
-        Assert.Equal(2, tokens.Count);
+        Assert.Equal(1, tokens.Count);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("***", tokens[0].Value);
     }
@@ -495,11 +495,11 @@ More text.";
 - Item 3";
         
         var tokens = Tokenize(markup);
-        Assert.Equal(5, tokens.Count);
+        Assert.Equal(3, tokens.Count);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // List items have empty value
-        Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
-        Assert.Equal("\n", tokens[1].Value);
+        Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[2].TokenType);
         Assert.Equal(string.Empty, tokens[2].Value); // List items have empty value
     }

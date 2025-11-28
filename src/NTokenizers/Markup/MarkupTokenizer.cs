@@ -33,7 +33,20 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
             {
                 if (TryParseLineStartConstruct())
                 {
-                    _atLineStart = false;
+                    //Eat newline after line-start construct
+                    if (Peek() == '\r') 
+                    {
+                        Read();
+                    }
+                    if(Peek() == '\n')
+                    {
+                        Read();
+                        _atLineStart = true;
+                    }
+                    else
+                    {
+                        _atLineStart = false;
+                    }
                     continue;
                 }
             }
