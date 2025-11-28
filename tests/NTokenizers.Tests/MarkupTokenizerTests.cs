@@ -25,7 +25,7 @@ public class MarkupTokenizerTests
             }
             else if (token.Metadata is ListItemMetadata listMeta)
             {
-                listMeta.OnInlineToken = listToken => { /* Capture C# tokens if needed */ };
+                listMeta.OnInlineToken = tokens.Add;
             }
             else if (token.Metadata is OrderedListItemMetadata orderedListMeta)
             {
@@ -232,7 +232,7 @@ public class MarkupTokenizerTests
     public void TestUnorderedListWithDash()
     {
         var tokens = Tokenize("- item 1");
-        Assert.Single(tokens);
+        Assert.Equal(2, tokens.Count);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Unordered list items have empty value
     }
@@ -241,7 +241,7 @@ public class MarkupTokenizerTests
     public void TestUnorderedListWithPlus()
     {
         var tokens = Tokenize("+ item 1");
-        Assert.Single(tokens);
+        Assert.Equal(2, tokens.Count);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Unordered list items have empty value
     }
@@ -250,9 +250,24 @@ public class MarkupTokenizerTests
     public void TestUnorderedListWithAsterisk()
     {
         var tokens = Tokenize("* item 1");
-        Assert.Single(tokens);
+        Assert.Equal(2, tokens.Count);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Unordered list items have empty value
+        Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("item 1", tokens[1].Value);
+    }
+
+    [Fact]
+    public void TestUnorderedListWithLeadingSpaces()
+    {
+        var tokens = Tokenize("     * item 1");
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkupTokenType.Text, tokens[0].TokenType);
+        Assert.Equal("     ", tokens[0].Value);
+        Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[2].TokenType);
+        Assert.Equal("item 1", tokens[2].Value);
     }
 
     [Fact]
@@ -495,13 +510,13 @@ More text.";
 - Item 3";
         
         var tokens = Tokenize(markup);
-        Assert.Equal(3, tokens.Count);
+        Assert.Equal(6, tokens.Count);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // List items have empty value
-        Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[2].TokenType);
-        Assert.Equal(string.Empty, tokens[2].Value); // List items have empty value
+        Assert.Equal(string.Empty, tokens[2].Value);
+        Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[4].TokenType);
+        Assert.Equal(string.Empty, tokens[4].Value); // List items have empty value
     }
 
     [Fact]

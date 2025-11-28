@@ -1,19 +1,18 @@
 ﻿using NTokenizers.Markup;
 using Spectre.Console.Extensions.NTokenizers.Styles;
-using Spectre.Console.Rendering;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class MarkupOrderedListItemWriter(MarkupOrderedListItemStyles styles) : BaseInlineWriter<MarkupToken, MarkupTokenType>
+public sealed class MarkupOrderedListItemWriter(MarkupOrderedListItemStyles styles)
 {
-    protected override void Started(InlineMarkupMetadata<MarkupToken> metadata)
+    internal void Write(OrderedListItemMetadata metadata)
     {
-        if (metadata is not OrderedListItemMetadata listItemMeta)
+        AnsiConsole.Write(new Console.Markup($"{metadata.Number}. ", styles.Number));
+        metadata.OnInlineToken = MarkupWriter.Write;
+        while (metadata.IsProcessing)
         {
-            return;
+            Thread.Sleep(3);
         }
-        _liveParagraph.Append($"\n{listItemMeta.Number}. ".PadRight(5), styles.Number);
+        AnsiConsole.WriteLine();
     }
-
-    protected override IRenderable GetIRendable() => _liveParagraph;
 }
