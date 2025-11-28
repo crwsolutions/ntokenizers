@@ -1,105 +1,44 @@
-using System.Text;
+using NTokenizers.Core;
 
 namespace NTokenizers.Json;
 
 /// <summary>
 /// Provides functionality for tokenizing JSON or JSON-like text sources.
 /// </summary>
-public static class JsonTokenizer
+public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
 {
     /// <summary>
-    /// Parses JSON or JSON-like content from the given <see cref="Stream"/> and
-    /// produces a sequence of <see cref="JsonToken"/> objects.
+    /// Creates a new instance of the <see cref="JsonTokenizer"/>.
     /// </summary>
-    /// <param name="stream">
-    /// The input stream containing the text to tokenize.  
-    /// The stream is read as UTF-8.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="JsonToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    /// <example>
-    /// The following example demonstrates how to parse a simple JSON snippet:
-    /// <code>
-    /// var json = "{ \"name\": \"Alice\", \"age\": 30 }";
-    /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
-    ///
-    /// JsonTokenizer.Parse(ms, token =>
-    /// {
-    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
-    /// });
-    /// </code>
-    ///
-    /// The next example shows parsing JSON that is embedded inside Markdown.
-    /// The tokenizer stops when the code fence delimiter is reached:
-    /// <code>
-    /// var markdown = "```json\n{ \"value\": 123 }\n``` extra";
-    ///
-    /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-    ///
-    /// JsonTokenizer.Parse(ms, "```", token =>
-    /// {
-    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
-    /// });
-    /// </code>
-    /// </example>
-    public static void Parse(Stream stream, Action<JsonToken> onToken)
-    {
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-        Parse(reader, null, onToken);
-    }
+    public static JsonTokenizer Create() => new();
 
     /// <summary>
     /// Parses JSON or JSON-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="JsonToken"/> objects.
     /// </summary>
-    /// <param name="reader">
-    /// The input reader containing the text to tokenize.
-    /// </param>
-    /// <param name="stopDelimiter">
-    /// An optional string that, when encountered in the input, instructs the tokenizer
-    /// to stop parsing and return control to the caller.  
-    /// This is typically used when the tokenizer is operating as a sub-tokenizer
-    /// inside another language (for example, JSON inside Markdown or another format),
-    /// where parsing should stop when reaching a delimiter such as a Markdown code
-    /// fence (<c>```</c>).
-    /// If <c>null</c>, the tokenizer parses until the end of the stream.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="JsonToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="reader"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    public static void Parse(TextReader reader, string? stopDelimiter, Action<JsonToken> onToken)
+    internal protected override void Parse()
     {
-        var sb = new StringBuilder();
         var stack = new Stack<ContainerType>();
         bool inString = false;
         bool inNumber = false;
         bool inKeyword = false;
         bool isExpectingKey = false;
         bool escape = false;
-        string delimiter = stopDelimiter ?? string.Empty;
+        string delimiter = _stopDelimiter ?? string.Empty;
         int delLength = delimiter.Length;
 
         if (delLength == 0)
         {
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
-                    EmitPending(sb, ref inString, ref inNumber, ref inKeyword, onToken);
+                    EmitPending(ref inString, ref inNumber, ref inKeyword);
                     break;
                 }
                 char c = (char)ic;
-                ProcessChar(c, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, sb, onToken, stack);
+                ProcessChar(c, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, stack);
             }
         }
         else
@@ -108,7 +47,7 @@ public static class JsonTokenizer
             bool stoppedByDelimiter = false;
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
                     break;
@@ -118,7 +57,7 @@ public static class JsonTokenizer
                 if (delQueue.Count > delLength)
                 {
                     char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, sb, onToken, stack);
+                    ProcessChar(toProcess, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, stack);
                 }
                 if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
                 {
@@ -131,18 +70,18 @@ public static class JsonTokenizer
                 while (delQueue.Count > 0)
                 {
                     char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, sb, onToken, stack);
+                    ProcessChar(toProcess, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, stack);
                 }
             }
-            EmitPending(sb, ref inString, ref inNumber, ref inKeyword, onToken);
+            EmitPending(ref inString, ref inNumber, ref inKeyword);
         }
     }
 
-    private static void ProcessChar(char c, ref bool inString, ref bool inNumber, ref bool inKeyword, ref bool escape, ref bool isExpectingKey, StringBuilder sb, Action<JsonToken> onToken, Stack<ContainerType> stack)
+    private void ProcessChar(char c, ref bool inString, ref bool inNumber, ref bool inKeyword, ref bool escape, ref bool isExpectingKey, Stack<ContainerType> stack)
     {
         if (inString)
         {
-            sb.Append(c);
+            _sb.Append(c);
             if (escape)
             {
                 escape = false;
@@ -154,12 +93,12 @@ public static class JsonTokenizer
             else if (c == '"')
             {
                 inString = false;
-                string str = sb.ToString();
-                sb.Clear();
+                string str = _sb.ToString();
+                _sb.Clear();
                 JsonTokenType type = (stack.Count > 0 && stack.Peek() == ContainerType.Object && isExpectingKey)
                     ? JsonTokenType.PropertyName
                     : JsonTokenType.StringValue;
-                onToken(new JsonToken(type, str));
+                _onToken(new JsonToken(type, str));
                 if (type == JsonTokenType.PropertyName)
                 {
                     isExpectingKey = false;
@@ -172,14 +111,14 @@ public static class JsonTokenizer
         {
             if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+')
             {
-                sb.Append(c);
+                _sb.Append(c);
                 return;
             }
             else
             {
-                string num = sb.ToString();
-                sb.Clear();
-                onToken(new JsonToken(JsonTokenType.Number, num));
+                string num = _sb.ToString();
+                _sb.Clear();
+                _onToken(new JsonToken(JsonTokenType.Number, num));
                 inNumber = false;
                 // Fall through to process current c
             }
@@ -187,34 +126,34 @@ public static class JsonTokenizer
 
         if (inKeyword)
         {
-            sb.Append(c);
-            string kw = sb.ToString();
+            _sb.Append(c);
+            string kw = _sb.ToString();
             if (kw == "true")
             {
-                onToken(new JsonToken(JsonTokenType.True, "true"));
+                _onToken(new JsonToken(JsonTokenType.True, "true"));
                 inKeyword = false;
-                sb.Clear();
+                _sb.Clear();
                 return;
             }
             else if (kw == "false")
             {
-                onToken(new JsonToken(JsonTokenType.False, "false"));
+                _onToken(new JsonToken(JsonTokenType.False, "false"));
                 inKeyword = false;
-                sb.Clear();
+                _sb.Clear();
                 return;
             }
             else if (kw == "null")
             {
-                onToken(new JsonToken(JsonTokenType.Null, "null"));
+                _onToken(new JsonToken(JsonTokenType.Null, "null"));
                 inKeyword = false;
-                sb.Clear();
+                _sb.Clear();
                 return;
             }
             else if (!"true".StartsWith(kw) && !"false".StartsWith(kw) && !"null".StartsWith(kw))
             {
                 // Invalid, reset
                 inKeyword = false;
-                sb.Clear();
+                _sb.Clear();
             }
             else
             {
@@ -225,16 +164,16 @@ public static class JsonTokenizer
         // Handle whitespace
         if (char.IsWhiteSpace(c))
         {
-            sb.Append(c);
+            _sb.Append(c);
             return;
         }
         else
         {
             // Emit any pending whitespace
-            if (sb.Length > 0 && !inNumber && !inKeyword && !inString)
+            if (_sb.Length > 0 && !inNumber && !inKeyword && !inString)
             {
-                onToken(new JsonToken(JsonTokenType.Whitespace, sb.ToString()));
-                sb.Clear();
+                _onToken(new JsonToken(JsonTokenType.Whitespace, _sb.ToString()));
+                _sb.Clear();
             }
         }
 
@@ -242,7 +181,7 @@ public static class JsonTokenizer
         switch (c)
         {
             case '{':
-                onToken(new JsonToken(JsonTokenType.StartObject, "{"));
+                _onToken(new JsonToken(JsonTokenType.StartObject, "{"));
                 stack.Push(ContainerType.Object);
                 isExpectingKey = true;
                 break;
@@ -251,11 +190,11 @@ public static class JsonTokenizer
                 {
                     stack.Pop();
                 }
-                onToken(new JsonToken(JsonTokenType.EndObject, "}"));
+                _onToken(new JsonToken(JsonTokenType.EndObject, "}"));
                 isExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
                 break;
             case '[':
-                onToken(new JsonToken(JsonTokenType.StartArray, "["));
+                _onToken(new JsonToken(JsonTokenType.StartArray, "["));
                 stack.Push(ContainerType.Array);
                 isExpectingKey = false;
                 break;
@@ -264,20 +203,20 @@ public static class JsonTokenizer
                 {
                     stack.Pop();
                 }
-                onToken(new JsonToken(JsonTokenType.EndArray, "]"));
+                _onToken(new JsonToken(JsonTokenType.EndArray, "]"));
                 isExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
                 break;
             case ':':
-                onToken(new JsonToken(JsonTokenType.Colon, ":"));
+                _onToken(new JsonToken(JsonTokenType.Colon, ":"));
                 isExpectingKey = false;
                 break;
             case ',':
-                onToken(new JsonToken(JsonTokenType.Comma, ","));
+                _onToken(new JsonToken(JsonTokenType.Comma, ","));
                 isExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
                 break;
             case '"':
                 inString = true;
-                sb.Append(c);
+                _sb.Append(c);
                 break;
             case '-':
             case '0':
@@ -291,13 +230,13 @@ public static class JsonTokenizer
             case '8':
             case '9':
                 inNumber = true;
-                sb.Append(c);
+                _sb.Append(c);
                 break;
             case 't':
             case 'f':
             case 'n':
                 inKeyword = true;
-                sb.Append(c);
+                _sb.Append(c);
                 break;
             default:
                 // Skip invalid characters
@@ -305,9 +244,9 @@ public static class JsonTokenizer
         }
     }
 
-    private static void EmitPending(StringBuilder sb, ref bool inString, ref bool inNumber, ref bool inKeyword, Action<JsonToken> onToken)
+    private void EmitPending(ref bool inString, ref bool inNumber, ref bool inKeyword)
     {
-        if (sb.Length > 0)
+        if (_sb.Length > 0)
         {
             if (inString)
             {
@@ -315,7 +254,7 @@ public static class JsonTokenizer
             }
             else if (inNumber)
             {
-                onToken(new JsonToken(JsonTokenType.Number, sb.ToString()));
+                _onToken(new JsonToken(JsonTokenType.Number, _sb.ToString()));
             }
             else if (inKeyword)
             {
@@ -323,9 +262,9 @@ public static class JsonTokenizer
             }
             else
             {
-                onToken(new JsonToken(JsonTokenType.Whitespace, sb.ToString()));
+                _onToken(new JsonToken(JsonTokenType.Whitespace, _sb.ToString()));
             }
-            sb.Clear();
+            _sb.Clear();
         }
         inString = false;
         inNumber = false;

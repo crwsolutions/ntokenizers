@@ -1,12 +1,17 @@
-using System.Text;
+using NTokenizers.Core;
 
 namespace NTokenizers.CSharp;
 
 /// <summary>
 /// Provides functionality for tokenizing C# source code text.
 /// </summary>
-public static class CSharpTokenizer
+public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="CSharpTokenizer"/> class.
+    /// </summary>
+    public static CSharpTokenizer Create() => new();
+
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
     {
         "abstract", "as", "async", "await", "base", "bool", "break", "byte", "case", "catch", "char", "var",
@@ -21,27 +26,6 @@ public static class CSharpTokenizer
         "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
     };
 
-    /// <summary>
-    /// Parses C# source code from the given <see cref="Stream"/> and
-    /// produces a sequence of <see cref="CSharpToken"/> objects.
-    /// </summary>
-    /// <param name="stream">
-    /// The input stream containing the text to tokenize.  
-    /// The stream is read as UTF-8.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="CSharpToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    public static void Parse(Stream stream, Action<CSharpToken> onToken)
-    {
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-        Parse(reader, null, onToken);
-    }
-
     private enum State
     {
         Start,
@@ -55,45 +39,26 @@ public static class CSharpTokenizer
         InOperator
     }
 
-    /// <summary>
-    /// Parses C# source code from the given <see cref="TextReader"/> and
-    /// produces a sequence of <see cref="CSharpToken"/> objects.
-    /// </summary>
-    /// <param name="reader">
-    /// The input reader containing the text to tokenize.
-    /// </param>
-    /// <param name="stopDelimiter">
-    /// An optional string that, when encountered in the input, instructs the tokenizer
-    /// to stop parsing and return control to the caller.  
-    /// If <c>null</c>, the tokenizer parses until the end of the stream.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="CSharpToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="reader"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    public static void Parse(TextReader reader, string? stopDelimiter, Action<CSharpToken> onToken)
+    /// <inheritdoc/>
+    internal protected override void Parse()
     {
-        var sb = new StringBuilder();
         State state = State.Start;
         bool escape = false;
-        string delimiter = stopDelimiter ?? string.Empty;
+        string delimiter = _stopDelimiter ?? string.Empty;
         int delLength = delimiter.Length;
 
         if (delLength == 0)
         {
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
-                    EmitPending(sb, ref state, onToken);
+                    EmitPending(ref state);
                     break;
                 }
                 char c = (char)ic;
-                ProcessChar(c, ref state, ref escape, sb, onToken, reader);
+                ProcessChar(c, ref state, ref escape);
             }
         }
         else
@@ -102,7 +67,7 @@ public static class CSharpTokenizer
             bool stoppedByDelimiter = false;
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
                     break;
@@ -112,7 +77,7 @@ public static class CSharpTokenizer
                 if (delQueue.Count > delLength)
                 {
                     char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref escape, sb, onToken, reader);
+                    ProcessChar(toProcess, ref state, ref escape);
                 }
                 if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
                 {
@@ -125,60 +90,59 @@ public static class CSharpTokenizer
                 while (delQueue.Count > 0)
                 {
                     char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref escape, sb, onToken, reader);
+                    ProcessChar(toProcess, ref state, ref escape);
                 }
             }
 
-            if (stoppedByDelimiter && sb.Length > 0)
+            if (stoppedByDelimiter && _sb.Length > 0)
             {
-                if (sb[sb.Length - 1] == '\n')
+                if (_sb[_sb.Length - 1] == '\n')
                 {
-                    sb.Length -= 1;
-                    if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
+                    _sb.Length -= 1;
+                    if (_sb.Length > 0 && _sb[_sb.Length - 1] == '\r')
                     {
-                        sb.Length -= 1;
+                        _sb.Length -= 1;
                     }
                 }
-                else if (sb[sb.Length - 1] == '\r')
+                else if (_sb[_sb.Length - 1] == '\r')
                 {
-                    sb.Length -= 1;
+                    _sb.Length -= 1;
                 }
             }
 
-            EmitPending(sb, ref state, onToken);
+            EmitPending(ref state);
         }
     }
 
-    private static void ProcessChar(char c, ref State state, ref bool escape, StringBuilder sb, Action<CSharpToken> onToken, TextReader reader)
+    private void ProcessChar(char c, ref State state, ref bool escape)
     {
         switch (state)
         {
             case State.InString:
-                ProcessInString(c, ref state, ref escape, sb, onToken);
+                ProcessInString(c, ref state, ref escape);
                 return;
 
             case State.InVerbatimString:
-                ProcessInVerbatimString(c, ref state, sb, onToken, reader);
+                ProcessInVerbatimString(c, ref state);
                 return;
 
             case State.InCommentLine:
-                ProcessInCommentLine(c, ref state, sb, onToken);
+                ProcessInCommentLine(c, ref state);
                 return;
 
             case State.InCommentBlock:
-                ProcessInCommentBlock(c, ref state, sb, onToken, reader);
+                ProcessInCommentBlock(c, ref state);
                 return;
 
             case State.InWhitespace:
                 if (char.IsWhiteSpace(c))
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                     return;
                 }
                 else
                 {
-                    EmitToken(CSharpTokenType.Whitespace, sb.ToString(), onToken);
-                    sb.Clear();
+                    EmitToken(CSharpTokenType.Whitespace);
                     state = State.Start;
                     // Fall through to process current character
                 }
@@ -187,36 +151,35 @@ public static class CSharpTokenizer
             case State.InIdentifier:
                 if (char.IsLetterOrDigit(c) || c == '_')
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                     return;
                 }
                 else
                 {
-                    EmitIdentifierOrKeyword(sb.ToString(), onToken);
-                    sb.Clear();
+                    EmitIdentifierOrKeyword(_sb.ToString());
+                    _sb.Clear();
                     state = State.Start;
                     // Fall through to process current character
                 }
                 break;
 
             case State.InNumber:
-                if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+' || c == 'x' || c == 'X' || 
+                if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+' || c == 'x' || c == 'X' ||
                     (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == '_')
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                     return;
                 }
                 else
                 {
-                    EmitToken(CSharpTokenType.Number, sb.ToString(), onToken);
-                    sb.Clear();
+                    EmitToken(CSharpTokenType.Number);
                     state = State.Start;
                     // Fall through to process current character
                 }
                 break;
 
             case State.InOperator:
-                ProcessInOperator(c, ref state, sb, onToken, reader);
+                ProcessInOperator(c, ref state);
                 return;
         }
 
@@ -224,94 +187,94 @@ public static class CSharpTokenizer
         if (char.IsWhiteSpace(c))
         {
             state = State.InWhitespace;
-            sb.Append(c);
+            _sb.Append(c);
         }
         else if (c == '"')
         {
             state = State.InString;
-            sb.Append(c);
+            _sb.Append(c);
         }
         else if (c == '@')
         {
             // Check if next character is a quote for verbatim string
-            int next = reader.Peek();
+            int next = _reader.Peek();
             if (next == '"')
             {
-                sb.Append(c);
-                sb.Append((char)reader.Read());
+                _sb.Append(c);
+                _sb.Append((char)_reader.Read());
                 state = State.InVerbatimString;
             }
             else
             {
                 // @ can be part of an identifier
                 state = State.InIdentifier;
-                sb.Append(c);
+                _sb.Append(c);
             }
         }
         else if (char.IsLetter(c) || c == '_')
         {
             state = State.InIdentifier;
-            sb.Append(c);
+            _sb.Append(c);
         }
         else if (char.IsDigit(c))
         {
             state = State.InNumber;
-            sb.Append(c);
+            _sb.Append(c);
         }
         else if (c == '/')
         {
-            int next = reader.Peek();
+            int next = _reader.Peek();
             if (next == '/')
             {
-                reader.Read(); // consume second /
+                _reader.Read(); // consume second /
                 state = State.InCommentLine;
-                sb.Append("//");
+                _sb.Append("//");
             }
             else if (next == '*')
             {
-                reader.Read(); // consume *
+                _reader.Read(); // consume *
                 state = State.InCommentBlock;
-                sb.Append("/*");
+                _sb.Append("/*");
             }
             else
             {
                 state = State.InOperator;
-                sb.Append(c);
+                _sb.Append(c);
             }
         }
         else if (c == '(' || c == ')' || c == ',' || c == ';')
         {
-            EmitPunctuation(c, onToken);
+            EmitPunctuation(c);
         }
         else if (c == '.')
         {
             // Check if it's part of a number or a dot operator
-            int next = reader.Peek();
+            int next = _reader.Peek();
             if (next != -1 && char.IsDigit((char)next))
             {
                 state = State.InNumber;
-                sb.Append(c);
+                _sb.Append(c);
             }
             else
             {
-                EmitToken(CSharpTokenType.Dot, ".", onToken);
+                EmitToken(CSharpTokenType.Dot, ".");
             }
         }
         else if (IsOperatorChar(c))
         {
             state = State.InOperator;
-            sb.Append(c);
+            _sb.Append(c);
         }
         else
         {
             // Unknown character - emit as NotDefined
-            EmitToken(CSharpTokenType.NotDefined, c.ToString(), onToken);
+            EmitToken(CSharpTokenType.NotDefined, c.ToString());
         }
     }
 
-    private static void ProcessInString(char c, ref State state, ref bool escape, StringBuilder sb, Action<CSharpToken> onToken)
+    private void ProcessInString(char c, ref State state, ref bool escape)
     {
-        sb.Append(c);
+        _sb.Append(c);
         if (escape)
         {
             escape = false;
@@ -322,75 +285,71 @@ public static class CSharpTokenizer
         }
         else if (c == '"')
         {
-            EmitToken(CSharpTokenType.StringValue, sb.ToString(), onToken);
-            sb.Clear();
+            EmitToken(CSharpTokenType.StringValue);
             state = State.Start;
         }
     }
 
-    private static void ProcessInVerbatimString(char c, ref State state, StringBuilder sb, Action<CSharpToken> onToken, TextReader reader)
+    private void ProcessInVerbatimString(char c, ref State state)
     {
-        sb.Append(c);
+        _sb.Append(c);
         if (c == '"')
         {
             // Check if it's an escaped quote (double quote)
-            int next = reader.Peek();
+            int next = _reader.Peek();
             if (next == '"')
             {
-                sb.Append((char)reader.Read());
+                _sb.Append((char)_reader.Read());
             }
             else
             {
                 // End of verbatim string
-                EmitToken(CSharpTokenType.StringValue, sb.ToString(), onToken);
-                sb.Clear();
+                EmitToken(CSharpTokenType.StringValue);
                 state = State.Start;
             }
         }
     }
 
-    private static void ProcessInCommentLine(char c, ref State state, StringBuilder sb, Action<CSharpToken> onToken)
+    private void ProcessInCommentLine(char c, ref State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(CSharpTokenType.Comment, sb.ToString(), onToken);
-            sb.Clear();
+            EmitToken(CSharpTokenType.Comment);
             state = State.InWhitespace;
-            sb.Append(c);
+            _sb.Append(c);
         }
         else
         {
-            sb.Append(c);
+            _sb.Append(c);
         }
     }
 
-    private static void ProcessInCommentBlock(char c, ref State state, StringBuilder sb, Action<CSharpToken> onToken, TextReader reader)
+    private void ProcessInCommentBlock(char c, ref State state)
     {
-        sb.Append(c);
+        _sb.Append(c);
         if (c == '*')
         {
-            int next = reader.Peek();
+            int next = _reader.Peek();
             if (next == '/')
             {
-                sb.Append((char)reader.Read());
-                EmitToken(CSharpTokenType.Comment, sb.ToString(), onToken);
-                sb.Clear();
+                _sb.Append((char)_reader.Read());
+                EmitToken(CSharpTokenType.Comment);
                 state = State.Start;
             }
         }
     }
 
-    private static void ProcessInOperator(char c, ref State state, StringBuilder sb, Action<CSharpToken> onToken, TextReader reader)
+    private void ProcessInOperator(char c, ref State state)
     {
-        string current = sb.ToString();
+        string current = _sb.ToString();
         string combined = current + c;
 
         // Check if the combined string forms a valid multi-character operator
         if (IsMultiCharOperator(combined))
         {
-            sb.Append(c);
+            _sb.Append(c);
             // Check if we can form an even longer operator
-            int next = reader.Peek();
+            int next = _reader.Peek();
             if (next != -1)
             {
                 string further = combined + (char)next;
@@ -400,28 +359,28 @@ public static class CSharpTokenizer
                 }
             }
             // Emit the operator
-            EmitOperatorToken(sb.ToString(), onToken);
-            sb.Clear();
+            EmitOperatorToken(_sb.ToString());
+            _sb.Clear();
             state = State.Start;
         }
         else if (IsOperatorChar(c))
         {
             // Emit the current operator and start a new one
-            EmitOperatorToken(current, onToken);
-            sb.Clear();
-            sb.Append(c);
+            EmitOperatorToken(current);
+            _sb.Clear();
+            _sb.Append(c);
         }
         else
         {
             // Emit the current operator and process this character
-            EmitOperatorToken(current, onToken);
-            sb.Clear();
+            EmitOperatorToken(current);
+            _sb.Clear();
             state = State.Start;
             bool tempEscape = false;
-            ProcessChar(c, ref state, ref tempEscape, sb, onToken, reader);
+            ProcessChar(c, ref state, ref tempEscape);
         }
     }
-    
+
     private static bool IsOperatorChar(char c)
     {
         return c == '=' || c == '!' || c == '<' || c == '>' || c == '+' || c == '-' ||
@@ -437,7 +396,7 @@ public static class CSharpTokenizer
                op == "??" || op == "?." || op == "?[" || op == "=>" || op == "->>" || op == "<<=" || op == ">>=";
     }
 
-    private static void EmitOperatorToken(string value, Action<CSharpToken> onToken)
+    private void EmitOperatorToken(string value)
     {
         CSharpTokenType type = value switch
         {
@@ -457,10 +416,10 @@ public static class CSharpTokenizer
             "%" => CSharpTokenType.Modulo,
             _ => CSharpTokenType.Operator
         };
-        EmitToken(type, value, onToken);
+        EmitToken(type, value);
     }
 
-    private static void EmitPunctuation(char c, Action<CSharpToken> onToken)
+    private void EmitPunctuation(char c)
     {
         CSharpTokenType type = c switch
         {
@@ -470,55 +429,62 @@ public static class CSharpTokenizer
             ';' => CSharpTokenType.SequenceTerminator,
             _ => CSharpTokenType.NotDefined
         };
-        EmitToken(type, c.ToString(), onToken);
+        EmitToken(type, c.ToString());
     }
 
-    private static void EmitIdentifierOrKeyword(string value, Action<CSharpToken> onToken)
+    private void EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
-            EmitToken(CSharpTokenType.Keyword, value, onToken);
+            EmitToken(CSharpTokenType.Keyword, value);
         }
         else
         {
-            EmitToken(CSharpTokenType.Identifier, value, onToken);
+            EmitToken(CSharpTokenType.Identifier, value);
         }
     }
 
-    private static void EmitToken(CSharpTokenType type, string value, Action<CSharpToken> onToken)
+    private void EmitToken(CSharpTokenType type, string value)
     {
-        onToken(new CSharpToken(type, value));
+        _onToken(new CSharpToken(type, value));
     }
 
-    private static void EmitPending(StringBuilder sb, ref State state, Action<CSharpToken> onToken)
+    private void EmitToken(CSharpTokenType type)
     {
-        if (sb.Length > 0)
+        EmitToken(type, _sb.ToString());
+        _sb.Clear();
+    }
+
+    private void EmitPending(ref State state)
+    {
+        if (_sb.Length > 0)
         {
             switch (state)
             {
                 case State.InWhitespace:
-                    EmitToken(CSharpTokenType.Whitespace, sb.ToString(), onToken);
+                    EmitToken(CSharpTokenType.Whitespace);
                     break;
                 case State.InIdentifier:
-                    EmitIdentifierOrKeyword(sb.ToString(), onToken);
+                    EmitIdentifierOrKeyword(_sb.ToString());
+                    _sb.Clear();
                     break;
                 case State.InNumber:
-                    EmitToken(CSharpTokenType.Number, sb.ToString(), onToken);
+                    EmitToken(CSharpTokenType.Number);
                     break;
                 case State.InString:
                 case State.InVerbatimString:
                     // Incomplete string - could emit as NotDefined or StringValue
-                    EmitToken(CSharpTokenType.StringValue, sb.ToString(), onToken);
+                    EmitToken(CSharpTokenType.StringValue);
                     break;
                 case State.InCommentLine:
                 case State.InCommentBlock:
-                    EmitToken(CSharpTokenType.Comment, sb.ToString(), onToken);
+                    EmitToken(CSharpTokenType.Comment);
                     break;
                 case State.InOperator:
-                    EmitOperatorToken(sb.ToString(), onToken);
+                    EmitOperatorToken(_sb.ToString());
+                    _sb.Clear();
                     break;
             }
-            sb.Clear();
         }
         state = State.Start;
     }

@@ -349,7 +349,7 @@ public class JsonTokenizerTests
     {
         var tokens = new List<JsonToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        JsonTokenizer.Parse(stream, token => tokens.Add(token));
+        JsonTokenizer.Create().Parse(stream, token => tokens.Add(token));
         return tokens;
     }
 
@@ -358,7 +358,7 @@ public class JsonTokenizerTests
         var tokens = new List<JsonToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        JsonTokenizer.Parse(reader, stopDelimiter, token => tokens.Add(token));
+        JsonTokenizer.Create().Parse(reader, stopDelimiter, token => tokens.Add(token));
         return tokens;
     }
 }

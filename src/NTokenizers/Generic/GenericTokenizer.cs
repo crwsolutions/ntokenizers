@@ -1,19 +1,31 @@
-﻿using NTokenizers.Markup;
-using System.Text;
+﻿using NTokenizers.Core;
+using NTokenizers.Markup;
 
 namespace NTokenizers.Generic;
-internal class GenericTokenizer
+
+/// <summary>
+/// A generic tokenizer that reads text until a specified stop delimiter is encountered.
+/// </summary>
+public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
 {
-    internal static void Parse(TextReader reader, string stopDelimiter, Action<MarkupToken> onToken)
+    /// <summary>
+    /// Creates a new instance of the <see cref="GenericTokenizer"/> class.
+    /// </summary>
+    public static GenericTokenizer Create() => new GenericTokenizer();
+
+    /// <summary>
+    /// Parses the input text reader and invokes the onToken action for each token found,
+    /// </summary>
+    internal protected override void Parse()
     {
-        var sb = new StringBuilder();
-        int delLength = stopDelimiter.Length;
+        string delimiter = _stopDelimiter ?? string.Empty;
+        int delLength = delimiter.Length;
 
         var delQueue = new Queue<char>();
         bool stoppedByDelimiter = false;
         while (true)
         {
-            int ic = reader.Read();
+            int ic = _reader.Read();
             if (ic == -1)
             {
                 break;
@@ -24,14 +36,14 @@ internal class GenericTokenizer
             if (delQueue.Count > delLength)
             {
                 char toProcess = delQueue.Dequeue();
-                sb.Append(toProcess);
+                _sb.Append(toProcess);
                 if (char.IsWhiteSpace(toProcess))
                 {
-                    EmitPending(sb, onToken);
+                    EmitPending();
                 }
             }
 
-            if (delQueue.Count == delLength && new string(delQueue.ToArray()) == stopDelimiter)
+            if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
             {
                 stoppedByDelimiter = true;
                 break;
@@ -42,18 +54,18 @@ internal class GenericTokenizer
             while (delQueue.Count > 0)
             {
                 char toProcess = delQueue.Dequeue();
-                sb.Append(toProcess);
+                _sb.Append(toProcess);
             }
         }
-        EmitPending(sb, onToken);
+        EmitPending();
     }
 
-    private static void EmitPending(StringBuilder sb, Action<MarkupToken> onToken)
+    private void EmitPending()
     {
-        if (sb.Length > 0)
+        if (_sb.Length > 0)
         {
-            onToken(new MarkupToken(MarkupTokenType.Text, sb.ToString()));
-            sb.Clear();
+            _onToken(new MarkupToken(MarkupTokenType.Text, _sb.ToString()));
+            _sb.Clear();
         }
     }
 }

@@ -1,3 +1,4 @@
+using NTokenizers.Markup.Metadata;
 using System.Diagnostics;
 
 namespace NTokenizers.Markup;

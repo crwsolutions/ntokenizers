@@ -1,5 +1,4 @@
 ﻿using NTokenizers.CSharp;
-using Spectre.Console;
 using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;

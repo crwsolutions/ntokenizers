@@ -1,12 +1,17 @@
-﻿using System.Text;
+﻿using NTokenizers.Core;
 
 namespace NTokenizers.Xml;
 
 /// <summary>
 /// Provides functionality for tokenizing XML or XML-like text sources.
 /// </summary>
-public static class XmlTokenizer
+public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="XmlTokenizer"/> class.
+    /// </summary>
+    public static XmlTokenizer Create() => new();
+
     private enum State
     {
         Text,              // Reading text content
@@ -25,91 +30,13 @@ public static class XmlTokenizer
     }
 
     /// <summary>
-    /// Parses XML or XML-like content from the given <see cref="Stream"/> and
-    /// produces a sequence of <see cref="XmlToken"/> objects.
-    /// </summary>
-    /// <param name="stream">
-    /// The input stream containing the text to tokenize.  
-    /// The stream is read as UTF-8.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="XmlToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="stream"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    /// <example>
-    /// The following example demonstrates how to parse a simple XML snippet:
-    /// <code>
-    /// var xml = "&lt;root&gt;Hello&lt;/root&gt;";
-    /// using var ms = new MemoryStream(Encoding.UTF8.GetBytes(xml));
-    ///
-    /// XmlTokenizer.Parse(ms, token =>
-    /// {
-    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
-    /// });
-    /// </code>
-    /// </example>
-    public static void Parse(Stream stream, Action<XmlToken> onToken)
-    {
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-        Parse(reader, null, onToken);
-    }
-
-    /// <summary>
     /// Parses XML or XML-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="XmlToken"/> objects.
     /// </summary>
-    /// <param name="reader">
-    /// The input reader containing the text to tokenize.
-    /// </param>
-    /// <param name="stopDelimiter">
-    /// An optional string that, when encountered in the input, instructs the tokenizer
-    /// to stop parsing and return control to the caller.  
-    /// This is typically used when the tokenizer is operating as a sub-tokenizer
-    /// inside another language (e.g., XML embedded in Markdown), where parsing should
-    /// stop when reaching a delimiter such as a Markdown code fence (<c>```</c>).
-    /// If <c>null</c>, the tokenizer parses until the end of the stream.
-    /// </param>
-    /// <param name="onToken">
-    /// A callback invoked for each <see cref="XmlToken"/> produced during parsing.
-    /// This delegate must not be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="reader"/> or <paramref name="onToken"/> is <c>null</c>.
-    /// </exception>
-    /// <example>
-    /// The following example demonstrates how to parse a simple XML snippet:
-    /// <code>
-    /// var xml = "&lt;root&gt;Hello&lt;/root&gt;";
-    /// using var sr = new StringReader(xml);
-    ///
-    /// XmlTokenizer.Parse(sr, null, token =>
-    /// {
-    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
-    /// });
-    /// </code>
-    ///
-    /// The next example shows parsing XML that is embedded inside Markdown.
-    /// The tokenizer stops when the code fence delimiter is reached:
-    /// <code>
-    /// var markdown = "```xml\n&lt;root&gt;Hi&lt;/root&gt;\n``` more text";
-    ///
-    /// using var sr = new StringReader(markdown);
-    ///
-    /// // We want to parse only until the closing code fence appears.
-    /// XmlTokenizer.Parse(sr, "```", token =>
-    /// {
-    ///     Console.WriteLine($"{token.Kind}: {token.Value}");
-    /// });
-    /// </code>
-    /// </example>
-    public static void Parse(TextReader reader, string? stopDelimiter, Action<XmlToken> onToken)
+    internal protected override void Parse()
     {
-        var sb = new StringBuilder();
         var state = State.Text;
-        string delimiter = stopDelimiter ?? string.Empty;
+        string delimiter = _stopDelimiter ?? string.Empty;
         int delLength = delimiter.Length;
         char? quoteChar = null;
         bool insideTag = false;
@@ -121,14 +48,14 @@ public static class XmlTokenizer
         {
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
-                    EmitPending(sb, state, onToken);
+                    EmitPending(state);
                     break;
                 }
                 char c = (char)ic;
-                ProcessChar(c, ref state, sb, onToken, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
+                ProcessChar(c, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
             }
         }
         else
@@ -138,7 +65,7 @@ public static class XmlTokenizer
 
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
                     break;
@@ -149,7 +76,7 @@ public static class XmlTokenizer
                 if (delQueue.Count > delLength)
                 {
                     char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, sb, onToken, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
+                    ProcessChar(toProcess, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
                 }
 
                 if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
@@ -164,77 +91,77 @@ public static class XmlTokenizer
                 while (delQueue.Count > 0)
                 {
                     char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, sb, onToken, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
+                    ProcessChar(toProcess, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
                 }
             }
 
-            EmitPending(sb, state, onToken);
+            EmitPending(state);
         }
     }
 
-    private static void ProcessChar(char c, ref State state, StringBuilder sb, Action<XmlToken> onToken, 
-                                    ref char? quoteChar, ref bool insideTag, ref bool seenElementName, ref int depth, ref bool isClosingTag)
+    private void ProcessChar(char c, ref State state, ref char? quoteChar, ref bool insideTag,
+                                    ref bool seenElementName, ref int depth, ref bool isClosingTag)
     {
         switch (state)
         {
             case State.Text:
                 if (c == '<')
                 {
-                    if (sb.Length > 0)
+                    if (_sb.Length > 0)
                     {
-                        onToken(new XmlToken(XmlTokenType.Text, sb.ToString()));
-                        sb.Clear();
+                        _onToken(new XmlToken(XmlTokenType.Text, _sb.ToString()));
+                        _sb.Clear();
                     }
-                    sb.Append(c);
+                    _sb.Append(c);
                     state = State.TagStart;
                 }
-                else if (IsWhitespace(c) && sb.Length == 0 && depth == 0)
+                else if (IsWhitespace(c) && _sb.Length == 0 && depth == 0)
                 {
                     // Whitespace at document level (between elements, not inside)
-                    sb.Append(c);
+                    _sb.Append(c);
                     state = State.InWhitespace;
                 }
                 else
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                 }
                 break;
 
             case State.TagStart:
-                sb.Append(c);
-                if (sb.ToString() == "<?")
+                _sb.Append(c);
+                if (_sb.ToString() == "<?")
                 {
                     state = State.InProcessingInstruction;
                 }
-                else if (sb.ToString() == "<!-")
+                else if (_sb.ToString() == "<!-")
                 {
                     // Continue reading for comment
                 }
-                else if (sb.ToString() == "<!--")
+                else if (_sb.ToString() == "<!--")
                 {
                     state = State.InComment;
                 }
-                else if (sb.ToString().StartsWith("<!["))
+                else if (_sb.ToString().StartsWith("<!["))
                 {
-                    if (sb.ToString() == "<![CDATA[")
+                    if (_sb.ToString() == "<![CDATA[")
                     {
                         state = State.InCData;
                     }
                     // else continue reading
                 }
-                else if (sb.Length > 2 && sb[1] == '!' && char.IsLetter(sb[2]))
+                else if (_sb.Length > 2 && _sb[1] == '!' && char.IsLetter(_sb[2]))
                 {
                     // DOCTYPE
                     state = State.InDocType;
                 }
-                else if (sb.Length == 2)
+                else if (_sb.Length == 2)
                 {
                     if (c == '/')
                     {
                         // End tag: </
-                        onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
-                        onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
-                        sb.Clear();
+                        _onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
+                        _onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
+                        _sb.Clear();
                         insideTag = true;
                         seenElementName = false;
                         isClosingTag = true;
@@ -243,8 +170,8 @@ public static class XmlTokenizer
                     else if (IsWhitespace(c))
                     {
                         // < followed by whitespace
-                        onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
-                        sb.Remove(0, 1); // remove the '<'
+                        _onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
+                        _sb.Remove(0, 1); // remove the '<'
                         insideTag = true;
                         seenElementName = false;
                         isClosingTag = false;
@@ -253,8 +180,8 @@ public static class XmlTokenizer
                     else if (IsNameStartChar(c))
                     {
                         // Regular opening tag: <name
-                        onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
-                        sb.Remove(0, 1); // remove the '<'
+                        _onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
+                        _sb.Remove(0, 1); // remove the '<'
                         insideTag = true;
                         seenElementName = false;
                         isClosingTag = false;
@@ -266,20 +193,20 @@ public static class XmlTokenizer
             case State.InTagName:
                 if (IsNameChar(c))
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                 }
                 else
                 {
-                    if (sb.Length > 0)
+                    if (_sb.Length > 0)
                     {
-                        onToken(new XmlToken(XmlTokenType.ElementName, sb.ToString()));
+                        _onToken(new XmlToken(XmlTokenType.ElementName, _sb.ToString()));
                         seenElementName = true;
-                        sb.Clear();
+                        _sb.Clear();
                     }
-                    
+
                     if (c == '>')
                     {
-                        onToken(new XmlToken(XmlTokenType.ClosingAngleBracket, ">"));
+                        _onToken(new XmlToken(XmlTokenType.ClosingAngleBracket, ">"));
                         insideTag = false;
                         seenElementName = false;
                         if (isClosingTag)
@@ -296,12 +223,12 @@ public static class XmlTokenizer
                     }
                     else if (c == '/')
                     {
-                        onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
+                        _onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
                         state = State.AfterTagName;
                     }
                     else if (IsWhitespace(c))
                     {
-                        sb.Append(c);
+                        _sb.Append(c);
                         state = State.InWhitespace;
                     }
                 }
@@ -310,24 +237,24 @@ public static class XmlTokenizer
             case State.InWhitespace:
                 if (IsWhitespace(c))
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                 }
                 else
                 {
-                    if (sb.Length > 0)
+                    if (_sb.Length > 0)
                     {
-                        onToken(new XmlToken(XmlTokenType.Whitespace, sb.ToString()));
-                        sb.Clear();
+                        _onToken(new XmlToken(XmlTokenType.Whitespace, _sb.ToString()));
+                        _sb.Clear();
                     }
 
                     if (c == '<')
                     {
-                        sb.Append(c);
+                        _sb.Append(c);
                         state = State.TagStart;
                     }
                     else if (c == '>')
                     {
-                        onToken(new XmlToken(XmlTokenType.ClosingAngleBracket, ">"));
+                        _onToken(new XmlToken(XmlTokenType.ClosingAngleBracket, ">"));
                         insideTag = false;
                         seenElementName = false;
                         if (isClosingTag)
@@ -343,23 +270,23 @@ public static class XmlTokenizer
                     }
                     else if (c == '/')
                     {
-                        onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
+                        _onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
                         state = State.AfterTagName;
                     }
                     else if (c == '=')
                     {
-                        onToken(new XmlToken(XmlTokenType.AttributeEquals, "="));
+                        _onToken(new XmlToken(XmlTokenType.AttributeEquals, "="));
                         state = State.AfterEquals;
                     }
                     else if (c == '"' || c == '\'')
                     {
                         quoteChar = c;
-                        onToken(new XmlToken(XmlTokenType.AttributeQuote, c.ToString()));
+                        _onToken(new XmlToken(XmlTokenType.AttributeQuote, c.ToString()));
                         state = State.InAttributeValue;
                     }
                     else if (IsNameStartChar(c))
                     {
-                        sb.Append(c);
+                        _sb.Append(c);
                         if (!seenElementName && insideTag)
                         {
                             state = State.InTagName;
@@ -375,7 +302,7 @@ public static class XmlTokenizer
             case State.AfterTagName:
                 if (c == '>')
                 {
-                    onToken(new XmlToken(XmlTokenType.ClosingAngleBracket, ">"));
+                    _onToken(new XmlToken(XmlTokenType.ClosingAngleBracket, ">"));
                     insideTag = false;
                     seenElementName = false;
                     // Self-closing tag or closing tag after attributes - don't change depth for self-closing
@@ -389,12 +316,12 @@ public static class XmlTokenizer
                 }
                 else if (c == '/')
                 {
-                    onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
+                    _onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
                     // Stay in AfterTagName to handle the closing '>'
                 }
                 else if (IsWhitespace(c))
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                     state = State.InWhitespace;
                 }
                 break;
@@ -402,24 +329,24 @@ public static class XmlTokenizer
             case State.InAttributeName:
                 if (IsNameChar(c))
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                 }
                 else
                 {
-                    if (sb.Length > 0)
+                    if (_sb.Length > 0)
                     {
-                        onToken(new XmlToken(XmlTokenType.AttributeName, sb.ToString()));
-                        sb.Clear();
+                        _onToken(new XmlToken(XmlTokenType.AttributeName, _sb.ToString()));
+                        _sb.Clear();
                     }
 
                     if (c == '=')
                     {
-                        onToken(new XmlToken(XmlTokenType.AttributeEquals, "="));
+                        _onToken(new XmlToken(XmlTokenType.AttributeEquals, "="));
                         state = State.AfterEquals;
                     }
                     else if (IsWhitespace(c))
                     {
-                        sb.Append(c);
+                        _sb.Append(c);
                         state = State.InWhitespace;
                     }
                 }
@@ -429,12 +356,12 @@ public static class XmlTokenizer
                 if (c == '"' || c == '\'')
                 {
                     quoteChar = c;
-                    onToken(new XmlToken(XmlTokenType.AttributeQuote, c.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.AttributeQuote, c.ToString()));
                     state = State.InAttributeValue;
                 }
                 else if (IsWhitespace(c))
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                     state = State.InWhitespace;
                 }
                 break;
@@ -442,80 +369,80 @@ public static class XmlTokenizer
             case State.InAttributeValue:
                 if (c == quoteChar)
                 {
-                    onToken(new XmlToken(XmlTokenType.AttributeValue, sb.ToString()));
-                    sb.Clear();
-                    onToken(new XmlToken(XmlTokenType.AttributeQuote, c.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.AttributeValue, _sb.ToString()));
+                    _sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.AttributeQuote, c.ToString()));
                     quoteChar = null;
                     state = State.AfterTagName;
                 }
                 else
                 {
-                    sb.Append(c);
+                    _sb.Append(c);
                 }
                 break;
 
             case State.InComment:
-                sb.Append(c);
-                if (sb.ToString().EndsWith("-->"))
+                _sb.Append(c);
+                if (_sb.ToString().EndsWith("-->"))
                 {
-                    onToken(new XmlToken(XmlTokenType.Comment, sb.ToString()));
-                    sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.Comment, _sb.ToString()));
+                    _sb.Clear();
                     state = State.Text;
                 }
                 break;
 
             case State.InProcessingInstruction:
-                sb.Append(c);
-                if (sb.ToString().EndsWith("?>"))
+                _sb.Append(c);
+                if (_sb.ToString().EndsWith("?>"))
                 {
-                    onToken(new XmlToken(XmlTokenType.ProcessingInstruction, sb.ToString()));
-                    sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.ProcessingInstruction, _sb.ToString()));
+                    _sb.Clear();
                     state = State.Text;
                 }
                 break;
 
             case State.InDocType:
-                sb.Append(c);
+                _sb.Append(c);
                 if (c == '>')
                 {
-                    onToken(new XmlToken(XmlTokenType.DocumentTypeDeclaration, sb.ToString()));
-                    sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.DocumentTypeDeclaration, _sb.ToString()));
+                    _sb.Clear();
                     state = State.Text;
                 }
                 break;
 
             case State.InCData:
-                sb.Append(c);
-                if (sb.ToString().EndsWith("]]>"))
+                _sb.Append(c);
+                if (_sb.ToString().EndsWith("]]>"))
                 {
-                    onToken(new XmlToken(XmlTokenType.CData, sb.ToString()));
-                    sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.CData, _sb.ToString()));
+                    _sb.Clear();
                     state = State.Text;
                 }
                 break;
         }
     }
 
-    private static void EmitPending(StringBuilder sb, State state, Action<XmlToken> onToken)
+    private void EmitPending(State state)
     {
-        if (sb.Length > 0)
+        if (_sb.Length > 0)
         {
             switch (state)
             {
                 case State.Text:
-                    onToken(new XmlToken(XmlTokenType.Text, sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.Text, _sb.ToString()));
                     break;
                 case State.InWhitespace:
-                    onToken(new XmlToken(XmlTokenType.Whitespace, sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.Whitespace, _sb.ToString()));
                     break;
                 case State.InTagName:
-                    onToken(new XmlToken(XmlTokenType.ElementName, sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.ElementName, _sb.ToString()));
                     break;
                 case State.InAttributeName:
-                    onToken(new XmlToken(XmlTokenType.AttributeName, sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.AttributeName, _sb.ToString()));
                     break;
             }
-            sb.Clear();
+            _sb.Clear();
         }
     }
 
