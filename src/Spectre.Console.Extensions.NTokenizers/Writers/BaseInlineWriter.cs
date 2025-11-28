@@ -1,4 +1,4 @@
-﻿using NTokenizers;
+﻿using NTokenizers.Core;
 using NTokenizers.Markup;
 using Spectre.Console.Rendering;
 using System.Diagnostics;

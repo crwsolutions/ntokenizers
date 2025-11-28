@@ -1,4 +1,6 @@
-﻿namespace NTokenizers.Xml;
+﻿using NTokenizers.Core;
+
+namespace NTokenizers.Xml;
 
 /// <summary>
 /// Represents an XML token with its type and value.

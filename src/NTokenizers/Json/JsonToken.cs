@@ -1,3 +1,5 @@
+using NTokenizers.Core;
+
 namespace NTokenizers.Json;
 
 /// <summary>
