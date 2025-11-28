@@ -429,57 +429,35 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
     {
         try
         {
-            switch (metadata)
+            if (metadata is IInlineMarkupMedata inlineMarkupMedata)
             {
-                case CSharpCodeBlockMetadata csharpMeta:
-                    while (csharpMeta.OnInlineToken is null)
-                    {
-                        Thread.Sleep(3);
-                    }
-                    CSharpTokenizer.Create().Parse(_reader, "```", csharpMeta.OnInlineToken);
-                    csharpMeta.IsProcessing = false;
-                    break;
-                case JsonCodeBlockMetadata jsonMeta:
-                    while (jsonMeta.OnInlineToken is null)
-                    {
-                        Thread.Sleep(3);
-                    }
-                    Json.JsonTokenizer.Create().Parse(_reader, "```", jsonMeta.OnInlineToken);
-                    jsonMeta.IsProcessing = false;
-                    break;
-                case XmlCodeBlockMetadata xmlMeta:
-                    while (xmlMeta.OnInlineToken is null)
-                    {
-                        Thread.Sleep(3);
-                    }
-                    Xml.XmlTokenizer.Create().Parse(_reader, "```", xmlMeta.OnInlineToken);
-                    xmlMeta.IsProcessing = false;
-                    break;
-                case SqlCodeBlockMetadata sqlMeta:
-                    while (sqlMeta.OnInlineToken is null)
-                    {
-                        Thread.Sleep(3);
-                    }
-                    Sql.SqlTokenizer.Create().Parse(_reader, "```", sqlMeta.OnInlineToken);
-                    sqlMeta.IsProcessing = false;
-                    break;
-                case TypeScriptCodeBlockMetadata tsMeta:
-                    while (tsMeta.OnInlineToken is null)
-                    {
-                        Thread.Sleep(3);
-                    }
-                    Typescript.TypescriptTokenizer.Create().Parse(_reader, "```", tsMeta.OnInlineToken);
-                    tsMeta.IsProcessing = false;
-                    break;
-                case GenericCodeBlockMetadata gMeta:
-                    while (gMeta.OnInlineToken is null)
-                    {
-                        Thread.Sleep(3);
-                    }
-                    Generic.GenericTokenizer.Create().Parse(_reader, "```", gMeta.OnInlineToken);
-                    gMeta.IsProcessing = false;
-                    break;
+                inlineMarkupMedata.WaitForCallbackClient();
+
+                switch (metadata)
+                {
+                    case CSharpCodeBlockMetadata csharpMeta:
+                        CSharpTokenizer.Create().Parse(_reader, "```", csharpMeta.OnInlineToken!);
+                        break;
+                    case JsonCodeBlockMetadata jsonMeta:
+                        Json.JsonTokenizer.Create().Parse(_reader, "```", jsonMeta.OnInlineToken!);
+                        break;
+                    case XmlCodeBlockMetadata xmlMeta:
+                        Xml.XmlTokenizer.Create().Parse(_reader, "```", xmlMeta.OnInlineToken!);
+                        break;
+                    case SqlCodeBlockMetadata sqlMeta:
+                        Sql.SqlTokenizer.Create().Parse(_reader, "```", sqlMeta.OnInlineToken!);
+                        break;
+                    case TypeScriptCodeBlockMetadata tsMeta:
+                        Typescript.TypescriptTokenizer.Create().Parse(_reader, "```", tsMeta.OnInlineToken!);
+                        break;
+                    case GenericCodeBlockMetadata gMeta:
+                        Generic.GenericTokenizer.Create().Parse(_reader, "```", gMeta.OnInlineToken!);
+                        break;
+                }
+
+                inlineMarkupMedata.IsProcessing = false;
             }
+
         }
         catch
         {

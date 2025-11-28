@@ -11,18 +11,55 @@ public abstract class MarkupMetadata;
 /// <summary>
 /// Markup metadata with inline tokenization support.
 /// </summary>
-public abstract class InlineMarkupMetadata<TToken>() : MarkupMetadata
+public abstract class InlineMarkupMetadata<TToken>() : MarkupMetadata, IInlineMarkupMedata
 {
-    /// <summary>
-    /// Is true if there are still more tokens to be processed in the code block, else false.
-    /// </summary>
+    /// <intheritdoc/>
     public bool IsProcessing { get; set; } = true;
+
+    private readonly ManualResetEventSlim _callbackReady = new();
 
     /// <summary>
     /// Optional callback to stream syntax-highlighted tokens from the code block.
     /// When set, the tokenizer will delegate to language-specific tokenizers and emit tokens via this callback.
     /// </summary>
-    public Action<TToken>? OnInlineToken { get; set; }
+    public Action<TToken>? OnInlineToken
+    {
+        get => _onInlineToken;
+        set
+        {
+            _onInlineToken = value;
+            if (value is not null)
+            {
+                _callbackReady.Set();
+            }
+        }
+    }
+    private Action<TToken>? _onInlineToken;
+
+    /// <intheritdoc/>
+    public void WaitForCallbackClient()
+    {
+        if (!_callbackReady.Wait(1000))
+        {
+            throw new TimeoutException("Callback client was never assigned.");
+        }
+    }
+}
+
+/// <summary>
+/// Metadata interface for inline tokens.
+/// </summary>
+public interface  IInlineMarkupMedata
+{
+    /// <summary>
+    /// Is true if there are still more tokens to be processed in the code block, else false.
+    /// </summary>
+    bool IsProcessing { get; set; }
+
+    /// <summary>
+    /// Waits until the OnInlineToken callback is set by the client.
+    /// </summary>
+    void WaitForCallbackClient();
 }
 
 /// <summary>
