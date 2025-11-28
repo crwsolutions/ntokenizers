@@ -1,9 +1,9 @@
 # NTokenizers
-Collection of tokenizers for JSON, XML, SQL, Typescript, CSharp and Markup processing
+Collection of tokenizers for Markup, JSON, XML, SQL, Typescript and CSharp processing
 
 ## Overview
 
-NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like XML, JSON, and HTML. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markup, JSON, XML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
 
 > [!WARNING] 
@@ -13,7 +13,6 @@ NTokenizers is a .NET library written in C# that provides tokenizers for process
 
 Here's a simple example showing how to use the XML tokenizer:
 
-```csharp
 ```csharp
 using System;
 using System.IO.Pipes;
