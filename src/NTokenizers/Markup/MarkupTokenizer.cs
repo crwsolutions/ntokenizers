@@ -460,7 +460,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     {
                         Thread.Sleep(3);
                     }
-                    Sql.SqlTokenizer.Parse(_reader, "```", sqlMeta.OnInlineToken);
+                    Sql.SqlTokenizer.Create().Parse(_reader, "```", sqlMeta.OnInlineToken);
                     sqlMeta.IsProcessing = false;
                     break;
                 case TypeScriptCodeBlockMetadata tsMeta:

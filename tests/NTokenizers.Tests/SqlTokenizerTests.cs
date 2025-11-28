@@ -500,7 +500,7 @@ public class SqlTokenizerTests
     {
         var tokens = new List<SqlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        SqlTokenizer.Parse(stream, token => tokens.Add(token));
+        SqlTokenizer.Create().Parse(stream, token => tokens.Add(token));
         return tokens;
     }
 
@@ -515,7 +515,7 @@ public class SqlTokenizerTests
         var tokens = new List<SqlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        SqlTokenizer.Parse(reader, stopDelimiter, token => tokens.Add(token));
+        SqlTokenizer.Create().Parse(reader, stopDelimiter, token => tokens.Add(token));
         return tokens;
     }
 
