@@ -444,7 +444,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     {
                         Thread.Sleep(3);
                     }
-                    Json.JsonTokenizer.Parse(_reader, "```", jsonMeta.OnInlineToken);
+                    Json.JsonTokenizer.Create().Parse(_reader, "```", jsonMeta.OnInlineToken);
                     jsonMeta.IsProcessing = false;
                     break;
                 case XmlCodeBlockMetadata xmlMeta:
