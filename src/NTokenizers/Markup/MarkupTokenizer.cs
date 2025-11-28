@@ -476,7 +476,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     {
                         Thread.Sleep(3);
                     }
-                    Generic.GenericTokenizer.Parse(_reader, "```", gMeta.OnInlineToken);
+                    Generic.GenericTokenizer.Create().Parse(_reader, "```", gMeta.OnInlineToken);
                     gMeta.IsProcessing = false;
                     break;
             }
