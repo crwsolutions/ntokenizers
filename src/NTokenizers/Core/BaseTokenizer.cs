@@ -8,9 +8,20 @@ namespace NTokenizers.Core;
 /// <typeparam name="TToken">The type of token to be produced by the tokenizer.</typeparam>
 public abstract class BaseTokenizer<TToken> where TToken : IToken
 {
-    protected TextReader _reader = default!;
-    protected Action<TToken> _onToken = default!;
-    protected readonly StringBuilder _sb = new();
+    /// <summary>
+    /// The text reader for the input stream.
+    /// </summary>
+    internal protected TextReader _reader = default!;
+
+    /// <summary>
+    /// The action to invoke for each token found.
+    /// </summary>
+    internal protected Action<TToken> _onToken = default!;
+
+    /// <summary>
+    /// The internal buffer for accumulating characters.
+    /// </summary>
+    internal protected readonly StringBuilder _sb = new();
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
