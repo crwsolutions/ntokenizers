@@ -3,7 +3,7 @@ using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class MarkupOrderedListItemWriter(MarkupOrderedListItemStyles styles)
+internal sealed class MarkupOrderedListItemWriter(MarkupOrderedListItemStyles styles)
 {
     internal void Write(OrderedListItemMetadata metadata)
     {

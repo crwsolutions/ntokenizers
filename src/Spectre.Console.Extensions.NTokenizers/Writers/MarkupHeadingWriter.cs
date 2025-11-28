@@ -4,7 +4,7 @@ using Spectre.Console.Rendering;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInlineWriter<MarkupToken, MarkupTokenType>
+internal sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
     private Style _style = default!;
     private int _lenght = 0;

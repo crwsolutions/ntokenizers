@@ -2,9 +2,9 @@
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public static class MarkupEmojiWriter
+internal static class MarkupEmojiWriter
 {
-    public static void Write(EmojiMetadata emojiMeta)
+    internal static void Write(EmojiMetadata emojiMeta)
     {
         AnsiConsole.Write(emojiMeta.Name);
     }

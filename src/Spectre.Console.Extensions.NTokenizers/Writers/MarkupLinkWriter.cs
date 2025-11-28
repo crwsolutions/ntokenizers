@@ -2,9 +2,9 @@
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public static class MarkupLinkWriter
+internal static class MarkupLinkWriter
 {
-    public static void Write(LinkMetadata linkMeta)
+    internal static void Write(LinkMetadata linkMeta)
     {
         AnsiConsole.Write($"[{linkMeta.Title}]({linkMeta.Url})");
     }

@@ -3,7 +3,7 @@ using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class MarkupListItemWriter(MarkupListItemStyles styles)
+internal sealed class MarkupListItemWriter(MarkupListItemStyles styles)
 {
     internal void Write(ListItemMetadata metadata)
     {
