@@ -1,6 +1,7 @@
 ﻿using NTokenizers.Markup;
 using NTokenizers.Markup.Metadata;
 using Spectre.Console.Extensions.NTokenizers.Styles;
+using System.Diagnostics;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
@@ -91,6 +92,12 @@ public static class MarkupWriter
 
     private static void Write(Paragraph? liveTarget, string value, Style? style = null)
     {
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+        Debug.WriteLine($"Writing token: `{value}` with style `[{style?.Foreground}/{style?.Background}]`");
+
         var text = Markup.Escape(value);
         if (liveTarget is not null)
         {
