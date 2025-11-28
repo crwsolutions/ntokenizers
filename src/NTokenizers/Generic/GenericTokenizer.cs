@@ -1,4 +1,5 @@
 ﻿using NTokenizers.Core;
+using NTokenizers.Extensions;
 using NTokenizers.Markup;
 
 namespace NTokenizers.Generic;
@@ -44,7 +45,7 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
                 }
             }
 
-            if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
+            if (delQueue.IsEqualTo(delimiter))
             {
                 stoppedByDelimiter = true;
                 break;

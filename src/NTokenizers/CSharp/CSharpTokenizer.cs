@@ -1,4 +1,5 @@
 using NTokenizers.Core;
+using NTokenizers.Extensions;
 
 namespace NTokenizers.CSharp;
 
@@ -79,7 +80,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                     char toProcess = delQueue.Dequeue();
                     ProcessChar(toProcess, ref state, ref escape);
                 }
-                if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
+                if (delQueue.IsEqualTo(delimiter))
                 {
                     stoppedByDelimiter = true;
                     break;

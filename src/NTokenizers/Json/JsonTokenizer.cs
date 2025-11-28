@@ -1,4 +1,5 @@
 using NTokenizers.Core;
+using NTokenizers.Extensions;
 
 namespace NTokenizers.Json;
 
@@ -59,7 +60,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
                     char toProcess = delQueue.Dequeue();
                     ProcessChar(toProcess, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, stack);
                 }
-                if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
+                if (delQueue.IsEqualTo(delimiter))
                 {
                     stoppedByDelimiter = true;
                     break;

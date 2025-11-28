@@ -1,4 +1,5 @@
 using NTokenizers.Core;
+using NTokenizers.Extensions;
 
 namespace NTokenizers.Typescript;
 
@@ -10,7 +11,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     /// <summary>
     /// Creates a new instance of the <see cref="TypescriptTokenizer"/> class.
     /// </summary>
-    public static TypescriptTokenizer Create() => new TypescriptTokenizer();
+    public static TypescriptTokenizer Create() => new();
 
     private static readonly HashSet<string> Keywords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -33,10 +34,6 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     /// </summary>
     internal protected override void Parse()
     {
-        var sb = _sb;
-        var reader = _reader;
-        var onToken = _onToken;
-
         var state = State.Start;
         char? stringDelimiter = null;
         string delimiter = _stopDelimiter ?? string.Empty;
@@ -46,7 +43,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         {
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
                     EmitPending(state);
@@ -62,7 +59,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
             bool stoppedByDelimiter = false;
             while (true)
             {
-                int ic = reader.Read();
+                int ic = _reader.Read();
                 if (ic == -1)
                 {
                     break;
@@ -74,7 +71,8 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                     char toProcess = delQueue.Dequeue();
                     ProcessChar(toProcess, ref state, ref stringDelimiter);
                 }
-                if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
+
+                if (delQueue.IsEqualTo(delimiter))
                 {
                     stoppedByDelimiter = true;
                     break;

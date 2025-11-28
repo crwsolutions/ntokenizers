@@ -1,4 +1,5 @@
 using NTokenizers.Core;
+using NTokenizers.Extensions;
 
 namespace NTokenizers.Sql;
 
@@ -81,7 +82,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                     state = ProcessChar(toProcess, state, ref stringQuote);
                 }
 
-                if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
+                if (delQueue.IsEqualTo(delimiter))
                 {
                     stoppedByDelimiter = true;
                     break;
@@ -106,38 +107,18 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         }
     }
 
-    private State ProcessChar(char c, State state, ref char stringQuote)
+    private State ProcessChar(char c, State state, ref char stringQuote) => state switch
     {
-        switch (state)
-        {
-            case State.Start:
-                return ProcessStart(c, ref stringQuote);
-
-            case State.InString:
-                return ProcessInString(c, stringQuote);
-
-            case State.InNumber:
-                return ProcessInNumber(c);
-
-            case State.InIdentifier:
-                return ProcessInIdentifier(c);
-
-            case State.InOperator:
-                return ProcessInOperator(c);
-
-            case State.InLineComment:
-                return ProcessInLineComment(c);
-
-            case State.InBlockComment:
-                return ProcessInBlockComment(c);
-
-            case State.InWhitespace:
-                return ProcessInWhitespace(c, ref stringQuote);
-
-            default:
-                return State.Start;
-        }
-    }
+        State.Start => ProcessStart(c, ref stringQuote),
+        State.InString => ProcessInString(c, stringQuote),
+        State.InNumber => ProcessInNumber(c),
+        State.InIdentifier => ProcessInIdentifier(c),
+        State.InOperator => ProcessInOperator(c),
+        State.InLineComment => ProcessInLineComment(c),
+        State.InBlockComment => ProcessInBlockComment(c),
+        State.InWhitespace => ProcessInWhitespace(c, ref stringQuote),
+        _ => State.Start,
+    };
 
     private State ProcessStart(char c, ref char stringQuote)
     {

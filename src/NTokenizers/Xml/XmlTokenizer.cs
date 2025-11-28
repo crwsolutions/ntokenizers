@@ -1,4 +1,5 @@
 ﻿using NTokenizers.Core;
+using NTokenizers.Extensions;
 
 namespace NTokenizers.Xml;
 
@@ -79,7 +80,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                     ProcessChar(toProcess, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
                 }
 
-                if (delQueue.Count == delLength && new string(delQueue.ToArray()) == delimiter)
+                if (delQueue.IsEqualTo(delimiter))
                 {
                     stoppedByDelimiter = true;
                     break;
