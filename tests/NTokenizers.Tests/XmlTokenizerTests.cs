@@ -383,13 +383,7 @@ public class XmlTokenizerTests
         Assert.Empty(incorrectAttrTokens);
     }
 
-    private static List<XmlToken> Tokenize(string input)
-    {
-        var tokens = new List<XmlToken>();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        XmlTokenizer.Create().Parse(stream, token => tokens.Add(token));
-        return tokens;
-    }
+    private static List<XmlToken> Tokenize(string input) => XmlTokenizer.Create().Parse(input);
 
     private static List<XmlToken> Tokenize(string input, string stopDelimiter)
     {

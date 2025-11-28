@@ -554,13 +554,7 @@ public class TypescriptTokenizerTests
         Assert.True(dots.Count >= 1);
     }
 
-    private static List<TypescriptToken> Tokenize(string input)
-    {
-        var tokens = new List<TypescriptToken>();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        TypescriptTokenizer.Create().Parse(stream, token => tokens.Add(token));
-        return tokens;
-    }
+    private static List<TypescriptToken> Tokenize(string input) => TypescriptTokenizer.Create().Parse(input);
 
     private static List<TypescriptToken> Tokenize(string input, string? stopDelimiter)
     {

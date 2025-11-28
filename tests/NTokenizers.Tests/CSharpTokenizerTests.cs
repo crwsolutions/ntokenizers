@@ -652,13 +652,7 @@ int x = 5; /* Block comment */ int y = 10;";
         Assert.Contains(tokens, t => t.TokenType == CSharpTokenType.Operator && t.Value == "+=");
     }
 
-    private static List<CSharpToken> Tokenize(string input)
-    {
-        var tokens = new List<CSharpToken>();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        CSharpTokenizer.Create().Parse(stream, token => tokens.Add(token));
-        return tokens;
-    }
+    private static List<CSharpToken> Tokenize(string input) => CSharpTokenizer.Create().Parse(input);
 
     private static List<CSharpToken> Tokenize(string input, string stopDelimiter)
     {

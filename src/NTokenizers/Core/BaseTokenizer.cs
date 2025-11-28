@@ -1,6 +1,7 @@
 ﻿using System.Text;
 
 namespace NTokenizers.Core;
+
 /// <summary>
 /// Abstract base class for tokenizers that provides common functionality for parsing text streams.
 /// </summary>
@@ -21,6 +22,19 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
         _reader = new StreamReader(stream);
         _onToken = onToken;
         Parse();
+    }
+
+    /// <summary>
+    /// Parses the input string and returns a list of tokens found.
+    /// </summary>
+    /// <param name="input">The input string to parse.</param>
+    /// <returns>A list of tokens found in the input string.</returns>
+    public List<TToken> Parse(string input)
+    {
+        var tokens = new List<TToken>();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
+        Parse(stream, tokens.Add);
+        return tokens;
     }
 
     /// <summary>

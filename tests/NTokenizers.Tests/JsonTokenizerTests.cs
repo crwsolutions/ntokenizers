@@ -345,13 +345,7 @@ public class JsonTokenizerTests
         Assert.Equal("}", tokens[6].Value);
     }
 
-    private static List<JsonToken> Tokenize(string input)
-    {
-        var tokens = new List<JsonToken>();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        JsonTokenizer.Create().Parse(stream, token => tokens.Add(token));
-        return tokens;
-    }
+    private static List<JsonToken> Tokenize(string input) => JsonTokenizer.Create().Parse(input);
 
     private static List<JsonToken> Tokenize(string input, string stopDelimiter)
     {

@@ -496,17 +496,11 @@ public class SqlTokenizerTests
         Assert.Equal("  \t\n ", whitespaceTokens[0].Value);
     }
 
-    private static List<SqlToken> Tokenize(string input)
-    {
-        var tokens = new List<SqlToken>();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        SqlTokenizer.Create().Parse(stream, token => tokens.Add(token));
-        return tokens;
-    }
+    private static List<SqlToken> Tokenize(string input) => SqlTokenizer.Create().Parse(input);
 
     private static List<SqlToken> TokenizeWithoutWhitespace(string input)
     {
-        var tokens = Tokenize(input);
+        var tokens = SqlTokenizer.Create().Parse(input);
         return tokens.Where(t => t.TokenType != SqlTokenType.Whitespace).ToList();
     }
 
