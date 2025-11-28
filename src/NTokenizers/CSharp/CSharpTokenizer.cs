@@ -94,20 +94,9 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                 }
             }
 
-            if (stoppedByDelimiter && _sb.Length > 0)
+            if (stoppedByDelimiter)
             {
-                if (_sb[_sb.Length - 1] == '\n')
-                {
-                    _sb.Length -= 1;
-                    if (_sb.Length > 0 && _sb[_sb.Length - 1] == '\r')
-                    {
-                        _sb.Length -= 1;
-                    }
-                }
-                else if (_sb[_sb.Length - 1] == '\r')
-                {
-                    _sb.Length -= 1;
-                }
+                StripFinalLineFeed();
             }
 
             EmitPending(ref state);

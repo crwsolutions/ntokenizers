@@ -57,6 +57,12 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
                 _sb.Append(toProcess);
             }
         }
+
+        if (stoppedByDelimiter)
+        {
+            StripFinalLineFeed();
+        }
+
         EmitPending();
     }
 

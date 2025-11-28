@@ -73,6 +73,12 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
                     ProcessChar(toProcess, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, stack);
                 }
             }
+
+            if (stoppedByDelimiter)
+            {
+                StripFinalLineFeed();
+            }
+
             EmitPending(ref inString, ref inNumber, ref inKeyword);
         }
     }

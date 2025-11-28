@@ -95,6 +95,11 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                 }
             }
 
+            if (stoppedByDelimiter)
+            {
+                StripFinalLineFeed();
+            }
+
             EmitPending(state);
         }
     }

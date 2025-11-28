@@ -65,4 +65,26 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
         _stopDelimiter = stopDelimiter;
         Parse(reader, onToken);
     }
+
+    /// <summary>
+    /// Removes a final line feed (CR, LF, or CRLF) from the internal StringBuilder, if present. 
+    /// </summary>
+    internal protected void StripFinalLineFeed()
+    {
+        if (_sb.Length > 0)
+        {
+            if (_sb[_sb.Length - 1] == '\n')
+            {
+                _sb.Length -= 1;
+                if (_sb.Length > 0 && _sb[_sb.Length - 1] == '\r')
+                {
+                    _sb.Length -= 1;
+                }
+            }
+            else if (_sb[_sb.Length - 1] == '\r')
+            {
+                _sb.Length -= 1;
+            }
+        }
+    }
 }

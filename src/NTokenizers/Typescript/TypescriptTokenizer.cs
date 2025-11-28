@@ -80,6 +80,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                     break;
                 }
             }
+
             if (!stoppedByDelimiter)
             {
                 while (delQueue.Count > 0)
@@ -88,6 +89,12 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                     ProcessChar(toProcess, ref state, ref stringDelimiter);
                 }
             }
+
+            if (stoppedByDelimiter)
+            {
+                StripFinalLineFeed();
+            }
+
             EmitPending(state);
         }
     }

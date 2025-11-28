@@ -97,6 +97,11 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 }
             }
 
+            if (stoppedByDelimiter)
+            {
+                StripFinalLineFeed();
+            }
+
             EmitPending(state);
         }
     }
