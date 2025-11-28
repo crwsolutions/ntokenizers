@@ -452,7 +452,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     {
                         Thread.Sleep(3);
                     }
-                    Xml.XmlTokenizer.Parse(_reader, "```", xmlMeta.OnInlineToken);
+                    Xml.XmlTokenizer.Create().Parse(_reader, "```", xmlMeta.OnInlineToken);
                     xmlMeta.IsProcessing = false;
                     break;
                 case SqlCodeBlockMetadata sqlMeta:
