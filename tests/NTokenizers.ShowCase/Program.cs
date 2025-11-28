@@ -17,7 +17,7 @@ var writerTask = Task.Run(async () =>
     {
         await pipe.WriteAsync(new[] { b }.AsMemory(0, 1));
         await pipe.FlushAsync();
-        await Task.Delay(rng.Next(0, 4));
+        await Task.Delay(rng.Next(0, 2));
     }
 
     pipe.Close();
