@@ -11,7 +11,7 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
     /// <summary>
     /// Creates a new instance of the <see cref="GenericTokenizer"/> class.
     /// </summary>
-    public static GenericTokenizer Create() => new GenericTokenizer();
+    public static GenericTokenizer Create() => new();
 
     /// <summary>
     /// Parses the input text reader and invokes the onToken action for each token found,
@@ -31,13 +31,14 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
                 break;
             }
             char c = (char)ic;
+
             delQueue.Enqueue(c);
 
             if (delQueue.Count > delLength)
             {
                 char toProcess = delQueue.Dequeue();
                 _sb.Append(toProcess);
-                if (char.IsWhiteSpace(toProcess))
+                if (toProcess == ' ')
                 {
                     EmitPending();
                 }

@@ -39,9 +39,14 @@ public abstract class InlineMarkupMetadata<TToken>() : MarkupMetadata, IInlineMa
     /// <intheritdoc/>
     public void WaitForCallbackClient()
     {
+        if (_onInlineToken is not null)
+        {
+            return;
+        }
+
         if (!_callbackReady.Wait(1000))
         {
-            throw new TimeoutException("Callback client was never assigned.");
+            //throw new TimeoutException("Callback client was never assigned.");
         }
     }
 }
@@ -94,7 +99,7 @@ public abstract class CodeBlockMetadata<TToken>(string Language) : InlineMarkupM
 /// to handle generic code blocks. It provides functionality to manage and process the code content associated with the
 /// block.</remarks>
 /// <param name="language">The code content associated with the generic code block.</param>
-public sealed class GenericCodeBlockMetadata(string language) : CodeBlockMetadata<MarkupToken>(language);
+public sealed class GenericCodeBlockMetadata(string language) : CodeBlockMetadata<MarkupToken>(language), ICodeBlockMetadata;
 
 /// <summary>
 /// Metadata for C# code block tokens with syntax highlighting support.

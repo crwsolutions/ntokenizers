@@ -1,6 +1,7 @@
 ﻿using NTokenizers;
 using NTokenizers.Markup;
 using Spectre.Console.Rendering;
+using System.Diagnostics;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
@@ -35,7 +36,7 @@ public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken
     {
         return new Panel(_liveParagraph)
             .Border(new LeftBoxBorder())
-            .BorderStyle(new Style(Color.Blue));
+            .BorderStyle(new Style(Color.Green));
     }
 
     protected virtual void Started(InlineMarkupMetadata<TToken> metadata)
@@ -50,6 +51,11 @@ public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken
 
     protected virtual void WriteToken(Paragraph liveParagraph, TToken token)
     {
+        if (string.IsNullOrEmpty(token.Value))
+        {
+            return;
+        }
+        Debug.WriteLine($"Writing token: `{token.Value}` of type `{token.TokenType}`");
         liveParagraph.Append(token.Value, GetStyle(token.TokenType));
     }
 }

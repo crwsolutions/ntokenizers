@@ -17,10 +17,8 @@ public static class MarkupWriter
     {
         if (token.Metadata is ICodeBlockMetadata codeBlockMetadata)
         {
-            if (!string.IsNullOrEmpty(codeBlockMetadata.Language))
-            {
-                AnsiConsole.WriteLine($"{codeBlockMetadata.Language}:");
-            }
+            var code = string.IsNullOrWhiteSpace(codeBlockMetadata.Language) ? "code" : codeBlockMetadata.Language;
+            AnsiConsole.WriteLine($"{code}:");
         }
 
         if (token.Metadata is HeadingMetadata meta)
@@ -53,6 +51,11 @@ public static class MarkupWriter
             var writer = new SqlWriter(MarkupStyles.SqlStyles);
             writer.Write(sqlMeta);
         }
+        else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
+        {
+            var writer = new GenericWriter();
+            writer.Write(genericMeta);
+        }
         else if (token.Metadata is LinkMetadata linkMeta)
         {
             MarkupLinkWriter.Write(linkMeta);
@@ -79,12 +82,6 @@ public static class MarkupWriter
         {
             var writer = new MarkupListItemWriter(MarkupStyles.MarkupListItemStyles);
             writer.Write(listItemMeta);
-        }
-        else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
-        {
-            var code = string.IsNullOrWhiteSpace(genericMeta.Language) ? "code" : genericMeta.Language;
-            Write(liveTarget, $"{code}:");
-            genericMeta.OnInlineToken = (token) => WriteMarkup(liveTarget, token, defaultStyle);
         }
         else
         {

@@ -383,10 +383,14 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
 
         // Read language identifier
         var lang = new StringBuilder();
-        while (Peek() != -1 && Peek() != '\n')
+        while (Peek() != -1 && Peek() != '\r' && Peek() != '\n')
         {
             lang.Append((char)Read());
         }
+
+        if (Peek() == '\r')
+            Read();
+
         if (Peek() == '\n')
             Read();
 
