@@ -19,6 +19,9 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
     private readonly Queue<char> _lookaheadBuffer = new();
     private bool _atLineStart = true;
 
+    /// <summary>
+    /// Parses the input stream and emits markup tokens via the OnToken callback.
+    /// </summary>
     internal protected override void Parse()
     {
         while (true)
