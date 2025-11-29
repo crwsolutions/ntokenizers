@@ -1,5 +1,6 @@
 using NTokenizers.Core;
 using NTokenizers.CSharp;
+using NTokenizers.Markup.Metadata;
 using System.Text;
 
 namespace NTokenizers.Markup;

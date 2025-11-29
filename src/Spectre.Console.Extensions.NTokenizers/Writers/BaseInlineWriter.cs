@@ -1,5 +1,5 @@
 ﻿using NTokenizers.Core;
-using NTokenizers.Markup;
+using NTokenizers.Markup.Metadata;
 using Spectre.Console.Rendering;
 using System.Diagnostics;
 
