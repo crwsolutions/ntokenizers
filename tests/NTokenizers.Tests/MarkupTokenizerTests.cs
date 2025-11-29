@@ -437,11 +437,9 @@ public class MarkupTokenizerTests
     public void TestTableCell()
     {
         var tokens = Tokenize("| cell 1 |");
-        Assert.Equal(2, tokens.Count);
+        Assert.Equal(1, tokens.Count);
         Assert.Equal(MarkupTokenType.TableCell, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value); // Table cells have empty value
-        Assert.Equal(MarkupTokenType.TableCell, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value); // Table cells have empty value
+        Assert.Equal(" cell 1 ", tokens[0].Value); // Table cells have empty value
     }
 
     [Fact]

@@ -97,6 +97,9 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         // Try custom container
         if (TryParseCustomContainer()) return true;
 
+        // Try table
+        if (TryParseTableCell()) return true;
+
         return false;
     }
 
@@ -135,9 +138,6 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         // Try HTML tag
         if (ch == '<' && TryParseHtmlTag()) return true;
-
-        // Try table delimiter
-        if (ch == '|' && TryParseTableCell()) return true;
 
         return false;
     }
@@ -529,12 +529,17 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
             cellContent.Append((char)Read());
         }
 
-        string content = cellContent.ToString().Trim();
+        string content = cellContent.ToString();
 
         // Emit table cell token with empty value
         // Note: TableCell doesn't have metadata currently for OnInlineToken support
         // This could be enhanced if needed
-        _onToken(new MarkupToken(MarkupTokenType.TableCell, string.Empty));
+        _onToken(new MarkupToken(MarkupTokenType.TableCell, content));
+
+        if (Peek() == '|')
+        {
+            Read();
+        }
 
         return true;
     }
