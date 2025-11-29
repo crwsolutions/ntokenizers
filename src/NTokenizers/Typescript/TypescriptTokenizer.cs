@@ -138,28 +138,28 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     {
         if (char.IsWhiteSpace(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             state = State.InWhitespace;
         }
         else if (c == '\'' || c == '"' || c == '`')
         {
             stringDelimiter = c;
-            _sb.Append(c);
+            _buffer.Append(c);
             state = State.InString;
         }
         else if (char.IsLetter(c) || c == '_' || c == '$')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             state = State.InIdentifier;
         }
         else if (char.IsDigit(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             state = State.InNumber;
         }
         else if (c == '/' || IsOperatorChar(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             state = State.InOperator;
         }
         else if (c == '(')
@@ -198,12 +198,12 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     {
         if (char.IsWhiteSpace(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
         }
         else
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _sb.ToString()));
-            _sb.Clear();
+            _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _buffer.ToString()));
+            _buffer.Clear();
             state = State.Start;
             ProcessStart(c, ref state, ref stringDelimiter);
         }
@@ -213,12 +213,12 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     {
         if (char.IsLetterOrDigit(c) || c == '_' || c == '$')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
         }
         else
         {
-            string identifier = _sb.ToString();
-            _sb.Clear();
+            string identifier = _buffer.ToString();
+            _buffer.Clear();
 
             // Check if it's a keyword (case-insensitive)
             if (Keywords.Contains(identifier))
@@ -240,10 +240,10 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+' || c == 'x' || c == 'X' ||
             (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'T' || c == ':')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
 
             // Check if this looks like a datetime (simple heuristic: contains 'T' or multiple colons)
-            string current = _sb.ToString();
+            string current = _buffer.ToString();
             if (current.Contains('T') || current.Count(ch => ch == ':') >= 2 || current.Count(ch => ch == '-') >= 2)
             {
                 // Continue building as potential datetime
@@ -251,8 +251,8 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         }
         else
         {
-            string number = _sb.ToString();
-            _sb.Clear();
+            string number = _buffer.ToString();
+            _buffer.Clear();
 
             // Determine if it's a datetime or a number
             TypescriptTokenType tokenType = TypescriptTokenType.Number;
@@ -270,7 +270,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
 
     private void ProcessString(char c, ref State state, ref char? stringDelimiter)
     {
-        _sb.Append(c);
+        _buffer.Append(c);
 
         if (c == '\\')
         {
@@ -278,8 +278,8 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         }
         else if (c == stringDelimiter)
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _sb.ToString()));
-            _sb.Clear();
+            _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _buffer.ToString()));
+            _buffer.Clear();
             stringDelimiter = null;
             state = State.Start;
         }
@@ -287,7 +287,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
 
     private void ProcessStringEscape(char c, ref State state)
     {
-        _sb.Append(c);
+        _buffer.Append(c);
         state = State.InString;
     }
 
@@ -295,20 +295,20 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     {
         if (c == '\n' || c == '\r')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.Comment, _sb.ToString()));
-            _sb.Clear();
-            _sb.Append(c);
+            _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
+            _buffer.Clear();
+            _buffer.Append(c);
             state = State.InWhitespace;
         }
         else
         {
-            _sb.Append(c);
+            _buffer.Append(c);
         }
     }
 
     private void ProcessCommentBlock(char c, ref State state)
     {
-        _sb.Append(c);
+        _buffer.Append(c);
         if (c == '*')
         {
             state = State.InCommentBlockStar;
@@ -317,11 +317,11 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
 
     private void ProcessCommentBlockStar(char c, ref State state)
     {
-        _sb.Append(c);
+        _buffer.Append(c);
         if (c == '/')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.Comment, _sb.ToString()));
-            _sb.Clear();
+            _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
+            _buffer.Clear();
             state = State.Start;
         }
         else if (c != '*')
@@ -332,18 +332,18 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
 
     private void ProcessOperator(char c, ref State state, ref char? stringDelimiter)
     {
-        string current = _sb.ToString();
+        string current = _buffer.ToString();
 
         // Check for comment start
         if (current == "/" && c == '/')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             state = State.InCommentLine;
             return;
         }
         else if (current == "/" && c == '*')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             state = State.InCommentBlock;
             return;
         }
@@ -351,7 +351,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         // Check for ?. operator
         if (current == "?" && c == '.')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return;
         }
 
@@ -361,14 +361,14 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
             string potential = current + c;
             if (IsValidOperator(potential))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return;
             }
         }
 
         // Emit current operator and process next character
         EmitOperator(current);
-        _sb.Clear();
+        _buffer.Clear();
         state = State.Start;
         ProcessStart(c, ref state, ref stringDelimiter);
     }
@@ -402,15 +402,15 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
 
     private void EmitPending(State state)
     {
-        if (_sb.Length > 0)
+        if (_buffer.Length > 0)
         {
             switch (state)
             {
                 case State.InWhitespace:
-                    _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _sb.ToString()));
+                    _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _buffer.ToString()));
                     break;
                 case State.InIdentifier:
-                    string identifier = _sb.ToString();
+                    string identifier = _buffer.ToString();
                     if (Keywords.Contains(identifier))
                     {
                         _onToken(new TypescriptToken(TypescriptTokenType.Keyword, identifier));
@@ -421,7 +421,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                     }
                     break;
                 case State.InNumber:
-                    string number = _sb.ToString();
+                    string number = _buffer.ToString();
                     TypescriptTokenType tokenType = TypescriptTokenType.Number;
                     if (number.Contains('T') || number.Count(ch => ch == ':') >= 2 ||
                         (number.Count(ch => ch == '-') >= 2 && !number.StartsWith("-")))
@@ -432,18 +432,18 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                     break;
                 case State.InString:
                     // Incomplete string - emit as string value
-                    _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _sb.ToString()));
+                    _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _buffer.ToString()));
                     break;
                 case State.InCommentLine:
                 case State.InCommentBlock:
                 case State.InCommentBlockStar:
-                    _onToken(new TypescriptToken(TypescriptTokenType.Comment, _sb.ToString()));
+                    _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
                     break;
                 case State.InOperator:
-                    EmitOperator(_sb.ToString());
+                    EmitOperator(_buffer.ToString());
                     break;
             }
-            _sb.Clear();
+            _buffer.Clear();
         }
     }
 

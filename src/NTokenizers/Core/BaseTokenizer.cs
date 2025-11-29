@@ -21,7 +21,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <summary>
     /// The internal buffer for accumulating characters.
     /// </summary>
-    internal protected readonly StringBuilder _sb = new();
+    internal protected readonly StringBuilder _buffer = new();
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
@@ -96,19 +96,19 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// </summary>
     internal protected void StripFinalLineFeed()
     {
-        if (_sb.Length > 0)
+        if (_buffer.Length > 0)
         {
-            if (_sb[_sb.Length - 1] == '\n')
+            if (_buffer[_buffer.Length - 1] == '\n')
             {
-                _sb.Length -= 1;
-                if (_sb.Length > 0 && _sb[_sb.Length - 1] == '\r')
+                _buffer.Length -= 1;
+                if (_buffer.Length > 0 && _buffer[_buffer.Length - 1] == '\r')
                 {
-                    _sb.Length -= 1;
+                    _buffer.Length -= 1;
                 }
             }
-            else if (_sb[_sb.Length - 1] == '\r')
+            else if (_buffer[_buffer.Length - 1] == '\r')
             {
-                _sb.Length -= 1;
+                _buffer.Length -= 1;
             }
         }
     }

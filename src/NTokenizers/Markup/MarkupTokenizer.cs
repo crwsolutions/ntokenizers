@@ -62,7 +62,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
 
             // Regular character - add to buffer
             Read();
-            _sb.Append(c);
+            _buffer.Append(c);
 
             if (c == '\n')
             {
@@ -537,7 +537,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
             }
 
             // No closing found, treat as text
-            _sb.Append("**").Append(boldText);
+            _buffer.Append("**").Append(boldText);
             return true;
         }
 
@@ -558,7 +558,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 }
                 boldText.Append((char)Read());
             }
-            _sb.Append("__").Append(boldText);
+            _buffer.Append("__").Append(boldText);
             return false;
         }
 
@@ -582,7 +582,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
             }
 
             // No closing found, treat as text
-            _sb.Append('*').Append(italicText);
+            _buffer.Append('*').Append(italicText);
             return true;
         }
 
@@ -602,7 +602,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 _onToken(new MarkupToken(MarkupTokenType.Italic, italicText.ToString()));
                 return true;
             }
-            _sb.Append('_').Append(italicText);
+            _buffer.Append('_').Append(italicText);
             return false;
         }
 
@@ -630,7 +630,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
         }
 
         // No closing found, treat as text
-        _sb.Append('`').Append(code);
+        _buffer.Append('`').Append(code);
         return true;
     }
 
@@ -833,7 +833,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
         }
 
         // No closing found, treat as text
-        _sb.Append('^').Append(subText);
+        _buffer.Append('^').Append(subText);
         return true;
     }
 
@@ -858,7 +858,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
         }
 
         // No closing found, treat as text
-        _sb.Append('~').Append(supText);
+        _buffer.Append('~').Append(supText);
         return true;
     }
 
@@ -886,7 +886,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
         }
 
         // No closing found, treat as text
-        _sb.Append("++").Append(insText);
+        _buffer.Append("++").Append(insText);
         return true;
     }
 
@@ -914,7 +914,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
         }
 
         // No closing found, treat as text
-        _sb.Append("==").Append(markedText);
+        _buffer.Append("==").Append(markedText);
         return true;
     }
 
@@ -949,7 +949,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
         }
 
         // No closing found, treat as text
-        _sb.Append(tagContent);
+        _buffer.Append(tagContent);
         return true;
     }
 
@@ -1011,7 +1011,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 if (TryParseMarkedText()) continue;
 
                 // Regular character
-                _sb.Append((char)Read());
+                _buffer.Append((char)Read());
             }
 
             EmitText();
@@ -1060,7 +1060,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     }
                     boldText.Append((char)Read());
                 }
-                _sb.Append("**").Append(boldText);
+                _buffer.Append("**").Append(boldText);
                 return false;
             }
 
@@ -1080,7 +1080,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     }
                     boldText.Append((char)Read());
                 }
-                _sb.Append("__").Append(boldText);
+                _buffer.Append("__").Append(boldText);
                 return false;
             }
 
@@ -1100,7 +1100,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     _onToken(new MarkupToken(MarkupTokenType.Italic, italicText.ToString()));
                     return true;
                 }
-                _sb.Append('*').Append(italicText);
+                _buffer.Append('*').Append(italicText);
                 return false;
             }
 
@@ -1120,7 +1120,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                     _onToken(new MarkupToken(MarkupTokenType.Italic, italicText.ToString()));
                     return true;
                 }
-                _sb.Append('_').Append(italicText);
+                _buffer.Append('_').Append(italicText);
                 return false;
             }
 
@@ -1143,7 +1143,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 _onToken(new MarkupToken(MarkupTokenType.CodeInline, codeText.ToString()));
                 return true;
             }
-            _sb.Append('`').Append(codeText);
+            _buffer.Append('`').Append(codeText);
             return false;
         }
 
@@ -1235,7 +1235,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 _onToken(new MarkupToken(MarkupTokenType.Subscript, text.ToString()));
                 return true;
             }
-            _sb.Append('~').Append(text);
+            _buffer.Append('~').Append(text);
             return false;
         }
 
@@ -1255,7 +1255,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 _onToken(new MarkupToken(MarkupTokenType.Superscript, text.ToString()));
                 return true;
             }
-            _sb.Append('^').Append(text);
+            _buffer.Append('^').Append(text);
             return false;
         }
 
@@ -1275,7 +1275,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 }
                 text.Append((char)Read());
             }
-            _sb.Append("++").Append(text);
+            _buffer.Append("++").Append(text);
             return false;
         }
 
@@ -1295,26 +1295,26 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
                 }
                 text.Append((char)Read());
             }
-            _sb.Append("==").Append(text);
+            _buffer.Append("==").Append(text);
             return false;
         }
 
         private void EmitText()
         {
-            if (_sb.Length > 0)
+            if (_buffer.Length > 0)
             {
-                _onToken(new MarkupToken(MarkupTokenType.Text, _sb.ToString()));
-                _sb.Clear();
+                _onToken(new MarkupToken(MarkupTokenType.Text, _buffer.ToString()));
+                _buffer.Clear();
             }
         }
     }
 
     private void EmitText()
     {
-        if (_sb.Length > 0)
+        if (_buffer.Length > 0)
         {
-            _onToken(new MarkupToken(MarkupTokenType.Text, _sb.ToString()));
-            _sb.Clear();
+            _onToken(new MarkupToken(MarkupTokenType.Text, _buffer.ToString()));
+            _buffer.Clear();
         }
     }
 }

@@ -38,7 +38,7 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
             if (delQueue.Count > delLength)
             {
                 char toProcess = delQueue.Dequeue();
-                _sb.Append(toProcess);
+                _buffer.Append(toProcess);
                 if (toProcess == ' ')
                 {
                     EmitPending();
@@ -56,7 +56,7 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
             while (delQueue.Count > 0)
             {
                 char toProcess = delQueue.Dequeue();
-                _sb.Append(toProcess);
+                _buffer.Append(toProcess);
             }
         }
 
@@ -70,10 +70,10 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
 
     private void EmitPending()
     {
-        if (_sb.Length > 0)
+        if (_buffer.Length > 0)
         {
-            _onToken(new MarkupToken(MarkupTokenType.Text, _sb.ToString()));
-            _sb.Clear();
+            _onToken(new MarkupToken(MarkupTokenType.Text, _buffer.ToString()));
+            _buffer.Clear();
         }
     }
 }

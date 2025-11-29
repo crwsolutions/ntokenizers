@@ -113,61 +113,61 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
             case State.Text:
                 if (c == '<')
                 {
-                    if (_sb.Length > 0)
+                    if (_buffer.Length > 0)
                     {
-                        _onToken(new XmlToken(XmlTokenType.Text, _sb.ToString()));
-                        _sb.Clear();
+                        _onToken(new XmlToken(XmlTokenType.Text, _buffer.ToString()));
+                        _buffer.Clear();
                     }
-                    _sb.Append(c);
+                    _buffer.Append(c);
                     state = State.TagStart;
                 }
-                else if (IsWhitespace(c) && _sb.Length == 0 && depth == 0)
+                else if (IsWhitespace(c) && _buffer.Length == 0 && depth == 0)
                 {
                     // Whitespace at document level (between elements, not inside)
-                    _sb.Append(c);
+                    _buffer.Append(c);
                     state = State.InWhitespace;
                 }
                 else
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                 }
                 break;
 
             case State.TagStart:
-                _sb.Append(c);
-                if (_sb.ToString() == "<?")
+                _buffer.Append(c);
+                if (_buffer.ToString() == "<?")
                 {
                     state = State.InProcessingInstruction;
                 }
-                else if (_sb.ToString() == "<!-")
+                else if (_buffer.ToString() == "<!-")
                 {
                     // Continue reading for comment
                 }
-                else if (_sb.ToString() == "<!--")
+                else if (_buffer.ToString() == "<!--")
                 {
                     state = State.InComment;
                 }
-                else if (_sb.ToString().StartsWith("<!["))
+                else if (_buffer.ToString().StartsWith("<!["))
                 {
-                    if (_sb.ToString() == "<![CDATA[")
+                    if (_buffer.ToString() == "<![CDATA[")
                     {
                         state = State.InCData;
                     }
                     // else continue reading
                 }
-                else if (_sb.Length > 2 && _sb[1] == '!' && char.IsLetter(_sb[2]))
+                else if (_buffer.Length > 2 && _buffer[1] == '!' && char.IsLetter(_buffer[2]))
                 {
                     // DOCTYPE
                     state = State.InDocType;
                 }
-                else if (_sb.Length == 2)
+                else if (_buffer.Length == 2)
                 {
                     if (c == '/')
                     {
                         // End tag: </
                         _onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
                         _onToken(new XmlToken(XmlTokenType.SelfClosingSlash, "/"));
-                        _sb.Clear();
+                        _buffer.Clear();
                         insideTag = true;
                         seenElementName = false;
                         isClosingTag = true;
@@ -177,7 +177,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                     {
                         // < followed by whitespace
                         _onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
-                        _sb.Remove(0, 1); // remove the '<'
+                        _buffer.Remove(0, 1); // remove the '<'
                         insideTag = true;
                         seenElementName = false;
                         isClosingTag = false;
@@ -187,7 +187,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                     {
                         // Regular opening tag: <name
                         _onToken(new XmlToken(XmlTokenType.OpeningAngleBracket, "<"));
-                        _sb.Remove(0, 1); // remove the '<'
+                        _buffer.Remove(0, 1); // remove the '<'
                         insideTag = true;
                         seenElementName = false;
                         isClosingTag = false;
@@ -199,15 +199,15 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
             case State.InTagName:
                 if (IsNameChar(c))
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                 }
                 else
                 {
-                    if (_sb.Length > 0)
+                    if (_buffer.Length > 0)
                     {
-                        _onToken(new XmlToken(XmlTokenType.ElementName, _sb.ToString()));
+                        _onToken(new XmlToken(XmlTokenType.ElementName, _buffer.ToString()));
                         seenElementName = true;
-                        _sb.Clear();
+                        _buffer.Clear();
                     }
 
                     if (c == '>')
@@ -234,7 +234,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                     }
                     else if (IsWhitespace(c))
                     {
-                        _sb.Append(c);
+                        _buffer.Append(c);
                         state = State.InWhitespace;
                     }
                 }
@@ -243,19 +243,19 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
             case State.InWhitespace:
                 if (IsWhitespace(c))
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                 }
                 else
                 {
-                    if (_sb.Length > 0)
+                    if (_buffer.Length > 0)
                     {
-                        _onToken(new XmlToken(XmlTokenType.Whitespace, _sb.ToString()));
-                        _sb.Clear();
+                        _onToken(new XmlToken(XmlTokenType.Whitespace, _buffer.ToString()));
+                        _buffer.Clear();
                     }
 
                     if (c == '<')
                     {
-                        _sb.Append(c);
+                        _buffer.Append(c);
                         state = State.TagStart;
                     }
                     else if (c == '>')
@@ -292,7 +292,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                     }
                     else if (IsNameStartChar(c))
                     {
-                        _sb.Append(c);
+                        _buffer.Append(c);
                         if (!seenElementName && insideTag)
                         {
                             state = State.InTagName;
@@ -327,7 +327,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                 }
                 else if (IsWhitespace(c))
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                     state = State.InWhitespace;
                 }
                 break;
@@ -335,14 +335,14 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
             case State.InAttributeName:
                 if (IsNameChar(c))
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                 }
                 else
                 {
-                    if (_sb.Length > 0)
+                    if (_buffer.Length > 0)
                     {
-                        _onToken(new XmlToken(XmlTokenType.AttributeName, _sb.ToString()));
-                        _sb.Clear();
+                        _onToken(new XmlToken(XmlTokenType.AttributeName, _buffer.ToString()));
+                        _buffer.Clear();
                     }
 
                     if (c == '=')
@@ -352,7 +352,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                     }
                     else if (IsWhitespace(c))
                     {
-                        _sb.Append(c);
+                        _buffer.Append(c);
                         state = State.InWhitespace;
                     }
                 }
@@ -367,7 +367,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                 }
                 else if (IsWhitespace(c))
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                     state = State.InWhitespace;
                 }
                 break;
@@ -375,54 +375,54 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
             case State.InAttributeValue:
                 if (c == quoteChar)
                 {
-                    _onToken(new XmlToken(XmlTokenType.AttributeValue, _sb.ToString()));
-                    _sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.AttributeValue, _buffer.ToString()));
+                    _buffer.Clear();
                     _onToken(new XmlToken(XmlTokenType.AttributeQuote, c.ToString()));
                     quoteChar = null;
                     state = State.AfterTagName;
                 }
                 else
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                 }
                 break;
 
             case State.InComment:
-                _sb.Append(c);
-                if (_sb.ToString().EndsWith("-->"))
+                _buffer.Append(c);
+                if (_buffer.ToString().EndsWith("-->"))
                 {
-                    _onToken(new XmlToken(XmlTokenType.Comment, _sb.ToString()));
-                    _sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.Comment, _buffer.ToString()));
+                    _buffer.Clear();
                     state = State.Text;
                 }
                 break;
 
             case State.InProcessingInstruction:
-                _sb.Append(c);
-                if (_sb.ToString().EndsWith("?>"))
+                _buffer.Append(c);
+                if (_buffer.ToString().EndsWith("?>"))
                 {
-                    _onToken(new XmlToken(XmlTokenType.ProcessingInstruction, _sb.ToString()));
-                    _sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.ProcessingInstruction, _buffer.ToString()));
+                    _buffer.Clear();
                     state = State.Text;
                 }
                 break;
 
             case State.InDocType:
-                _sb.Append(c);
+                _buffer.Append(c);
                 if (c == '>')
                 {
-                    _onToken(new XmlToken(XmlTokenType.DocumentTypeDeclaration, _sb.ToString()));
-                    _sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.DocumentTypeDeclaration, _buffer.ToString()));
+                    _buffer.Clear();
                     state = State.Text;
                 }
                 break;
 
             case State.InCData:
-                _sb.Append(c);
-                if (_sb.ToString().EndsWith("]]>"))
+                _buffer.Append(c);
+                if (_buffer.ToString().EndsWith("]]>"))
                 {
-                    _onToken(new XmlToken(XmlTokenType.CData, _sb.ToString()));
-                    _sb.Clear();
+                    _onToken(new XmlToken(XmlTokenType.CData, _buffer.ToString()));
+                    _buffer.Clear();
                     state = State.Text;
                 }
                 break;
@@ -431,24 +431,24 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
 
     private void EmitPending(State state)
     {
-        if (_sb.Length > 0)
+        if (_buffer.Length > 0)
         {
             switch (state)
             {
                 case State.Text:
-                    _onToken(new XmlToken(XmlTokenType.Text, _sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.Text, _buffer.ToString()));
                     break;
                 case State.InWhitespace:
-                    _onToken(new XmlToken(XmlTokenType.Whitespace, _sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.Whitespace, _buffer.ToString()));
                     break;
                 case State.InTagName:
-                    _onToken(new XmlToken(XmlTokenType.ElementName, _sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.ElementName, _buffer.ToString()));
                     break;
                 case State.InAttributeName:
-                    _onToken(new XmlToken(XmlTokenType.AttributeName, _sb.ToString()));
+                    _onToken(new XmlToken(XmlTokenType.AttributeName, _buffer.ToString()));
                     break;
             }
-            _sb.Clear();
+            _buffer.Clear();
         }
     }
 

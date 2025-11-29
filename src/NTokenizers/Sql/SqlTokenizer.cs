@@ -125,7 +125,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         // Accumulate whitespace
         if (char.IsWhiteSpace(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InWhitespace;
         }
 
@@ -133,21 +133,21 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         if (c == '\'' || c == '"')
         {
             stringQuote = c;
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InString;
         }
 
         // Numbers
         if (char.IsDigit(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InNumber;
         }
 
         // Identifiers and keywords
         if (char.IsLetter(c) || c == '_')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InIdentifier;
         }
 
@@ -158,12 +158,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             if (next == '-')
             {
                 _reader.Read(); // consume second '-'
-                _sb.Append("--");
+                _buffer.Append("--");
                 return State.InLineComment;
             }
             else
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InOperator;
             }
         }
@@ -174,12 +174,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             if (next == '*')
             {
                 _reader.Read(); // consume '*'
-                _sb.Append("/*");
+                _buffer.Append("/*");
                 return State.InBlockComment;
             }
             else
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InOperator;
             }
         }
@@ -207,7 +207,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         // Operators
         if (IsOperatorChar(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InOperator;
         }
 
@@ -218,21 +218,21 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
 
     private State ProcessInString(char c, char stringQuote)
     {
-        _sb.Append(c);
+        _buffer.Append(c);
 
         // Determine the quote character from the first char in buffer if stringQuote is not set
-        char actualQuote = stringQuote != '\0' ? stringQuote : (_sb.Length > 0 ? _sb[0] : '"');
+        char actualQuote = stringQuote != '\0' ? stringQuote : (_buffer.Length > 0 ? _buffer[0] : '"');
 
-        if (c == actualQuote && _sb.Length > 1) // Must have at least opening quote + closing quote
+        if (c == actualQuote && _buffer.Length > 1) // Must have at least opening quote + closing quote
         {
             // Check for escaped quote (double quote)
             // We need to peek ahead, but we can't in this architecture
             // So we'll handle it differently: if the next char is also a quote, continue
             // This is a simplification - in reality, we should peek
             // For now, emit the string
-            string value = _sb.ToString();
+            string value = _buffer.ToString();
             _onToken(new SqlToken(SqlTokenType.StringValue, value));
-            _sb.Clear();
+            _buffer.Clear();
             return State.Start;
         }
 
@@ -243,20 +243,20 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     {
         if (char.IsDigit(c) || c == '.')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InNumber;
         }
         else
         {
             // Number is complete
-            string value = _sb.ToString();
+            string value = _buffer.ToString();
             _onToken(new SqlToken(SqlTokenType.Number, value));
-            _sb.Clear();
+            _buffer.Clear();
 
             // Handle current character based on what it is
             if (char.IsWhiteSpace(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
@@ -284,12 +284,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             }
             else if (char.IsLetter(c) || c == '_')
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InIdentifier;
             }
             else if (IsOperatorChar(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InOperator;
             }
             else
@@ -304,21 +304,21 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     {
         if (char.IsLetterOrDigit(c) || c == '_')
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InIdentifier;
         }
         else
         {
             // Identifier is complete
-            string value = _sb.ToString();
+            string value = _buffer.ToString();
             SqlTokenType tokenType = _keywords.Contains(value) ? SqlTokenType.Keyword : SqlTokenType.Identifier;
             _onToken(new SqlToken(tokenType, value));
-            _sb.Clear();
+            _buffer.Clear();
 
             // Handle current character
             if (char.IsWhiteSpace(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
@@ -345,12 +345,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             }
             else if (char.IsDigit(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InNumber;
             }
             else if (IsOperatorChar(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InOperator;
             }
             else
@@ -365,13 +365,13 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     {
         if (IsOperatorChar(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             // Check if we have a complete multi-char operator
-            string current = _sb.ToString();
+            string current = _buffer.ToString();
             if (current == "<>" || current == "<=" || current == ">=" || current == "!=" || current == "||")
             {
                 _onToken(new SqlToken(SqlTokenType.Operator, current));
-                _sb.Clear();
+                _buffer.Clear();
                 return State.Start;
             }
             return State.InOperator;
@@ -379,14 +379,14 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         else
         {
             // Operator is complete
-            string value = _sb.ToString();
+            string value = _buffer.ToString();
             _onToken(new SqlToken(SqlTokenType.Operator, value));
-            _sb.Clear();
+            _buffer.Clear();
 
             // Handle current character
             if (char.IsWhiteSpace(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
@@ -413,12 +413,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             }
             else if (char.IsDigit(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InNumber;
             }
             else if (char.IsLetter(c) || c == '_')
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InIdentifier;
             }
             else
@@ -434,28 +434,28 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         if (c == '\n' || c == '\r')
         {
             // Line comment is complete
-            string value = _sb.ToString();
+            string value = _buffer.ToString();
             _onToken(new SqlToken(SqlTokenType.Comment, value));
-            _sb.Clear();
+            _buffer.Clear();
             return State.Start;
         }
         else
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InLineComment;
         }
     }
 
     private State ProcessInBlockComment(char c)
     {
-        _sb.Append(c);
+        _buffer.Append(c);
 
         // Check for end of block comment */
-        string current = _sb.ToString();
+        string current = _buffer.ToString();
         if (current.Length >= 2 && current.EndsWith("*/"))
         {
             _onToken(new SqlToken(SqlTokenType.Comment, current));
-            _sb.Clear();
+            _buffer.Clear();
             return State.Start;
         }
 
@@ -466,31 +466,31 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     {
         if (char.IsWhiteSpace(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return State.InWhitespace;
         }
         else
         {
             // Whitespace is complete
-            string value = _sb.ToString();
+            string value = _buffer.ToString();
             _onToken(new SqlToken(SqlTokenType.Whitespace, value));
-            _sb.Clear();
+            _buffer.Clear();
 
             // Handle current character based on what it is
             if (c == '\'' || c == '"')
             {
                 stringQuote = c;
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InString;
             }
             else if (char.IsDigit(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InNumber;
             }
             else if (char.IsLetter(c) || c == '_')
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InIdentifier;
             }
             // Check for comments
@@ -500,12 +500,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 if (next == '-')
                 {
                     _reader.Read(); // consume second '-'
-                    _sb.Append("--");
+                    _buffer.Append("--");
                     return State.InLineComment;
                 }
                 else
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                     return State.InOperator;
                 }
             }
@@ -515,12 +515,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 if (next == '*')
                 {
                     _reader.Read(); // consume '*'
-                    _sb.Append("/*");
+                    _buffer.Append("/*");
                     return State.InBlockComment;
                 }
                 else
                 {
-                    _sb.Append(c);
+                    _buffer.Append(c);
                     return State.InOperator;
                 }
             }
@@ -551,7 +551,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             }
             else if (IsOperatorChar(c))
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return State.InOperator;
             }
             else
@@ -564,10 +564,10 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
 
     private void EmitPending(State state)
     {
-        if (_sb.Length == 0)
+        if (_buffer.Length == 0)
             return;
 
-        string value = _sb.ToString();
+        string value = _buffer.ToString();
 
         switch (state)
         {
@@ -593,7 +593,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 break;
         }
 
-        _sb.Clear();
+        _buffer.Clear();
     }
 
     private static bool IsOperatorChar(char c)

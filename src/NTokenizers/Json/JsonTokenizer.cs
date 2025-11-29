@@ -88,7 +88,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
     {
         if (inString)
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             if (escape)
             {
                 escape = false;
@@ -100,8 +100,8 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             else if (c == '"')
             {
                 inString = false;
-                string str = _sb.ToString();
-                _sb.Clear();
+                string str = _buffer.ToString();
+                _buffer.Clear();
                 JsonTokenType type = (stack.Count > 0 && stack.Peek() == ContainerType.Object && isExpectingKey)
                     ? JsonTokenType.PropertyName
                     : JsonTokenType.StringValue;
@@ -118,13 +118,13 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
         {
             if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+')
             {
-                _sb.Append(c);
+                _buffer.Append(c);
                 return;
             }
             else
             {
-                string num = _sb.ToString();
-                _sb.Clear();
+                string num = _buffer.ToString();
+                _buffer.Clear();
                 _onToken(new JsonToken(JsonTokenType.Number, num));
                 inNumber = false;
                 // Fall through to process current c
@@ -133,34 +133,34 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
 
         if (inKeyword)
         {
-            _sb.Append(c);
-            string kw = _sb.ToString();
+            _buffer.Append(c);
+            string kw = _buffer.ToString();
             if (kw == "true")
             {
                 _onToken(new JsonToken(JsonTokenType.True, "true"));
                 inKeyword = false;
-                _sb.Clear();
+                _buffer.Clear();
                 return;
             }
             else if (kw == "false")
             {
                 _onToken(new JsonToken(JsonTokenType.False, "false"));
                 inKeyword = false;
-                _sb.Clear();
+                _buffer.Clear();
                 return;
             }
             else if (kw == "null")
             {
                 _onToken(new JsonToken(JsonTokenType.Null, "null"));
                 inKeyword = false;
-                _sb.Clear();
+                _buffer.Clear();
                 return;
             }
             else if (!"true".StartsWith(kw) && !"false".StartsWith(kw) && !"null".StartsWith(kw))
             {
                 // Invalid, reset
                 inKeyword = false;
-                _sb.Clear();
+                _buffer.Clear();
             }
             else
             {
@@ -171,16 +171,16 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
         // Handle whitespace
         if (char.IsWhiteSpace(c))
         {
-            _sb.Append(c);
+            _buffer.Append(c);
             return;
         }
         else
         {
             // Emit any pending whitespace
-            if (_sb.Length > 0 && !inNumber && !inKeyword && !inString)
+            if (_buffer.Length > 0 && !inNumber && !inKeyword && !inString)
             {
-                _onToken(new JsonToken(JsonTokenType.Whitespace, _sb.ToString()));
-                _sb.Clear();
+                _onToken(new JsonToken(JsonTokenType.Whitespace, _buffer.ToString()));
+                _buffer.Clear();
             }
         }
 
@@ -223,7 +223,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
                 break;
             case '"':
                 inString = true;
-                _sb.Append(c);
+                _buffer.Append(c);
                 break;
             case '-':
             case '0':
@@ -237,13 +237,13 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             case '8':
             case '9':
                 inNumber = true;
-                _sb.Append(c);
+                _buffer.Append(c);
                 break;
             case 't':
             case 'f':
             case 'n':
                 inKeyword = true;
-                _sb.Append(c);
+                _buffer.Append(c);
                 break;
             default:
                 // Skip invalid characters
@@ -253,7 +253,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
 
     private void EmitPending(ref bool inString, ref bool inNumber, ref bool inKeyword)
     {
-        if (_sb.Length > 0)
+        if (_buffer.Length > 0)
         {
             if (inString)
             {
@@ -261,7 +261,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             }
             else if (inNumber)
             {
-                _onToken(new JsonToken(JsonTokenType.Number, _sb.ToString()));
+                _onToken(new JsonToken(JsonTokenType.Number, _buffer.ToString()));
             }
             else if (inKeyword)
             {
@@ -269,9 +269,9 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             }
             else
             {
-                _onToken(new JsonToken(JsonTokenType.Whitespace, _sb.ToString()));
+                _onToken(new JsonToken(JsonTokenType.Whitespace, _buffer.ToString()));
             }
-            _sb.Clear();
+            _buffer.Clear();
         }
         inString = false;
         inNumber = false;
