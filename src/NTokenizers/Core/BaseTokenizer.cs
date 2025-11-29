@@ -8,6 +8,8 @@ namespace NTokenizers.Core;
 /// <typeparam name="TToken">The type of token to be produced by the tokenizer.</typeparam>
 public abstract class BaseTokenizer<TToken> where TToken : IToken
 {
+    private readonly Queue<char> _lookaheadBuffer = new();
+
     /// <summary>
     /// The text reader for the input stream.
     /// </summary>
@@ -64,6 +66,31 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// Performs the actual parsing logic. This method must be implemented by derived classes.
     /// </summary>
     internal protected abstract void Parse();
+
+    internal int Peek()
+    {
+        if (_lookaheadBuffer.Count > 0)
+            return _lookaheadBuffer.Peek();
+        return _reader.Peek();
+    }
+
+    internal int Read()
+    {
+        if (_lookaheadBuffer.Count > 0)
+            return _lookaheadBuffer.Dequeue();
+        return _reader.Read();
+    }
+
+    internal char PeekAhead(int offset)
+    {
+        while (_lookaheadBuffer.Count <= offset)
+        {
+            int next = _reader.Read();
+            if (next == -1) return '\0';
+            _lookaheadBuffer.Enqueue((char)next);
+        }
+        return _lookaheadBuffer.ElementAt(offset);
+    }
 }
 
 /// <summary>

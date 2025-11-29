@@ -16,7 +16,6 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
     /// <returns></returns>
     public static MarkupTokenizer Create() => new();
 
-    private readonly Queue<char> _lookaheadBuffer = new();
     private bool _atLineStart = true;
 
     /// <summary>
@@ -77,37 +76,6 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
 
         // Emit any remaining text
         EmitText();
-    }
-
-    private int Peek()
-    {
-        if (_lookaheadBuffer.Count > 0)
-            return _lookaheadBuffer.Peek();
-
-        return _reader.Peek();
-    }
-
-    private int Read()
-    {
-        if (_lookaheadBuffer.Count > 0)
-            return _lookaheadBuffer.Dequeue();
-
-        return _reader.Read();
-    }
-
-    private char PeekAhead(int offset)
-    {
-        // Ensure we have enough characters in the lookahead buffer
-        while (_lookaheadBuffer.Count <= offset)
-        {
-            int c = _reader.Read();
-            if (c == -1)
-                return '\0';
-            _lookaheadBuffer.Enqueue((char)c);
-        }
-
-        // Return the character at the offset
-        return _lookaheadBuffer.ElementAt(offset);
     }
 
     private bool TryParseLineStartConstruct()
@@ -993,8 +961,7 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
     private class InlineParserContext : BaseTokenizer<MarkupToken>
     {
         internal static InlineParserContext Create() => new();
-        private readonly Queue<char> _lookaheadBuffer = new();
-
+        
         internal protected override void Parse()
         {
             while (Peek() != -1 && Peek() != '\n' && Peek() != '\r')
@@ -1015,31 +982,6 @@ public sealed class MarkupTokenizer : BaseTokenizer<MarkupToken>
             }
 
             EmitText();
-        }
-
-        private int Peek()
-        {
-            if (_lookaheadBuffer.Count > 0)
-                return _lookaheadBuffer.Peek();
-            return _reader.Peek();
-        }
-
-        private int Read()
-        {
-            if (_lookaheadBuffer.Count > 0)
-                return _lookaheadBuffer.Dequeue();
-            return _reader.Read();
-        }
-
-        private char PeekAhead(int offset)
-        {
-            while (_lookaheadBuffer.Count <= offset)
-            {
-                int next = _reader.Read();
-                if (next == -1) return '\0';
-                _lookaheadBuffer.Enqueue((char)next);
-            }
-            return _lookaheadBuffer.ElementAt(offset);
         }
 
         private bool TryParseBoldOrItalic()
