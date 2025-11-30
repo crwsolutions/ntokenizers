@@ -14,28 +14,44 @@ NTokenizers is a .NET library written in C# that provides tokenizers for process
 Here's a simple example showing how to use the XML tokenizer:
 
 ```csharp
-using System;
+using NTokenizers.Json;
+using NTokenizers.Markup;
+using NTokenizers.Markup.Metadata;
+using NTokenizers.Typescript;
+using NTokenizers.Xml;
+using Spectre.Console;
 using System.IO.Pipes;
 using System.Text;
-using System.Threading.Tasks;
-using NTokenizers;
-using Spectre.Console;
 
 class Program
 {
     static async Task Main()
     {
-        string xml = """
-        <?xml version="1.0" encoding="utf-8"?>
+        string markup = """
+        # NTokenizers Showcase
+
+        ## XML example
+        ```xml
         <user id="4821" active="true">
             <name>Laura Smith</name>
-            <addresses>
-                <address type="home">
-                    <street>221B Baker Street</street>
-                    <city>London</city>
-                </address>
-            </addresses>
         </user>
+        ```
+
+        ## JSON example
+        ```json
+        {
+            "name": "Laura Smith",
+            "active": true
+        }
+        ```
+
+        ## TypeScript example
+        ```typescript
+        const user = {
+            name: "Laura Smith",
+            active: true
+        };
+        ```
         """;
 
         // Create connected streams
@@ -43,39 +59,115 @@ class Program
         using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
         // Start slow writer
-        var writerTask = EmitSlowlyAsync(xml, pipe);
+        var writerTask = EmitSlowlyAsync(markup, pipe);
 
-        // Start parsing XML
-        XmlTokenizer.Parse(reader, onToken: token =>
+        // Parse markup
+        MarkupTokenizer.Create().Parse(reader, onToken: token =>
         {
-            var value = Markup.Escape(token.Value);
-
-            var colored = token.TokenType switch
+            if (token.Metadata is HeadingMetadata headingMetadata)
+            { 
+                headingMetadata.OnInlineToken = inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = headingMetadata.Level != 1 ? 
+                        new Markup($"[bold blue]{value}[/]") :
+                        new Markup($"[bold yellow]** {value} **[/]");
+                    AnsiConsole.Write(colored);
+                };
+            }
+            else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
             {
-                XmlTokenType.ElementName => new Markup($"[blue]{value}[/]"),
-                XmlTokenType.EndElement => new Markup($"[blue]{value}[/]"),
+                xmlMetadata.OnInlineToken = inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        XmlTokenType.ElementName => new Markup($"[blue]{value}[/]"),
+                        XmlTokenType.EndElement => new Markup($"[blue]{value}[/]"),
+                        XmlTokenType.OpeningAngleBracket => new Markup($"[yellow]{value}[/]"),
+                        XmlTokenType.ClosingAngleBracket => new Markup($"[yellow]{value}[/]"),
+                        XmlTokenType.SelfClosingSlash => new Markup($"[yellow]{value}[/]"),
+                        XmlTokenType.AttributeName => new Markup($"[cyan]{value}[/]"),
+                        XmlTokenType.AttributeEquals => new Markup($"[yellow]{value}[/]"),
+                        XmlTokenType.AttributeQuote => new Markup($"[grey]{value}[/]"),
+                        XmlTokenType.AttributeValue => new Markup($"[green]{value}[/]"),
+                        XmlTokenType.Text => new Markup($"[white]{value}[/]"),
+                        XmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                };
+            }
+            else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
+            {
+                jsonMetadata.OnInlineToken = inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        JsonTokenType.StartObject => new Markup($"[yellow]{value}[/]"),
+                        JsonTokenType.EndObject => new Markup($"[yellow]{value}[/]"),
+                        JsonTokenType.StartArray => new Markup($"[yellow]{value}[/]"),
+                        JsonTokenType.EndArray => new Markup($"[yellow]{value}[/]"),
+                        JsonTokenType.PropertyName => new Markup($"[cyan]{value}[/]"),
+                        JsonTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        JsonTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        JsonTokenType.True => new Markup($"[orange1]{value}[/]"),
+                        JsonTokenType.False => new Markup($"[orange1]{value}[/]"),
+                        JsonTokenType.Null => new Markup($"[grey]{value}[/]"),
+                        JsonTokenType.Colon => new Markup($"[yellow]{value}[/]"),
+                        JsonTokenType.Comma => new Markup($"[yellow]{value}[/]"),
+                        JsonTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                };
+            }
+            else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
+            {
+                tsMetadata.OnInlineToken = inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        TypescriptTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        TypescriptTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        TypescriptTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        TypescriptTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        TypescriptTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        TypescriptTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                };
+            }
+            else
+            {
+                // Handle regular markup tokens
+                var value = Markup.Escape(token.Value);
+                var colored = token.TokenType switch
+                {
+                    MarkupTokenType.Text => new Markup($"[white]{value}[/]"),
+                    MarkupTokenType.Bold => new Markup($"[bold]{value}[/]"),
+                    MarkupTokenType.Italic => new Markup($"[italic]{value}[/]"),
+                    MarkupTokenType.Heading => new Markup($"[bold blue]{value}[/]"),
+                    MarkupTokenType.Link => new Markup($"[blue underline]{value}[/]"),
+                    _ => new Markup(value)
+                };
 
-                XmlTokenType.OpeningAngleBracket => new Markup($"[yellow]{value}[/]"),
-                XmlTokenType.ClosingAngleBracket => new Markup($"[yellow]{value}[/]"),
-                XmlTokenType.SelfClosingSlash => new Markup($"[yellow]{value}[/]"),
+                AnsiConsole.Write(colored);
+            }
 
-                XmlTokenType.AttributeName => new Markup($"[cyan]{value}[/]"),
-                XmlTokenType.AttributeEquals => new Markup($"[yellow]{value}[/]"),
-                XmlTokenType.AttributeQuote => new Markup($"[grey]{value}[/]"),
-                XmlTokenType.AttributeValue => new Markup($"[green]{value}[/]"),
-
-                XmlTokenType.Text => new Markup($"[white]{value}[/]"),
-                XmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
-
-                XmlTokenType.Comment => new Markup($"[grey]{value}[/]"),
-                XmlTokenType.CData => new Markup($"[magenta]{value}[/]"),
-                XmlTokenType.DocumentTypeDeclaration => new Markup($"[orange1]{value}[/]"),
-                XmlTokenType.ProcessingInstruction => new Markup($"[orange1]{value}[/]"),
-
-                _ => new Markup(value)
-            };
-
-            AnsiConsole.Write(colored);
+            //Important: wait for inline processing to complete before proceeding
+            if (token.Metadata is IInlineMarkupMedata inlineMetadata)
+            {
+                while (inlineMetadata.IsProcessing)
+                {
+                    Thread.Sleep(3);
+                }
+                AnsiConsole.WriteLine();
+            }
         });
 
         await writerTask;
@@ -84,16 +176,16 @@ class Program
         Console.WriteLine("Done.");
     }
 
-    static async Task EmitSlowlyAsync(string xml, Stream output)
+    static async Task EmitSlowlyAsync(string markup, Stream output)
     {
         var rng = new Random();
-        byte[] bytes = Encoding.UTF8.GetBytes(xml);
+        byte[] bytes = Encoding.UTF8.GetBytes(markup);
 
         foreach (var b in bytes)
         {
             await output.WriteAsync(new[] { b }.AsMemory(0, 1));
             await output.FlushAsync();
-            await Task.Delay(rng.Next(10, 60));
+            await Task.Delay(rng.Next(2, 8));
         }
 
         output.Close(); // EOF
