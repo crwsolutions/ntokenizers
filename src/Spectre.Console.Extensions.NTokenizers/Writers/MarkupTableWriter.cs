@@ -20,7 +20,6 @@ internal class MarkupTableWriter
         var spectreTable = new Table();
 
         var column = -1;
-        //TableColumn? currentColumn = null;
         TableRow? currentRow = null;
         var cellParagraphs = new List<Paragraph>();
         var liveParagraph = new Paragraph();
@@ -107,11 +106,6 @@ internal class MarkupTableWriter
                 {
                     // Alignment provided → apply it
                     spectreTable.Columns[i].Alignment = aligns[i].ToSpectreJustify();
-                }
-                else
-                {
-                    // No alignment provided → optionally leave unchanged
-                    // (Or set a default if desired)
                 }
             }
 
