@@ -1,5 +1,6 @@
 using NTokenizers.CSharp;
 using NTokenizers.Markup.Metadata;
+using System.Diagnostics;
 using System.Text;
 
 namespace NTokenizers.Markup;
@@ -98,7 +99,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         if (TryParseCustomContainer()) return true;
 
         // Try table
-        if (TryParseTableCell()) return true;
+        if (TryParseTable()) return true;
 
         return false;
     }
@@ -515,26 +516,44 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         return true;
     }
 
-    private bool TryParseTableCell()
+    private bool TryParseTable()
     {
         if (Peek() != '|') return false;
 
         EmitText();
         Read(); // Consume |
 
-        // Read cell content until next | or newline
-        var cellContent = new StringBuilder();
-        while (Peek() != -1 && Peek() != '|' && Peek() != '\n')
+        if (Peek() == '|') //this is invalid
         {
-            cellContent.Append((char)Read());
+            _buffer.Append('|'); //put that pipe back
+            return false;
         }
 
-        string content = cellContent.ToString();
+        var metadata = new TableMetadata();
 
-        // Emit table cell token with empty value
-        // Note: TableCell doesn't have metadata currently for OnInlineToken support
-        // This could be enhanced if needed
-        _onToken(new MarkupToken(MarkupTokenType.TableCell, content));
+        var t = Task.Run(() =>
+            _onToken(new MarkupToken(
+                MarkupTokenType.Table,
+                string.Empty,
+                metadata))
+        );
+
+        // Wait until client sets OnInlineToken
+        while (metadata.OnInlineToken is null)
+        {
+            Thread.Sleep(3);
+        }
+
+        var tableTokenizer = new TableMarkupTokenizer(metadata);
+
+        Debug.WriteLine($"'{Peek()}'");
+
+        tableTokenizer.Parse(_reader, metadata.OnInlineToken!);
+
+        metadata.IsProcessing = false;
+
+        // Ensure the heading token emission is complete
+        t.Wait();
 
         if (Peek() == '|')
         {

@@ -437,9 +437,124 @@ public class MarkupTokenizerTests
     public void TestTableCell()
     {
         var tokens = Tokenize("| cell 1 |");
-        Assert.Equal(1, tokens.Count);
-        Assert.Equal(MarkupTokenType.TableCell, tokens[0].TokenType);
-        Assert.Equal(" cell 1 ", tokens[0].Value); // Table cells have empty value
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkupTokenType.Table, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+        Assert.Equal(MarkupTokenType.TableRow, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[2].TokenType);
+        Assert.Equal(string.Empty, tokens[2].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(" cell 1 ", tokens[3].Value); 
+    }
+
+    [Fact]
+    public void TestTableCellBold()
+    {
+        var tokens = Tokenize("|**bold**|");
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkupTokenType.Table, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+        Assert.Equal(MarkupTokenType.TableRow, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[2].TokenType);
+        Assert.Equal(string.Empty, tokens[2].Value);
+        Assert.Equal(MarkupTokenType.Bold, tokens[3].TokenType);
+        Assert.Equal("bold", tokens[3].Value);
+    }
+
+    [Fact]
+    public void TestTableWithTwoCells()
+    {
+        var tokens = Tokenize("| | |");
+        Assert.Equal(6, tokens.Count);
+        Assert.Equal(MarkupTokenType.Table, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+        Assert.Equal(MarkupTokenType.TableRow, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value); // Table cells have empty value
+        Assert.Equal(MarkupTokenType.TableCell, tokens[2].TokenType);
+        Assert.Equal(string.Empty, tokens[2].Value); // Table cells have empty value
+        Assert.Equal(MarkupTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(" ", tokens[3].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[4].TokenType);
+        Assert.Equal(string.Empty, tokens[4].Value); // Table cells have empty value
+        Assert.Equal(MarkupTokenType.Text, tokens[5].TokenType);
+        Assert.Equal(" ", tokens[5].Value);
+    }
+
+    [Fact]
+    public void TestTableWithTwoRows()
+    {
+        var tokens = Tokenize("| |\r\n| |");
+        Assert.Equal(7, tokens.Count);
+        Assert.Equal(MarkupTokenType.Table, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+        Assert.Equal(MarkupTokenType.TableRow, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[2].TokenType);
+        Assert.Equal(string.Empty, tokens[2].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(" ", tokens[3].Value);
+        Assert.Equal(MarkupTokenType.TableRow, tokens[4].TokenType);
+        Assert.Equal(string.Empty, tokens[4].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[5].TokenType);
+        Assert.Equal(string.Empty, tokens[5].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[6].TokenType);
+        Assert.Equal(" ", tokens[6].Value);
+    }
+
+    [Fact]
+    public void TestTableAlignments()
+    {
+        var tokens = Tokenize("|----|----|---|");
+        var tableMetadata = tokens[0].Metadata as TableMetadata;
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(MarkupTokenType.Table, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+        Assert.Equal(MarkupTokenType.TableAlignments, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value);
+        Assert.Equal(3, tableMetadata!.Alignments!.Count);
+        Assert.Equal(Justify.Left, tableMetadata!.Alignments![0]);
+        Assert.Equal(Justify.Left, tableMetadata!.Alignments![1]);
+        Assert.Equal(Justify.Left, tableMetadata!.Alignments![2]);
+    }
+
+    [Fact]
+    public void TestTableWithTwoCellsAndAlignment()
+    {
+        var tokens = Tokenize("| | | |\r\n|:---|:---:|---:|\r\n");
+        var tableMetadata = tokens[0].Metadata as TableMetadata;
+        Assert.Equal(9, tokens.Count);
+        Assert.Equal(MarkupTokenType.Table, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+        Assert.Equal(MarkupTokenType.TableRow, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[2].TokenType);
+        Assert.Equal(string.Empty, tokens[2].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(" ", tokens[3].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[4].TokenType);
+        Assert.Equal(string.Empty, tokens[4].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[5].TokenType);
+        Assert.Equal(" ", tokens[5].Value);
+        Assert.Equal(MarkupTokenType.TableCell, tokens[6].TokenType);
+        Assert.Equal(string.Empty, tokens[6].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[7].TokenType);
+        Assert.Equal(" ", tokens[7].Value);
+        Assert.Equal(MarkupTokenType.TableAlignments, tokens[8].TokenType);
+        Assert.Equal(string.Empty, tokens[8].Value);
+        Assert.Equal(Justify.Left, tableMetadata!.Alignments![0]);
+        Assert.Equal(Justify.Center, tableMetadata!.Alignments![1]);
+        Assert.Equal(Justify.Right, tableMetadata!.Alignments![2]);
+    }
+
+    [Fact]
+    public void TestTableInvalidCells()
+    {
+        var tokens = Tokenize("|||");
+        Assert.Single(tokens);
+        Assert.Equal(MarkupTokenType.Text, tokens[0].TokenType);
+        Assert.Equal("|||", tokens[0].Value);
     }
 
     [Fact]

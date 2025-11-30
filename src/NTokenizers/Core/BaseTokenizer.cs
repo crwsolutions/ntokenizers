@@ -59,6 +59,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     {
         _reader = reader;
         _onToken = onToken;
+
         Parse();
     }
 

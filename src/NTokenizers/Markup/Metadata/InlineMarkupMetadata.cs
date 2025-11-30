@@ -11,7 +11,7 @@ public abstract class InlineMarkupMetadata<TToken>() : MarkupMetadata, IInlineMa
     private readonly ManualResetEventSlim _callbackReady = new();
 
     /// <summary>
-    /// Optional callback to stream syntax-highlighted tokens from the code block.
+    /// Callback to stream syntax-highlighted tokens from the code block.
     /// When set, the tokenizer will delegate to language-specific tokenizers and emit tokens via this callback.
     /// </summary>
     public Action<TToken>? OnInlineToken

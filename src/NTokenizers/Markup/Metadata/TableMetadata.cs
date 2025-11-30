@@ -3,14 +3,10 @@
 /// <summary>
 /// Metadata for table tokens, containing column information.
 /// </summary>
-/// <param name="Columns">List of column metadata.</param>
-public sealed class TableMetadata(
-    IReadOnlyList<TableColumnMetadata> Columns
-) : MarkupMetadata
+public sealed class TableMetadata : InlineMarkupMetadata<MarkupToken>
 {
     /// <summary>
-    /// Optional callback to stream inline tokens (bold, italic, etc.) within table cells.
-    /// When set, the tokenizer will parse inline content and emit tokens via this callback.
+    /// List of text alignments for each column in the table.
     /// </summary>
-    public Action<MarkupToken>? OnInlineToken { get; set; }
+    public List<Justify>? Alignments { get; internal set; }
 }

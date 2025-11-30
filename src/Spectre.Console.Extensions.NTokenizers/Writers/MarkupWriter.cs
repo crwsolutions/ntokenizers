@@ -21,7 +21,6 @@ public static class MarkupWriter
             var code = string.IsNullOrWhiteSpace(codeBlockMetadata.Language) ? "code" : codeBlockMetadata.Language;
             AnsiConsole.WriteLine($"{code}:");
         }
-
         if (token.Metadata is HeadingMetadata meta)
         {
             var writer = new MarkupHeadingWriter(MarkupStyles.MarkupHeadingStyles);
@@ -84,6 +83,11 @@ public static class MarkupWriter
             var writer = new MarkupListItemWriter(MarkupStyles.MarkupListItemStyles);
             writer.Write(listItemMeta);
         }
+        else if (token.Metadata is TableMetadata tableMeta)
+        {
+            var writer = new MarkupTableWriter(MarkupStyles);
+            writer.Write(tableMeta);
+        }
         else
         {
             WriteMarkup(liveTarget, token, defaultStyle);
@@ -113,7 +117,7 @@ public static class MarkupWriter
         }
     }
 
-    private static void WriteMarkup(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
+    internal static void WriteMarkup(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
         var style = token.TokenType switch
         {

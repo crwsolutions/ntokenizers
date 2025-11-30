@@ -64,12 +64,28 @@ public enum MarkupTokenType
     /// Represents a code block. Value contains the code content without ``` markers. Language is stored in Metadata.
     /// </summary>
     CodeBlock,
-    
+
+    /// <summary>
+    /// Represents a table. Value is empty. Table structure stored in Metadata.
+    /// </summary>
+    Table,
+
+    /// <summary>
+    /// Represents a table row. Value is empty. Row position stored in Metadata.
+    /// </summary>
+    TableRow,
+
     /// <summary>
     /// Represents a table cell. Value contains the cell content without | delimiters. Position and alignment stored in Metadata.
     /// </summary>
     TableCell,
-    
+
+
+    /// <summary>
+    /// Represents table column alignments. Value is empty. Alignments stored in Metadata.
+    /// </summary>
+    TableAlignments,
+
     /// <summary>
     /// Represents a link. Value contains the link text without [ ] markers. URL and title stored in Metadata.
     /// </summary>
