@@ -548,11 +548,13 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         Debug.WriteLine($"'{Peek()}'");
 
+        metadata.WaitForCallbackClient();
+
         tableTokenizer.Parse(_reader, metadata.OnInlineToken!);
 
         metadata.IsProcessing = false;
 
-        // Ensure the heading token emission is complete
+        // Ensure the table token emission is complete
         t.Wait();
 
         if (Peek() == '|')
@@ -569,6 +571,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
     /// </summary>
     private void ParseInlineTokens(InlineMarkupMetadata<MarkupToken> inlineMarkupMetadata)
     {
+        inlineMarkupMetadata.WaitForCallbackClient();
         InlineMarkupTokenizer.Create().Parse(_reader, inlineMarkupMetadata.OnInlineToken!);
         inlineMarkupMetadata.IsProcessing = false;
     }
