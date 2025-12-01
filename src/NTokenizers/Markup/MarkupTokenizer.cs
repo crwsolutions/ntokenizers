@@ -1,4 +1,3 @@
-using NTokenizers.Core;
 using NTokenizers.CSharp;
 using NTokenizers.Markup.Metadata;
 using System.Diagnostics;
@@ -22,7 +21,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
     /// <summary>
     /// Parses the input stream and emits markup tokens via the OnToken callback.
     /// </summary>
-    internal protected override void Parse()
+    internal protected override async Task ParseAsync()
     {
         while (true)
         {
@@ -34,14 +33,14 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
             // Try to parse special constructs at line start
             if (_atLineStart && !char.IsWhiteSpace(c))
             {
-                if (TryParseLineStartConstruct())
+                if (await TryParseLineStartConstructAsync())
                 {
                     //Eat newline after line-start construct
-                    if (Peek() == '\r') 
+                    if (Peek() == '\r')
                     {
                         Read();
                     }
-                    if(Peek() == '\n')
+                    if (Peek() == '\n')
                     {
                         Read();
                         _atLineStart = true;
@@ -79,28 +78,28 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         EmitText();
     }
 
-    private bool TryParseLineStartConstruct()
+    private async Task<bool> TryParseLineStartConstructAsync()
     {
         // Try heading
-        if (TryParseHeading()) return true;
+        if (await TryParseHeadingAsync()) return true;
 
         // Try horizontal rule
         if (TryParseHorizontalRule()) return true;
 
         // Try blockquote
-        if (TryParseBlockquote()) return true;
+        if (await TryParseBlockquoteAsync()) return true;
 
         // Try list items
-        if (TryParseListItem()) return true;
+        if (await TryParseListItemAsync()) return true;
 
         // Try code fence
-        if (TryParseCodeFence()) return true;
+        if (await TryParseCodeFence()) return true;
 
         // Try custom container
         if (TryParseCustomContainer()) return true;
 
         // Try table
-        if (TryParseTable()) return true;
+        if (await TryParseTableAsync()) return true;
 
         return false;
     }
@@ -144,7 +143,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         return false;
     }
 
-    private bool TryParseHeading()
+    private async Task<bool> TryParseHeadingAsync()
     {
         int level = 0;
         int pos = 0;
@@ -178,20 +177,16 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         var metadata = new HeadingMetadata(level);
 
         // Emit heading token with empty value (client can set OnInlineToken to parse inline content)
-        var t = Task.Run(() =>
-            _onToken(new MarkupToken(
-                MarkupTokenType.Heading,
-                string.Empty,
-                metadata))
-        );
+        var emitTask = Task.Run(() =>
+            _onToken(new MarkupToken(MarkupTokenType.Heading, string.Empty, metadata)));
 
         // Await the client registering the handler
-        var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
+        var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-        InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
+        await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
 
         // Ensure the heading token emission is complete
-        t.Wait();
+        await emitTask;
 
         metadata.CompleteProcessing();
 
@@ -230,7 +225,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         return true;
     }
 
-    private bool TryParseBlockquote()
+    private async Task<bool> TryParseBlockquoteAsync()
     {
         if (Peek() != '>') return false;
 
@@ -245,21 +240,23 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         var metadata = new BlockquoteMetadata();
 
         // Emit blockquote token with empty value (client can set OnInlineToken to parse inline content)
-        var t = Task.Run(() =>
+        var emitTask = Task.Run(() =>
             _onToken(new MarkupToken(MarkupTokenType.Blockquote, string.Empty, metadata))
         );
 
         // Await the client registering the handler
-        var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
+        var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-        InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
+        await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
 
-        t.Wait();
+        await emitTask;
+
+        metadata.CompleteProcessing();
 
         return true;
     }
 
-    private bool TryParseListItem()
+    private async Task<bool> TryParseListItemAsync()
     {
         char c = PeekAhead(0);
 
@@ -279,15 +276,16 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
             var metadata = new ListItemMetadata(marker);
 
             // Emit unordered list item token with empty value
-            var t = Task.Run(() =>
-                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, string.Empty, metadata))
-                );
+            var emitTask = Task.Run(() =>
+                _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, string.Empty, metadata)));
 
-            var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
+            var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-            InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
+            await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
 
-            t.Wait();
+            await emitTask;
+
+            metadata.CompleteProcessing();
 
             return true;
         }
@@ -316,19 +314,16 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
                 var metadata = new OrderedListItemMetadata(number);
 
                 // Emit ordered list item token with empty value
-                var t = Task.Run(() =>
-                    _onToken(new MarkupToken(
-                        MarkupTokenType.OrderedListItem,
-                        string.Empty,
-                        metadata
-                    ))
-                );
+                var emitTask = Task.Run(() =>
+                    _onToken(new MarkupToken(MarkupTokenType.OrderedListItem, string.Empty, metadata)));
 
-                var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
+                var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-                InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
+                await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
 
-                t.Wait();
+                await emitTask;
+
+                metadata.CompleteProcessing();
 
                 return true;
             }
@@ -337,7 +332,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         return false;
     }
 
-    private bool TryParseCodeFence()
+    private async Task<bool> TryParseCodeFence()
     {
         if (PeekAhead(0) != '`' || PeekAhead(1) != '`' || PeekAhead(2) != '`')
             return false;
@@ -376,7 +371,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         };
 
         // Emit code block token with empty value (client can set OnInlineToken for syntax highlighting)
-        var t = Task.Run(() =>
+        var emitTask = Task.Run(() =>
             _onToken(new MarkupToken(
                 MarkupTokenType.CodeBlock,
                 string.Empty,
@@ -386,9 +381,9 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         // Check if client set OnInlineToken during the callback
         // If so, delegate to specialized tokenizer for syntax highlighting
-        DelegateToLanguageTokenizer(metadata);
+        await DelegateToLanguageTokenizerAsync(metadata);
 
-        t.Wait();
+        await emitTask;
 
         metadata.CompleteProcessing();
 
@@ -399,35 +394,35 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
     /// Delegates code block content to the appropriate language tokenizer.
     /// Emits language-specific tokens (e.g., CSharpToken, JsonToken) via the OnInlineToken callback.
     /// </summary>
-    private void DelegateToLanguageTokenizer(MarkupMetadata metadata)
+    private async Task DelegateToLanguageTokenizerAsync(MarkupMetadata metadata)
     {
         try
         {
             switch (metadata)
             {
                 case CSharpCodeBlockMetadata csharpMeta:
-                    var csharpHandler = csharpMeta.GetInlineTokenHandlerAsync().Result;
-                    CSharpTokenizer.Create().Parse(_reader, "```", csharpHandler);
+                    var csharpHandler = await csharpMeta.GetInlineTokenHandlerAsync();
+                    await CSharpTokenizer.Create().ParseAsync(_reader, "```", csharpHandler);
                     break;
                 case JsonCodeBlockMetadata jsonMeta:
-                    var jsonHandler = jsonMeta.GetInlineTokenHandlerAsync().Result;
-                    Json.JsonTokenizer.Create().Parse(_reader, "```", jsonHandler);
+                    var jsonHandler = await jsonMeta.GetInlineTokenHandlerAsync();
+                    await Json.JsonTokenizer.Create().ParseAsync(_reader, "```", jsonHandler);
                     break;
                 case XmlCodeBlockMetadata xmlMeta:
-                    var xmlHandler = xmlMeta.GetInlineTokenHandlerAsync().Result;
-                    Xml.XmlTokenizer.Create().Parse(_reader, "```", xmlHandler);
+                    var xmlHandler = await xmlMeta.GetInlineTokenHandlerAsync();
+                    await Xml.XmlTokenizer.Create().ParseAsync(_reader, "```", xmlHandler);
                     break;
                 case SqlCodeBlockMetadata sqlMeta:
-                    var sqlHandler = sqlMeta.GetInlineTokenHandlerAsync().Result;
-                    Sql.SqlTokenizer.Create().Parse(_reader, "```", sqlHandler);
+                    var sqlHandler = await sqlMeta.GetInlineTokenHandlerAsync();
+                    await Sql.SqlTokenizer.Create().ParseAsync(_reader, "```", sqlHandler);
                     break;
                 case TypeScriptCodeBlockMetadata tsMeta:
-                    var tsHandler = tsMeta.GetInlineTokenHandlerAsync().Result;
-                    Typescript.TypescriptTokenizer.Create().Parse(_reader, "```", tsHandler);
+                    var tsHandler = await tsMeta.GetInlineTokenHandlerAsync();
+                    await Typescript.TypescriptTokenizer.Create().ParseAsync(_reader, "```", tsHandler);
                     break;
                 case GenericCodeBlockMetadata gMeta:
-                    var genHandler = gMeta.GetInlineTokenHandlerAsync().Result;
-                    Generic.GenericTokenizer.Create().Parse(_reader, "```", genHandler);
+                    var genHandler = await gMeta.GetInlineTokenHandlerAsync();
+                    await Generic.GenericTokenizer.Create().ParseAsync(_reader, "```", genHandler);
                     break;
             }
         }
@@ -500,7 +495,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         return true;
     }
 
-    private bool TryParseTable()
+    private async Task<bool> TryParseTableAsync()
     {
         if (Peek() != '|') return false;
 
@@ -515,24 +510,21 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         var metadata = new TableMetadata();
 
-        var t = Task.Run(() =>
-            _onToken(new MarkupToken(
-                MarkupTokenType.Table,
-                string.Empty,
-                metadata))
-        );
+        var emitTask = Task.Run(() =>
+            _onToken(new MarkupToken(MarkupTokenType.Table, string.Empty, metadata)));
 
         // Await the client registering the handler
-        var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
+        var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
         var tableTokenizer = new TableMarkupTokenizer(metadata);
 
         Debug.WriteLine($"'{Peek()}'");
-  
-        tableTokenizer.Parse(_reader, inlineTokenHandler);
+
+        await tableTokenizer.ParseAsync(_reader, inlineTokenHandler);
 
         // Ensure the table token emission is complete
-        t.Wait();
+        await emitTask;
+
         metadata.CompleteProcessing();
 
         if (Peek() == '|')

@@ -7,7 +7,7 @@ internal class TableMarkupTokenizer : BaseMarkupTokenizer
 
     internal TableMarkupTokenizer(TableMetadata metadata) => _tableMetaData = metadata;
 
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         do
         {
@@ -80,6 +80,8 @@ internal class TableMarkupTokenizer : BaseMarkupTokenizer
         } while (Peek() == '|'); //Next line of the table
 
         EmitText();
+
+        return Task.CompletedTask;
     }
 
     private Justify ReadAlignment()

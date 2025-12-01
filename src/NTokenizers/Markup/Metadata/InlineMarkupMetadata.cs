@@ -1,6 +1,4 @@
-﻿using NTokenizers.Core;
-
-namespace NTokenizers.Markup.Metadata;
+﻿namespace NTokenizers.Markup.Metadata;
 
 /// <summary>
 /// Markup metadata with inline tokenization support.

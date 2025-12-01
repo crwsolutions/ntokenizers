@@ -4,6 +4,7 @@ using NTokenizers.Markup.Metadata;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using Spectre.Console;
+using System.Diagnostics;
 using System.IO.Pipes;
 using System.Text;
 
@@ -12,6 +13,9 @@ class Program
     static async Task Main()
     {
         string markup = """
+        - aaa
+        - bbb
+
         # NTokenizers Showcase
 
         ## XML example
@@ -46,9 +50,20 @@ class Program
         var writerTask = EmitSlowlyAsync(markup, pipe);
 
         // Parse markup
-        MarkupTokenizer.Create().Parse(reader, onToken: async token =>
+        await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token =>
         {
-            if (token.Metadata is HeadingMetadata headingMetadata)
+            if (token.Metadata is ListItemMetadata listMetadata)
+            {
+                AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
+                await listMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    AnsiConsole.Write(new Markup($"[bold red]{value}[/]"));
+                });
+                Debug.WriteLine("Written listItem inlines");
+
+            }
+            else if (token.Metadata is HeadingMetadata headingMetadata)
             {
                 await headingMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
@@ -58,6 +73,7 @@ class Program
                         new Markup($"[bold yellow]** {value} **[/]");
                     AnsiConsole.Write(colored);
                 });
+                Debug.WriteLine("Written Heading inlines");
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
             {

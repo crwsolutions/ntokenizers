@@ -41,7 +41,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
     }
 
     /// <inheritdoc/>
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         State state = State.Start;
         bool escape = false;
@@ -102,6 +102,8 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
 
             EmitPending(ref state);
         }
+
+        return Task.CompletedTask;
     }
 
     private void ProcessChar(char c, ref State state, ref bool escape)

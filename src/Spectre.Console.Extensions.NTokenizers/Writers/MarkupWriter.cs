@@ -9,10 +9,11 @@ public static class MarkupWriter
 {
     public static MarkupStyles MarkupStyles { get; } = MarkupStyles.Default;
 
-    public static void Write(MarkupToken token)
-    {
-        WriteAsync(null, token, null).Wait();
-    }
+    public static void Write(MarkupToken token) => 
+        WriteAsync(token).GetAwaiter().GetResult();
+
+    public static Task WriteAsync(MarkupToken token) => 
+        WriteAsync(null, token, null);
 
     public static async Task WriteAsync(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {

@@ -23,7 +23,7 @@ internal class MarkupTableWriter
         TableRow? currentRow = null;
         var cellParagraphs = new List<Paragraph>();
         var liveParagraph = new Paragraph();
-        AnsiConsole.Live(spectreTable)
+        await AnsiConsole.Live(spectreTable)
         .StartAsync(async ctx =>
         {
             await metadata.RegisterInlineTokenHandler( inlineToken =>

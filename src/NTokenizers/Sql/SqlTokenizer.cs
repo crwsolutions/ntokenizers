@@ -37,7 +37,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     /// Parses SQL content from the given <see cref="TextReader"/> and produces a sequence
     /// of <see cref="SqlToken"/> objects.
     /// </summary>
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         var state = State.Start;
         char stringQuote = '\0';
@@ -105,6 +105,8 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
 
             EmitPending(state);
         }
+
+        return Task.CompletedTask;
     }
 
     private State ProcessChar(char c, State state, ref char stringQuote) => state switch

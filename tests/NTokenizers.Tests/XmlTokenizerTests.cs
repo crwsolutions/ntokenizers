@@ -390,7 +390,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        XmlTokenizer.Create().Parse(reader, stopDelimiter, token => tokens.Add(token));
+        XmlTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token));
         return tokens;
     }
 }

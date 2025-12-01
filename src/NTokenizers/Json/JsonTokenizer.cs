@@ -17,7 +17,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
     /// Parses JSON or JSON-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="JsonToken"/> objects.
     /// </summary>
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         var stack = new Stack<ContainerType>();
         bool inString = false;
@@ -82,6 +82,8 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
 
             EmitPending(ref inString, ref inNumber, ref inKeyword);
         }
+
+        return Task.CompletedTask;
     }
 
     private void ProcessChar(char c, ref bool inString, ref bool inNumber, ref bool inKeyword, ref bool escape, ref bool isExpectingKey, Stack<ContainerType> stack)

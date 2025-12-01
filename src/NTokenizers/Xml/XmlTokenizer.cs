@@ -34,7 +34,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
     /// Parses XML or XML-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="XmlToken"/> objects.
     /// </summary>
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         var state = State.Text;
         string delimiter = _stopDelimiter ?? string.Empty;
@@ -103,6 +103,8 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
 
             EmitPending(state);
         }
+
+        return Task.CompletedTask;
     }
 
     private void ProcessChar(char c, ref State state, ref char? quoteChar, ref bool insideTag,
