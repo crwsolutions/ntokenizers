@@ -24,37 +24,37 @@ internal class MarkupWriter(IAnsiConsole ansiConsole)
         if (token.Metadata is HeadingMetadata meta)
         {
             var writer = new MarkupHeadingWriter(ansiConsole, MarkupStyles.MarkupHeadingStyles);
-            await writer.Write(meta);
+            await writer.WriteAsync(meta);
         }
         else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
         {
             var writer = new CSharpWriter(ansiConsole, MarkupStyles.CSharpStyles);
-            await writer.Write(csharpMeta);
+            await writer.WriteAsync(csharpMeta);
         }
         else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
         {
             var writer = new XmlWriter(ansiConsole, MarkupStyles.XmlStyles);
-            await writer.Write(xmlMeta);
+            await writer.WriteAsync(xmlMeta);
         }
         else if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
         {
             var writer = new TypescriptWriter(ansiConsole, MarkupStyles.TypescriptStyles);
-            await writer.Write(tsMeta);
+            await writer.WriteAsync(tsMeta);
         }
         else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
         {
             var writer = new JsonWriter(ansiConsole, MarkupStyles.JsonStyles);
-            await writer.Write(jsonMeta);
+            await writer.WriteAsync(jsonMeta);
         }
         else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
         {
             var writer = new SqlWriter(ansiConsole, MarkupStyles.SqlStyles);
-            await writer.Write(sqlMeta);
+            await writer.WriteAsync(sqlMeta);
         }
         else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
         {
             var writer = new GenericWriter(ansiConsole);
-            await writer.Write(genericMeta);
+            await writer.WriteAsync(genericMeta);
         }
         else if (token.Metadata is LinkMetadata linkMeta)
         {
@@ -64,7 +64,7 @@ internal class MarkupWriter(IAnsiConsole ansiConsole)
         else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
         {
             var writer = new MarkupBlockquoteWriter(ansiConsole);
-            await writer.Write(blockquoteMeta);
+            await writer.WriteAsync(blockquoteMeta);
         }
         else if (token.Metadata is FootnoteMetadata footnoteMeta)
         {
