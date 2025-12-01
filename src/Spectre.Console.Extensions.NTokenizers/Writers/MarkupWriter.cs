@@ -9,11 +9,8 @@ public static class MarkupWriter
 {
     public static MarkupStyles MarkupStyles { get; } = MarkupStyles.Default;
 
-    public static void Write(MarkupToken token) => 
-        WriteAsync(token).GetAwaiter().GetResult();
-
-    public static Task WriteAsync(MarkupToken token) => 
-        WriteAsync(null, token, null);
+    public static async Task WriteAsync(MarkupToken token) => 
+        await WriteAsync(null, token, null);
 
     public static async Task WriteAsync(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
@@ -25,37 +22,37 @@ public static class MarkupWriter
         if (token.Metadata is HeadingMetadata meta)
         {
             var writer = new MarkupHeadingWriter(MarkupStyles.MarkupHeadingStyles);
-            writer.Write(meta);
+            await writer.Write(meta);
         }
         else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
         {
             var writer = new CSharpWriter(MarkupStyles.CSharpStyles);
-            writer.Write(csharpMeta);
+            await writer.Write(csharpMeta);
         }
         else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
         {
             var writer = new XmlWriter(MarkupStyles.XmlStyles);
-            writer.Write(xmlMeta);
+            await writer.Write(xmlMeta);
         }
         else if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
         {
             var writer = new TypescriptWriter(MarkupStyles.TypescriptStyles);
-            writer.Write(tsMeta);
+            await writer.Write(tsMeta);
         }
         else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
         {
             var writer = new JsonWriter(MarkupStyles.JsonStyles);
-            writer.Write(jsonMeta);
+            await writer.Write(jsonMeta);
         }
         else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
         {
             var writer = new SqlWriter(MarkupStyles.SqlStyles);
-            writer.Write(sqlMeta);
+            await writer.Write(sqlMeta);
         }
         else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
         {
             var writer = new GenericWriter();
-            writer.Write(genericMeta);
+            await writer.Write(genericMeta);
         }
         else if (token.Metadata is LinkMetadata linkMeta)
         {
@@ -64,7 +61,7 @@ public static class MarkupWriter
         else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
         {
             var writer = new MarkupBlockquoteWriter();
-            writer.Write(blockquoteMeta);
+            await writer.Write(blockquoteMeta);
         }
         else if (token.Metadata is FootnoteMetadata footnoteMeta)
         {
