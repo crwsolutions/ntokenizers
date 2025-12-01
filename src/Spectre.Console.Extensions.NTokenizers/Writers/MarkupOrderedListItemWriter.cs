@@ -9,7 +9,7 @@ internal sealed class MarkupOrderedListItemWriter(MarkupOrderedListItemStyles st
     {
         AnsiConsole.Write(new Console.Markup($"{metadata.Number}. ", styles.Number));
         await metadata.RegisterInlineTokenHandler(
-            async token => await MarkupWriter.WriteAsync(token));
+            async token => await MarkupWriter.Create().WriteAsync(token));
         AnsiConsole.WriteLine();
     }
 }

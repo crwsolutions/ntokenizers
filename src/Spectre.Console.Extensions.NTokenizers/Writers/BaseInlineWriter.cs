@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
+internal abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
 {
     protected virtual Style GetStyle(TTokentype token) => Style.Plain;
 

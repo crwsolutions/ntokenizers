@@ -9,7 +9,7 @@ internal sealed class MarkupListItemWriter(MarkupListItemStyles styles)
     {
         AnsiConsole.Write(new Console.Markup($"{metadata.Marker} ", styles.Marker));
         await metadata.RegisterInlineTokenHandler(
-            async token => await MarkupWriter.WriteAsync(token));
+            async token => await MarkupWriter.Create().WriteAsync(token));
         AnsiConsole.WriteLine();
     }
 }

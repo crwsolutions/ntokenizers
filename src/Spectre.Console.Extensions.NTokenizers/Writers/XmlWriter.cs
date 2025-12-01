@@ -3,7 +3,7 @@ using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class XmlWriter(XmlStyles styles) : BaseInlineWriter<XmlToken, XmlTokenType>
+internal sealed class XmlWriter(XmlStyles styles) : BaseInlineWriter<XmlToken, XmlTokenType>
 {
     protected override Style GetStyle(XmlTokenType token) => token switch
     {

@@ -59,7 +59,7 @@ internal sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInli
     protected override async Task WriteTokenAsync(Paragraph liveParagraph, MarkupToken token)
     {
         _lenght += token.Value.Length;
-        await MarkupWriter.WriteAsync(liveParagraph, token, _style);
+        await MarkupWriter.Create().WriteAsync(liveParagraph, token, _style);
     }
 
     protected override IRenderable GetIRendable() => _liveParagraph;

@@ -3,7 +3,7 @@ using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class TypescriptWriter(TypescriptStyles styles) : BaseInlineWriter<TypescriptToken, TypescriptTokenType>
+internal sealed class TypescriptWriter(TypescriptStyles styles) : BaseInlineWriter<TypescriptToken, TypescriptTokenType>
 {
     protected override Style GetStyle(TypescriptTokenType token) => token switch
     {

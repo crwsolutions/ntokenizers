@@ -5,14 +5,16 @@ using System.Diagnostics;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public static class MarkupWriter
+internal class MarkupWriter
 {
-    public static MarkupStyles MarkupStyles { get; } = MarkupStyles.Default;
+    internal static MarkupStyles MarkupStyles { get; set; } = MarkupStyles.Default;
 
-    public static async Task WriteAsync(MarkupToken token) => 
+    internal static MarkupWriter Create() => new();
+
+    internal async Task WriteAsync(MarkupToken token) => 
         await WriteAsync(null, token, null);
 
-    public static async Task WriteAsync(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
+    internal async Task WriteAsync(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
         if (token.Metadata is ICodeBlockMetadata codeBlockMetadata)
         {
@@ -92,7 +94,7 @@ public static class MarkupWriter
         }
     }
 
-    private static void Write(Paragraph? liveTarget, string value, Style? style = null)
+    private void Write(Paragraph? liveTarget, string value, Style? style = null)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -115,7 +117,7 @@ public static class MarkupWriter
         }
     }
 
-    internal static void WriteMarkup(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
+    internal void WriteMarkup(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
         var style = token.TokenType switch
         {

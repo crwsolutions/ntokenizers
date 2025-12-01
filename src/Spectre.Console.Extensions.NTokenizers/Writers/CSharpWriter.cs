@@ -3,7 +3,7 @@ using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-public sealed class CSharpWriter(CSharpStyles styles) : BaseInlineWriter<CSharpToken, CSharpTokenType>
+internal sealed class CSharpWriter(CSharpStyles styles) : BaseInlineWriter<CSharpToken, CSharpTokenType>
 {
     protected override Style GetStyle(CSharpTokenType token) => token switch
     {

@@ -123,6 +123,6 @@ internal class MarkupTableWriter
             return;
         }
         Debug.WriteLine($"Writing token: `{token.Value}` of type `{token.TokenType}`");
-        await MarkupWriter.WriteAsync(liveParagraph, token, _markupStyles.TableCell);
+        await MarkupWriter.Create().WriteAsync(liveParagraph, token, _markupStyles.TableCell);
     }
 }
