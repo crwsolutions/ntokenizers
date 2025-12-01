@@ -11,7 +11,12 @@ internal abstract class BaseInlineWriter<TToken, TTokentype>(IAnsiConsole ansiCo
 
     protected readonly Paragraph _liveParagraph = new("");
 
-    internal async Task Write(InlineMarkupMetadata<TToken> metadata)
+    internal void WriteToken(TToken token)
+    {
+        ansiConsole.Write(new Markup(Markup.Escape(token.Value), GetStyle(token.TokenType)));
+    }
+
+    internal async Task WriteAsync(InlineMarkupMetadata<TToken> metadata)
     {
         await ansiConsole.Live(GetIRendable())
         .StartAsync(async ctx =>
