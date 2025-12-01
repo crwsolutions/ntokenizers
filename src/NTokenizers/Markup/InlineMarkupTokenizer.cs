@@ -7,7 +7,7 @@ internal class InlineMarkupTokenizer : BaseMarkupTokenizer
 {
     internal static InlineMarkupTokenizer Create() => new();
 
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         while (Peek() != -1 && Peek() != '\n' && Peek() != '\r')
         {
@@ -27,5 +27,7 @@ internal class InlineMarkupTokenizer : BaseMarkupTokenizer
         }
 
         EmitText();
+
+        return Task.CompletedTask;
     }
 }

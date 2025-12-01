@@ -32,7 +32,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     /// <summary>
     /// Parses TypeScript content from the given <see cref="TextReader"/> and produces a sequence of <see cref="TypescriptToken"/> objects.
     /// </summary>
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         var state = State.Start;
         char? stringDelimiter = null;
@@ -95,6 +95,8 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
 
             EmitPending(state);
         }
+
+        return Task.CompletedTask;
     }
 
     private void ProcessChar(char c, ref State state, ref char? stringDelimiter)

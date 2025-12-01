@@ -17,7 +17,7 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
     /// <summary>
     /// Parses the input text reader and invokes the onToken action for each token found,
     /// </summary>
-    internal protected override void Parse()
+    internal protected override Task ParseAsync()
     {
         string delimiter = _stopDelimiter ?? string.Empty;
         int delLength = delimiter.Length;
@@ -66,6 +66,8 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
         }
 
         EmitPending();
+
+        return Task.CompletedTask;
     }
 
     private void EmitPending()

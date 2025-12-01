@@ -15,7 +15,7 @@ internal class MarkupTableWriter
         _markupStyles = markupStyles;
     }
 
-    internal void Write(TableMetadata metadata)
+    internal async Task WriteAsync(TableMetadata metadata)
     {
         var spectreTable = new Table();
 
@@ -23,10 +23,10 @@ internal class MarkupTableWriter
         TableRow? currentRow = null;
         var cellParagraphs = new List<Paragraph>();
         var liveParagraph = new Paragraph();
-        AnsiConsole.Live(spectreTable)
-        .Start(ctx =>
+        await AnsiConsole.Live(spectreTable)
+        .StartAsync(async ctx =>
         {
-            metadata.OnInlineToken = inlineToken =>
+            await metadata.RegisterInlineTokenHandler(async inlineToken =>
             {
                 if (inlineToken.TokenType == MarkupTokenType.TableAlignments)
                 {
@@ -62,16 +62,11 @@ internal class MarkupTableWriter
                 }
                 else //Write cell content
                 {
-                    WriteToken(liveParagraph, inlineToken);
+                    await WriteTokenAsync(liveParagraph, inlineToken);
                 }
 
                 ctx.Refresh();
-            };
-
-            while (metadata.IsProcessing)
-            {
-                Thread.Sleep(3);
-            }
+            });
 
             ctx.Refresh();
         });
@@ -121,13 +116,13 @@ internal class MarkupTableWriter
         }
     }
 
-    private void WriteToken(Paragraph liveParagraph, MarkupToken token)
+    private async Task WriteTokenAsync(Paragraph liveParagraph, MarkupToken token)
     {
         if (string.IsNullOrEmpty(token.Value))
         {
             return;
         }
         Debug.WriteLine($"Writing token: `{token.Value}` of type `{token.TokenType}`");
-        MarkupWriter.Write(liveParagraph, token, _markupStyles.TableCell);
+        await MarkupWriter.WriteAsync(liveParagraph, token, _markupStyles.TableCell);
     }
 }

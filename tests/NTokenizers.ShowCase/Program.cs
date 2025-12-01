@@ -4,6 +4,7 @@ using NTokenizers.Markup.Metadata;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using Spectre.Console;
+using System.Diagnostics;
 using System.IO.Pipes;
 using System.Text;
 
@@ -12,6 +13,9 @@ class Program
     static async Task Main()
     {
         string markup = """
+        - aaa
+        - bbb
+
         # NTokenizers Showcase
 
         ## XML example
@@ -46,22 +50,34 @@ class Program
         var writerTask = EmitSlowlyAsync(markup, pipe);
 
         // Parse markup
-        MarkupTokenizer.Create().Parse(reader, onToken: token =>
+        await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token =>
         {
-            if (token.Metadata is HeadingMetadata headingMetadata)
+            if (token.Metadata is ListItemMetadata listMetadata)
             {
-                headingMetadata.OnInlineToken = inlineToken =>
+                AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
+                await listMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    AnsiConsole.Write(new Markup($"[bold red]{value}[/]"));
+                });
+                Debug.WriteLine("Written listItem inlines");
+
+            }
+            else if (token.Metadata is HeadingMetadata headingMetadata)
+            {
+                await headingMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = headingMetadata.Level != 1 ?
                         new Markup($"[bold GreenYellow]{value}[/]") :
                         new Markup($"[bold yellow]** {value} **[/]");
                     AnsiConsole.Write(colored);
-                };
+                });
+                Debug.WriteLine("Written Heading inlines");
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
             {
-                xmlMetadata.OnInlineToken = inlineToken =>
+                await xmlMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -80,11 +96,11 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
             {
-                jsonMetadata.OnInlineToken = inlineToken =>
+                await jsonMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -105,11 +121,11 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
             {
-                tsMetadata.OnInlineToken = inlineToken =>
+                await tsMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -124,7 +140,7 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else
             {
@@ -143,13 +159,8 @@ class Program
                 AnsiConsole.Write(colored);
             }
 
-            //Important: wait for inline processing to complete before proceeding
-            if (token.Metadata is IInlineMarkupMedata inlineMetadata)
+            if (token.Metadata is InlineMarkupMetadata)
             {
-                while (inlineMetadata.IsProcessing)
-                {
-                    Thread.Sleep(3);
-                }
                 AnsiConsole.WriteLine();
             }
         });

@@ -3,42 +3,46 @@
 /// <summary>
 /// Markup metadata with inline tokenization support.
 /// </summary>
-public abstract class InlineMarkupMetadata<TToken>() : MarkupMetadata, IInlineMarkupMedata
+public abstract class InlineMarkupMetadata<TToken>() : InlineMarkupMetadata
 {
-    /// <intheritdoc/>
-    public bool IsProcessing { get; set; } = true;
+    private readonly TaskCompletionSource<Action<TToken>> _onInlineTokenTcs = new();
 
-    private readonly ManualResetEventSlim _callbackReady = new();
-
-    /// <summary>
-    /// Callback to stream syntax-highlighted tokens from the code block.
-    /// When set, the tokenizer will delegate to language-specific tokenizers and emit tokens via this callback.
-    /// </summary>
-    public Action<TToken>? OnInlineToken
-    {
-        get => _onInlineToken;
-        set
-        {
-            _onInlineToken = value;
-            if (value is not null)
-            {
-                _callbackReady.Set();
-            }
-        }
-    }
     private Action<TToken>? _onInlineToken;
 
-    /// <intheritdoc/>
-    public void WaitForCallbackClient()
-    {
-        if (_onInlineToken is not null)
-        {
-            return;
-        }
+    // Awaitable getter for the handler (parser uses this)
+    internal Task<Action<TToken>> GetInlineTokenHandlerAsync() => _onInlineTokenTcs.Task;
 
-        if (!_callbackReady.Wait(1000))
+    /// <summary>
+    /// Client calls this to register the handler and signal; returns processing Task for awaiting
+    /// </summary>
+    public Task<bool> RegisterInlineTokenHandler(Action<TToken> handler)
+    {
+        _onInlineToken = handler ?? throw new ArgumentNullException(nameof(handler));
+        _onInlineTokenTcs.TrySetResult(handler);
+        return _processingTcs.Task;
+    }
+}
+
+/// <summary>
+/// Markup metadata with inline tokenization support.
+/// </summary>
+public abstract class InlineMarkupMetadata : MarkupMetadata
+{
+    /// <summary>
+    /// Task that completes when processing is done
+    /// </summary>
+    internal protected readonly TaskCompletionSource<bool> _processingTcs = new();
+
+    // Parser calls this to signal completion
+    internal void CompleteProcessing(Exception? ex = null)
+    {
+        if (ex != null)
         {
-            //throw new TimeoutException("Callback client was never assigned.");
+            _processingTcs.TrySetException(ex);
+        }
+        else
+        {
+            _processingTcs.TrySetResult(true);
         }
     }
 }

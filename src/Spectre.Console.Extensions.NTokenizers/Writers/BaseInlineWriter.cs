@@ -11,23 +11,19 @@ public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken
 
     protected readonly Paragraph _liveParagraph = new("");
 
-    internal void Write(InlineMarkupMetadata<TToken> metadata)
+    internal async Task Write(InlineMarkupMetadata<TToken> metadata)
     {
-        AnsiConsole.Live(GetIRendable())
-        .Start(ctx =>
+        await AnsiConsole.Live(GetIRendable())
+        .StartAsync(async ctx =>
         {
-            Started(metadata);
-            metadata.OnInlineToken = inlineToken =>
+            await StartedAsync(metadata);
+            await metadata.RegisterInlineTokenHandler(async inlineToken =>
             {
-                WriteToken(_liveParagraph, inlineToken);
+                await WriteTokenAsync(_liveParagraph, inlineToken);
                 ctx.Refresh();
-            };
+            });
 
-            while (metadata.IsProcessing)
-            {
-                Thread.Sleep(3);
-            }
-            Finalize(metadata);
+            await FinalizeAsync(metadata);
             ctx.Refresh();
         });
     }
@@ -39,23 +35,17 @@ public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken
             .BorderStyle(new Style(Color.Green));
     }
 
-    protected virtual void Started(InlineMarkupMetadata<TToken> metadata)
+    protected virtual Task StartedAsync(InlineMarkupMetadata<TToken> metadata) => Task.CompletedTask;
+
+    protected virtual Task FinalizeAsync(InlineMarkupMetadata<TToken> metadata) => Task.CompletedTask;
+
+    protected virtual Task WriteTokenAsync(Paragraph liveParagraph, TToken token)
     {
-
-    }
-
-    protected virtual void Finalize(InlineMarkupMetadata<TToken> metadata)
-    {
-
-    }
-
-    protected virtual void WriteToken(Paragraph liveParagraph, TToken token)
-    {
-        if (string.IsNullOrEmpty(token.Value))
+        if (!string.IsNullOrEmpty(token.Value))
         {
-            return;
+            Debug.WriteLine($"Writing token: `{token.Value}` of type `{token.TokenType}`");
+            liveParagraph.Append(token.Value, GetStyle(token.TokenType));
         }
-        Debug.WriteLine($"Writing token: `{token.Value}` of type `{token.TokenType}`");
-        liveParagraph.Append(token.Value, GetStyle(token.TokenType));
+        return Task.CompletedTask;
     }
 }

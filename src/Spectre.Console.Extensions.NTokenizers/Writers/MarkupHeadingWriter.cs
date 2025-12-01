@@ -12,7 +12,7 @@ internal sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInli
 
     protected override Style GetStyle(MarkupTokenType token) => _style;
 
-    protected override void Started(InlineMarkupMetadata<MarkupToken> metadata)
+    protected override async Task StartedAsync(InlineMarkupMetadata<MarkupToken> metadata)
     {
         _liveParagraph.Append("\n");
         if (metadata is HeadingMetadata meta)
@@ -25,41 +25,41 @@ internal sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInli
             };
             if (meta.Level == 1)
             {
-                WriteToken("** ");
+                await WriteToken("** ");
             }
         }
     }
 
-    protected override void Finalize(InlineMarkupMetadata<MarkupToken> metadata)
+    protected override async Task FinalizeAsync(InlineMarkupMetadata<MarkupToken> metadata)
     {
         if (metadata is HeadingMetadata meta)
         {
             if (meta.Level == 1)
             {
-                WriteToken(" **");
+                await WriteToken(" **");
             }
             if (meta.Level < 3)
             {
-                WriteToken($"\n{new string('=', _lenght)}");
+                await WriteToken($"\n{new string('=', _lenght)}");
             }
             else if (meta.Level < 5)
             {
-                WriteToken($"\n{new string('-', _lenght)}");
+                await WriteToken($"\n{new string('-', _lenght)}");
             }
 
             //WriteToken("\n");
         }
     }
 
-    private void WriteToken(string text)
+    private async Task WriteToken(string text)
     {
-        WriteToken(_liveParagraph, new MarkupToken(MarkupTokenType.Text, text));
+        await WriteTokenAsync(_liveParagraph, new MarkupToken(MarkupTokenType.Text, text));
     }
 
-    protected override void WriteToken(Paragraph liveParagraph, MarkupToken token)
+    protected override async Task WriteTokenAsync(Paragraph liveParagraph, MarkupToken token)
     {
         _lenght += token.Value.Length;
-        MarkupWriter.Write(liveParagraph, token, _style);
+        await MarkupWriter.WriteAsync(liveParagraph, token, _style);
     }
 
     protected override IRenderable GetIRendable() => _liveParagraph;
