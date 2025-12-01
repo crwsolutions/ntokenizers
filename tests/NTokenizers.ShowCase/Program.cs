@@ -54,7 +54,7 @@ class Program
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = headingMetadata.Level != 1 ?
-                        new Markup($"[bold blue]{value}[/]") :
+                        new Markup($"[bold GreenYellow]{value}[/]") :
                         new Markup($"[bold yellow]** {value} **[/]");
                     AnsiConsole.Write(colored);
                 };
