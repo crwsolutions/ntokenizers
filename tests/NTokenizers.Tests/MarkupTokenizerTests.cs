@@ -6,7 +6,7 @@ namespace Markup;
 
 public class MarkupTokenizerTests
 {
-    private static async Task<List<MarkupToken>> Tokenize(string markup)
+    private static List<MarkupToken> Tokenize(string markup)
     {
         var tokens = new List<MarkupToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markup));
@@ -15,21 +15,22 @@ public class MarkupTokenizerTests
             tokens.Add(token);
 
             // Automatically set OnInlineToken to capture inline tokens
+            // Note: We just register the handler without waiting - the processing happens during parsing
             if (token.Metadata is HeadingMetadata headingMeta)
             {
                 headingMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
             {
-                blockquoteMeta.RegisterInlineTokenHandler(tokens.Add).Wait();
+                blockquoteMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is ListItemMetadata listMeta)
             {
-                listMeta.RegisterInlineTokenHandler(tokens.Add).GetAwaiter().GetResult();
+                listMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is OrderedListItemMetadata orderedListMeta)
             {
-                orderedListMeta.RegisterInlineTokenHandler(tokens.Add).Wait();
+                orderedListMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
             {
@@ -58,13 +59,13 @@ public class MarkupTokenizerTests
             }
             else if (token.Metadata is TableMetadata tableMeta)
             {
-                tableMeta.RegisterInlineTokenHandler(tokens.Add).Wait();
+                tableMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is GenericCodeBlockMetadata gMeta)
             {
                 gMeta.RegisterInlineTokenHandler(token => { });
             }
-        });
+        }).GetAwaiter().GetResult();
         return tokens;
     }
 

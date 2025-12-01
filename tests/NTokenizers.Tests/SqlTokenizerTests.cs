@@ -509,7 +509,7 @@ public class SqlTokenizerTests
         var tokens = new List<SqlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        SqlTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token));
+        SqlTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 

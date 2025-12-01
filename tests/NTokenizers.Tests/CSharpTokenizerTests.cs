@@ -659,7 +659,7 @@ int x = 5; /* Block comment */ int y = 10;";
         var tokens = new List<CSharpToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        CSharpTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token));
+        CSharpTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 }

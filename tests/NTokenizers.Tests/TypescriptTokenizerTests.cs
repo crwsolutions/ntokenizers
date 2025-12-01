@@ -561,7 +561,7 @@ public class TypescriptTokenizerTests
         var tokens = new List<TypescriptToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        TypescriptTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token));
+        TypescriptTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 }
