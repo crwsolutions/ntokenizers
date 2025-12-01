@@ -1,35 +1,74 @@
-﻿using NTokenizers.Markup;
-using NTokenizers.ShowCase;
-using Spectre.Console.Extensions.NTokenizers.Writers;
+﻿using Spectre.Console;
+using Spectre.Console.Extensions.NTokenizers;
+using Spectre.Console.Extensions.NTokenizers.ShowCase;
+using Spectre.Console.Extensions.NTokenizers.Styles;
 using System.IO.Pipes;
 using System.Text;
 
-using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
-using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
 //Console.ReadLine();
+var sampleString = MarkupExample.GetSampleText();
+Console.WriteLine("\n=== WriteMarkupText with Stream (default styles) ===");
+var (writerTask, stream) = SetupStream(sampleString);
+await AnsiConsole.Console.WriteMarkupTextAsync(stream);
+await writerTask;
 
-var writerTask = Task.Run(async () =>
-{
-    var rng = new Random();
-    byte[] bytes = Encoding.UTF8.GetBytes(MarkupExample.GetSampleText());
-    foreach (var b in bytes)
-    {
-        await pipe.WriteAsync(new[] { b }.AsMemory(0, 1));
-        await pipe.FlushAsync();
-        await Task.Delay(rng.Next(0, 2));
-    }
+// Showcase all methods of AnsiConsoleXmlExtensions
+var xmlString = XmlExample.GetSampleXml();
 
-    pipe.Close();
-});
+var customXmlStyles = XmlStyles.Default;
+customXmlStyles.ElementName = new Style(Color.Orange1);
 
-//AnsiConsole.Console.WriteMarkup(reader);
+// Method 1: WriteXml with string (default styles)
+Console.WriteLine("=== WriteXml with string (default styles) ===");
+AnsiConsole.Console.WriteXml(xmlString);
 
-await MarkupTokenizer.Create().ParseAsync(
-    reader,
-    async token => await MarkupWriter.WriteAsync(token)
-);
+// Method 2: WriteXml with string and custom styles
+Console.WriteLine("\n=== WriteXml with string and custom styles ===");
+AnsiConsole.Console.WriteXml(xmlString, customXmlStyles);
 
+// Method 3: WriteXml with Stream (default styles)
+Console.WriteLine("\n=== WriteXml with Stream (default styles) ===");
+(writerTask, stream) = SetupStream(xmlString);
+AnsiConsole.Console.WriteXml(stream);
+await writerTask;
+
+// Method 4: WriteXml with Stream and custom styles
+Console.WriteLine("\n=== WriteXml with Stream and custom styles ===");
+(writerTask, stream) = SetupStream(xmlString);
+AnsiConsole.Console.WriteXml(stream, customXmlStyles);
+await writerTask;
+
+// Method 5: WriteXmlAsync with string (default styles)
+Console.WriteLine("\n=== WriteXmlAsync with string (default styles) ===");
+(writerTask, stream) = SetupStream(xmlString);
+await AnsiConsole.Console.WriteXmlAsync(stream);
+await writerTask;
+
+// Method 6: WriteXmlAsync with string and custom styles
+Console.WriteLine("\n=== WriteXmlAsync with string and custom styles ===");
+(writerTask, stream) = SetupStream(xmlString);
+await AnsiConsole.Console.WriteXmlAsync(stream, customXmlStyles);
 await writerTask;
 
 Console.WriteLine("\nDone.");
+
+static (Task writerTask, AnonymousPipeClientStream reader) SetupStream(string sampleString)
+{
+    var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
+    var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
+    var writerTask = Task.Run(async () =>
+    {
+        var rng = new Random();
+        byte[] bytes = Encoding.UTF8.GetBytes(sampleString);
+        foreach (var b in bytes)
+        {
+            await pipe.WriteAsync(new[] { b }.AsMemory(0, 1));
+            await pipe.FlushAsync();
+            await Task.Delay(rng.Next(0, 2));
+        }
+
+        pipe.Close();
+    });
+    return (writerTask, reader);
+}

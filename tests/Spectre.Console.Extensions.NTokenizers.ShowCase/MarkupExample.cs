@@ -1,4 +1,4 @@
-namespace NTokenizers.ShowCase;
+namespace Spectre.Console.Extensions.NTokenizers.ShowCase;
 
 internal static class MarkupExample
 {

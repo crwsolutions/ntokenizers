@@ -2,7 +2,7 @@ namespace Spectre.Console.Extensions.NTokenizers.Styles;
 
 public sealed class XmlStyles
 {
-    public static XmlStyles Default { get; } = new XmlStyles();
+    public static XmlStyles Default => new XmlStyles();
     
     public Style ElementName { get; set; } = new Style(Color.DeepSkyBlue3_1);
     public Style Text { get; set; } = new Style(Color.DarkSlateGray1);

@@ -4,7 +4,7 @@ namespace Spectre.Console.Extensions.NTokenizers.Styles;
 
 public sealed class SqlStyles
 {
-    public static SqlStyles Default { get; } = new SqlStyles();
+    public static SqlStyles Default => new SqlStyles();
 
     public Style Number { get; set; } = new Style(Color.DeepSkyBlue3_1);
     public Style StringValue { get; set; } = new Style(Color.DarkSlateGray1);
