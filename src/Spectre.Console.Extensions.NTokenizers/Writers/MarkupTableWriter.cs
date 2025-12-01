@@ -6,15 +6,8 @@ using System.Diagnostics;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal class MarkupTableWriter
+internal class MarkupTableWriter(IAnsiConsole ansiConsole, MarkupStyles markupStyles)
 {
-    private readonly MarkupStyles _markupStyles;
-
-    public MarkupTableWriter(MarkupStyles markupStyles)
-    {
-        _markupStyles = markupStyles;
-    }
-
     internal async Task WriteAsync(TableMetadata metadata)
     {
         var spectreTable = new Table();
@@ -23,7 +16,7 @@ internal class MarkupTableWriter
         TableRow? currentRow = null;
         var cellParagraphs = new List<Paragraph>();
         var liveParagraph = new Paragraph();
-        await AnsiConsole.Live(spectreTable)
+        await ansiConsole.Live(spectreTable)
         .StartAsync(async ctx =>
         {
             await metadata.RegisterInlineTokenHandler(async inlineToken =>
@@ -123,6 +116,6 @@ internal class MarkupTableWriter
             return;
         }
         Debug.WriteLine($"Writing token: `{token.Value}` of type `{token.TokenType}`");
-        await MarkupWriter.Create().WriteAsync(liveParagraph, token, _markupStyles.TableCell);
+        await MarkupWriter.Create(ansiConsole).WriteAsync(liveParagraph, token, markupStyles.TableCell);
     }
 }

@@ -3,7 +3,7 @@ using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class SqlWriter(SqlStyles styles) : BaseInlineWriter<SqlToken, SqlTokenType>
+internal sealed class SqlWriter(IAnsiConsole ansiConsole, SqlStyles styles) : BaseInlineWriter<SqlToken, SqlTokenType>(ansiConsole)
 {
     protected override Style GetStyle(SqlTokenType token) => token switch
     {

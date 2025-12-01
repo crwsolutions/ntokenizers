@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken<TTokentype> where TTokentype : Enum
+internal abstract class BaseInlineWriter<TToken, TTokentype>(IAnsiConsole ansiConsole) where TToken : IToken<TTokentype> where TTokentype : Enum
 {
     protected virtual Style GetStyle(TTokentype token) => Style.Plain;
 
@@ -13,7 +13,7 @@ internal abstract class BaseInlineWriter<TToken, TTokentype> where TToken : ITok
 
     internal async Task Write(InlineMarkupMetadata<TToken> metadata)
     {
-        await AnsiConsole.Live(GetIRendable())
+        await ansiConsole.Live(GetIRendable())
         .StartAsync(async ctx =>
         {
             await StartedAsync(metadata);

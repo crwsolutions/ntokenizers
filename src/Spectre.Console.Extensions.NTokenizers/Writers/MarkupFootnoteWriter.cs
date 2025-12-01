@@ -2,10 +2,10 @@
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal static class MarkupFootnoteWriter
+internal class MarkupFootnoteWriter(IAnsiConsole ansiConsole)
 {
-    internal static void Write(FootnoteMetadata footnoteMeta)
+    internal void Write(FootnoteMetadata footnoteMeta)
     {
-        AnsiConsole.Write($"[^{footnoteMeta.Id}]");
+        ansiConsole.Write($"[^{footnoteMeta.Id}]");
     }
 }

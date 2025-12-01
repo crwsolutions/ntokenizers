@@ -5,7 +5,7 @@ using Spectre.Console.Rendering;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInlineWriter<MarkupToken, MarkupTokenType>
+internal sealed class MarkupHeadingWriter(IAnsiConsole ansiConsole, MarkupHeadingStyles styles) : BaseInlineWriter<MarkupToken, MarkupTokenType>(ansiConsole)
 {
     private Style _style = default!;
     private int _lenght = 0;
@@ -59,7 +59,7 @@ internal sealed class MarkupHeadingWriter(MarkupHeadingStyles styles) : BaseInli
     protected override async Task WriteTokenAsync(Paragraph liveParagraph, MarkupToken token)
     {
         _lenght += token.Value.Length;
-        await MarkupWriter.Create().WriteAsync(liveParagraph, token, _style);
+        await MarkupWriter.Create(ansiConsole).WriteAsync(liveParagraph, token, _style);
     }
 
     protected override IRenderable GetIRendable() => _liveParagraph;

@@ -3,7 +3,7 @@ using Spectre.Console.Extensions.NTokenizers.Styles;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal sealed class JsonWriter(JsonStyles styles) : BaseInlineWriter<JsonToken, JsonTokenType>
+internal sealed class JsonWriter(IAnsiConsole ansiConsole, JsonStyles styles) : BaseInlineWriter<JsonToken, JsonTokenType>(ansiConsole)
 {
     protected override Style GetStyle(JsonTokenType token) => token switch
     {

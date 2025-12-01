@@ -5,11 +5,11 @@ using System.Diagnostics;
 
 namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
-internal class MarkupWriter
+internal class MarkupWriter(IAnsiConsole ansiConsole)
 {
     internal static MarkupStyles MarkupStyles { get; set; } = MarkupStyles.Default;
 
-    internal static MarkupWriter Create() => new();
+    internal static MarkupWriter Create(IAnsiConsole ansiConsole) => new(ansiConsole);
 
     internal async Task WriteAsync(MarkupToken token) => 
         await WriteAsync(null, token, null);
@@ -19,73 +19,76 @@ internal class MarkupWriter
         if (token.Metadata is ICodeBlockMetadata codeBlockMetadata)
         {
             var code = string.IsNullOrWhiteSpace(codeBlockMetadata.Language) ? "code" : codeBlockMetadata.Language;
-            AnsiConsole.WriteLine($"{code}:");
+            ansiConsole.WriteLine($"{code}:");
         }
         if (token.Metadata is HeadingMetadata meta)
         {
-            var writer = new MarkupHeadingWriter(MarkupStyles.MarkupHeadingStyles);
+            var writer = new MarkupHeadingWriter(ansiConsole, MarkupStyles.MarkupHeadingStyles);
             await writer.Write(meta);
         }
         else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
         {
-            var writer = new CSharpWriter(MarkupStyles.CSharpStyles);
+            var writer = new CSharpWriter(ansiConsole, MarkupStyles.CSharpStyles);
             await writer.Write(csharpMeta);
         }
         else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
         {
-            var writer = new XmlWriter(MarkupStyles.XmlStyles);
+            var writer = new XmlWriter(ansiConsole, MarkupStyles.XmlStyles);
             await writer.Write(xmlMeta);
         }
         else if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
         {
-            var writer = new TypescriptWriter(MarkupStyles.TypescriptStyles);
+            var writer = new TypescriptWriter(ansiConsole, MarkupStyles.TypescriptStyles);
             await writer.Write(tsMeta);
         }
         else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
         {
-            var writer = new JsonWriter(MarkupStyles.JsonStyles);
+            var writer = new JsonWriter(ansiConsole, MarkupStyles.JsonStyles);
             await writer.Write(jsonMeta);
         }
         else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
         {
-            var writer = new SqlWriter(MarkupStyles.SqlStyles);
+            var writer = new SqlWriter(ansiConsole, MarkupStyles.SqlStyles);
             await writer.Write(sqlMeta);
         }
         else if (token.Metadata is GenericCodeBlockMetadata genericMeta)
         {
-            var writer = new GenericWriter();
+            var writer = new GenericWriter(ansiConsole);
             await writer.Write(genericMeta);
         }
         else if (token.Metadata is LinkMetadata linkMeta)
         {
-            MarkupLinkWriter.Write(linkMeta);
+            var writer = new MarkupLinkWriter(ansiConsole);
+            writer.Write(linkMeta);
         }
         else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
         {
-            var writer = new MarkupBlockquoteWriter();
+            var writer = new MarkupBlockquoteWriter(ansiConsole);
             await writer.Write(blockquoteMeta);
         }
         else if (token.Metadata is FootnoteMetadata footnoteMeta)
         {
-            MarkupFootnoteWriter.Write(footnoteMeta);
+            var writer = new MarkupFootnoteWriter(ansiConsole);
+            writer.Write(footnoteMeta);
         }
         else if (token.Metadata is EmojiMetadata emojiMeta)
         {
-            MarkupEmojiWriter.Write(emojiMeta);
+            var writer = new MarkupEmojiWriter(ansiConsole);
+            writer.Write(emojiMeta);
         }
         else if (token.Metadata is OrderedListItemMetadata orderedListItemMeta)
         {
-            var writer = new MarkupOrderedListItemWriter(MarkupStyles.MarkupOrderedListItemStyles);
+            var writer = new MarkupOrderedListItemWriter(ansiConsole, MarkupStyles.MarkupOrderedListItemStyles);
             await writer.WriteAsync(orderedListItemMeta);
         }
         else if (token.Metadata is ListItemMetadata listItemMeta)
         {
-            var writer = new MarkupListItemWriter(MarkupStyles.MarkupListItemStyles);
+            var writer = new MarkupListItemWriter(ansiConsole, MarkupStyles.MarkupListItemStyles);
             await writer.WriteAsync(listItemMeta);
         }
         else if (token.Metadata is TableMetadata tableMeta)
         {
-            var writer = new MarkupTableWriter(MarkupStyles);
+            var writer = new MarkupTableWriter(ansiConsole, MarkupStyles);
             await writer.WriteAsync(tableMeta);
         }
         else
@@ -109,11 +112,11 @@ internal class MarkupWriter
         }
         else if (style is not null)
         {
-            AnsiConsole.Write(new Markup(text, style));
+            ansiConsole.Write(new Markup(text, style));
         }
         else
         {
-            AnsiConsole.Write(text);
+            ansiConsole.Write(text);
         }
     }
 
