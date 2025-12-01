@@ -3,9 +3,11 @@ using Spectre.Console;
 using System.Text;
 
 string json = """
-    { "name": "Laura Smith",
-      "active": true }
-    """;
+        { 
+            "name": "Laura Smith",
+            "active": true 
+        }
+        """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
 await JsonTokenizer.Create().ParseAsync(stream, onToken: token =>

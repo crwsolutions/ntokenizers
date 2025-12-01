@@ -3,8 +3,10 @@ using Spectre.Console;
 using System.Text;
 
 string typescript = """
-    const user = { name: "Laura Smith",
-        active: true };
+    const user = { 
+        name: "Laura Smith",
+        active: true
+    };
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(typescript));
