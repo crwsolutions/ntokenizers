@@ -5,14 +5,10 @@ namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
 internal sealed class MarkupOrderedListItemWriter(MarkupOrderedListItemStyles styles)
 {
-    internal void Write(OrderedListItemMetadata metadata)
+    internal async Task WriteAsync(OrderedListItemMetadata metadata)
     {
         AnsiConsole.Write(new Console.Markup($"{metadata.Number}. ", styles.Number));
-        metadata.OnInlineToken = MarkupWriter.Write;
-        while (metadata.IsProcessing)
-        {
-            Thread.Sleep(3);
-        }
+        await metadata.RegisterInlineTokenHandler(MarkupWriter.Write);
         AnsiConsole.WriteLine();
     }
 }

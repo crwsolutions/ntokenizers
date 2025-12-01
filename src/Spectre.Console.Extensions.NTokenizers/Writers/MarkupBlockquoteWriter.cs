@@ -5,5 +5,5 @@ namespace Spectre.Console.Extensions.NTokenizers.Writers;
 internal sealed class MarkupBlockquoteWriter : BaseInlineWriter<MarkupToken, MarkupTokenType>
 {
     protected override void WriteToken(Paragraph liveParagraph, MarkupToken token) =>
-        MarkupWriter.Write(liveParagraph, token, GetStyle(token.TokenType));
+        MarkupWriter.WriteAsync(liveParagraph, token, GetStyle(token.TokenType)).Wait();
 }

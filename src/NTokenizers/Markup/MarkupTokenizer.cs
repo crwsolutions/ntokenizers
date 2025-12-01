@@ -1,3 +1,4 @@
+using NTokenizers.Core;
 using NTokenizers.CSharp;
 using NTokenizers.Markup.Metadata;
 using System.Diagnostics;
@@ -184,16 +185,15 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
                 metadata))
         );
 
-        // Wait until client sets OnInlineToken
-        while (metadata.OnInlineToken is null)
-        {
-            Thread.Sleep(3);
-        }
+        // Await the client registering the handler
+        var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
 
-        ParseInlineTokens(metadata);
+        InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
 
         // Ensure the heading token emission is complete
         t.Wait();
+
+        metadata.CompleteProcessing();
 
         return true;
     }
@@ -248,15 +248,11 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         var t = Task.Run(() =>
             _onToken(new MarkupToken(MarkupTokenType.Blockquote, string.Empty, metadata))
         );
-        // Check if client set OnInlineToken during the callback
-        // If so, parse inline tokens and stream them
-        // Wait until client sets OnInlineToken
-        while (metadata.OnInlineToken is null)
-        {
-            Thread.Sleep(3);
-        }
 
-        ParseInlineTokens(metadata);
+        // Await the client registering the handler
+        var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
+
+        InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
 
         t.Wait();
 
@@ -287,15 +283,9 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
                 _onToken(new MarkupToken(MarkupTokenType.UnorderedListItem, string.Empty, metadata))
                 );
 
-            // Check if client set OnInlineToken during the callback
-            // If so, parse inline tokens and stream them
-            // Wait until client sets OnInlineToken
-            while (metadata.OnInlineToken is null)
-            {
-                Thread.Sleep(3);
-            }
+            var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
 
-            ParseInlineTokens(metadata);
+            InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
 
             t.Wait();
 
@@ -334,15 +324,9 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
                     ))
                 );
 
-                // Check if client set OnInlineToken during the callback
-                // If so, parse inline tokens and stream them
-                // Wait until client sets OnInlineToken
-                while (metadata.OnInlineToken is null)
-                {
-                    Thread.Sleep(3);
-                }
+                var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
 
-                ParseInlineTokens(metadata);
+                InlineMarkupTokenizer.Create().Parse(_reader, inlineTokenHandler);
 
                 t.Wait();
 
@@ -381,7 +365,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         string language = lang.ToString().Trim().ToLowerInvariant();
 
         // Create appropriate metadata based on language
-        MarkupMetadata metadata = language.ToLowerInvariant() switch
+        InlineMarkupMetadata metadata = language.ToLowerInvariant() switch
         {
             "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(language),
             "json" => new JsonCodeBlockMetadata(language),
@@ -406,6 +390,8 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         t.Wait();
 
+        metadata.CompleteProcessing();
+
         return true;
     }
 
@@ -417,35 +403,33 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
     {
         try
         {
-            if (metadata is IInlineMarkupMedata inlineMarkupMedata)
+            switch (metadata)
             {
-                inlineMarkupMedata.WaitForCallbackClient();
-
-                switch (metadata)
-                {
-                    case CSharpCodeBlockMetadata csharpMeta:
-                        CSharpTokenizer.Create().Parse(_reader, "```", csharpMeta.OnInlineToken!);
-                        break;
-                    case JsonCodeBlockMetadata jsonMeta:
-                        Json.JsonTokenizer.Create().Parse(_reader, "```", jsonMeta.OnInlineToken!);
-                        break;
-                    case XmlCodeBlockMetadata xmlMeta:
-                        Xml.XmlTokenizer.Create().Parse(_reader, "```", xmlMeta.OnInlineToken!);
-                        break;
-                    case SqlCodeBlockMetadata sqlMeta:
-                        Sql.SqlTokenizer.Create().Parse(_reader, "```", sqlMeta.OnInlineToken!);
-                        break;
-                    case TypeScriptCodeBlockMetadata tsMeta:
-                        Typescript.TypescriptTokenizer.Create().Parse(_reader, "```", tsMeta.OnInlineToken!);
-                        break;
-                    case GenericCodeBlockMetadata gMeta:
-                        Generic.GenericTokenizer.Create().Parse(_reader, "```", gMeta.OnInlineToken!);
-                        break;
-                }
-
-                inlineMarkupMedata.IsProcessing = false;
+                case CSharpCodeBlockMetadata csharpMeta:
+                    var csharpHandler = csharpMeta.GetInlineTokenHandlerAsync().Result;
+                    CSharpTokenizer.Create().Parse(_reader, "```", csharpHandler);
+                    break;
+                case JsonCodeBlockMetadata jsonMeta:
+                    var jsonHandler = jsonMeta.GetInlineTokenHandlerAsync().Result;
+                    Json.JsonTokenizer.Create().Parse(_reader, "```", jsonHandler);
+                    break;
+                case XmlCodeBlockMetadata xmlMeta:
+                    var xmlHandler = xmlMeta.GetInlineTokenHandlerAsync().Result;
+                    Xml.XmlTokenizer.Create().Parse(_reader, "```", xmlHandler);
+                    break;
+                case SqlCodeBlockMetadata sqlMeta:
+                    var sqlHandler = sqlMeta.GetInlineTokenHandlerAsync().Result;
+                    Sql.SqlTokenizer.Create().Parse(_reader, "```", sqlHandler);
+                    break;
+                case TypeScriptCodeBlockMetadata tsMeta:
+                    var tsHandler = tsMeta.GetInlineTokenHandlerAsync().Result;
+                    Typescript.TypescriptTokenizer.Create().Parse(_reader, "```", tsHandler);
+                    break;
+                case GenericCodeBlockMetadata gMeta:
+                    var genHandler = gMeta.GetInlineTokenHandlerAsync().Result;
+                    Generic.GenericTokenizer.Create().Parse(_reader, "```", genHandler);
+                    break;
             }
-
         }
         catch
         {
@@ -538,24 +522,18 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
                 metadata))
         );
 
-        // Wait until client sets OnInlineToken
-        while (metadata.OnInlineToken is null)
-        {
-            Thread.Sleep(3);
-        }
+        // Await the client registering the handler
+        var inlineTokenHandler = metadata.GetInlineTokenHandlerAsync().Result;
 
         var tableTokenizer = new TableMarkupTokenizer(metadata);
 
         Debug.WriteLine($"'{Peek()}'");
-
-        metadata.WaitForCallbackClient();
-
-        tableTokenizer.Parse(_reader, metadata.OnInlineToken!);
-
-        metadata.IsProcessing = false;
+  
+        tableTokenizer.Parse(_reader, inlineTokenHandler);
 
         // Ensure the table token emission is complete
         t.Wait();
+        metadata.CompleteProcessing();
 
         if (Peek() == '|')
         {
@@ -565,14 +543,4 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         return true;
     }
 
-    /// <summary>
-    /// Parses inline tokens from a string and invokes the callback for each token found.
-    /// This enables streaming of inline markup (bold, italic, code, links, etc.) within other constructs.
-    /// </summary>
-    private void ParseInlineTokens(InlineMarkupMetadata<MarkupToken> inlineMarkupMetadata)
-    {
-        inlineMarkupMetadata.WaitForCallbackClient();
-        InlineMarkupTokenizer.Create().Parse(_reader, inlineMarkupMetadata.OnInlineToken!);
-        inlineMarkupMetadata.IsProcessing = false;
-    }
 }

@@ -5,14 +5,10 @@ namespace Spectre.Console.Extensions.NTokenizers.Writers;
 
 internal sealed class MarkupListItemWriter(MarkupListItemStyles styles)
 {
-    internal void Write(ListItemMetadata metadata)
+    internal async Task WriteAsync(ListItemMetadata metadata)
     {
-        AnsiConsole.Write(new Console.Markup($"{metadata.Marker}. ", styles.Marker));
-        metadata.OnInlineToken = MarkupWriter.Write;
-        while (metadata.IsProcessing)
-        {
-            Thread.Sleep(3);
-        }
+        AnsiConsole.Write(new Console.Markup($"{metadata.Marker} ", styles.Marker));
+        await metadata.RegisterInlineTokenHandler(MarkupWriter.Write);
         AnsiConsole.WriteLine();
     }
 }

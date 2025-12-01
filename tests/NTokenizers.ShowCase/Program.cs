@@ -46,22 +46,22 @@ class Program
         var writerTask = EmitSlowlyAsync(markup, pipe);
 
         // Parse markup
-        MarkupTokenizer.Create().Parse(reader, onToken: token =>
+        MarkupTokenizer.Create().Parse(reader, onToken: async token =>
         {
             if (token.Metadata is HeadingMetadata headingMetadata)
             {
-                headingMetadata.OnInlineToken = inlineToken =>
+                await headingMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = headingMetadata.Level != 1 ?
                         new Markup($"[bold blue]{value}[/]") :
                         new Markup($"[bold yellow]** {value} **[/]");
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
             {
-                xmlMetadata.OnInlineToken = inlineToken =>
+                await xmlMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -80,11 +80,11 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
             {
-                jsonMetadata.OnInlineToken = inlineToken =>
+                await jsonMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -105,11 +105,11 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
             {
-                tsMetadata.OnInlineToken = inlineToken =>
+                await tsMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -124,7 +124,7 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else
             {
@@ -143,13 +143,8 @@ class Program
                 AnsiConsole.Write(colored);
             }
 
-            //Important: wait for inline processing to complete before proceeding
-            if (token.Metadata is IInlineMarkupMedata inlineMetadata)
+            if (token.Metadata is InlineMarkupMetadata)
             {
-                while (inlineMetadata.IsProcessing)
-                {
-                    Thread.Sleep(3);
-                }
                 AnsiConsole.WriteLine();
             }
         });

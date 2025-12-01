@@ -14,19 +14,15 @@ public abstract class BaseInlineWriter<TToken, TTokentype> where TToken : IToken
     internal void Write(InlineMarkupMetadata<TToken> metadata)
     {
         AnsiConsole.Live(GetIRendable())
-        .Start(ctx =>
+        .StartAsync(async ctx =>
         {
             Started(metadata);
-            metadata.OnInlineToken = inlineToken =>
+            await metadata.RegisterInlineTokenHandler( inlineToken =>
             {
                 WriteToken(_liveParagraph, inlineToken);
                 ctx.Refresh();
-            };
+            });
 
-            while (metadata.IsProcessing)
-            {
-                Thread.Sleep(3);
-            }
             Finalize(metadata);
             ctx.Refresh();
         });

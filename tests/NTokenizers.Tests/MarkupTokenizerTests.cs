@@ -6,7 +6,7 @@ namespace Markup;
 
 public class MarkupTokenizerTests
 {
-    private static List<MarkupToken> Tokenize(string markup)
+    private static async Task<List<MarkupToken>> Tokenize(string markup)
     {
         var tokens = new List<MarkupToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markup));
@@ -17,52 +17,52 @@ public class MarkupTokenizerTests
             // Automatically set OnInlineToken to capture inline tokens
             if (token.Metadata is HeadingMetadata headingMeta)
             {
-                headingMeta.OnInlineToken = tokens.Add;
+                headingMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
             {
-                blockquoteMeta.OnInlineToken = tokens.Add;
+                blockquoteMeta.RegisterInlineTokenHandler(tokens.Add).Wait();
             }
             else if (token.Metadata is ListItemMetadata listMeta)
             {
-                listMeta.OnInlineToken = tokens.Add;
+                listMeta.RegisterInlineTokenHandler(tokens.Add).GetAwaiter().GetResult();
             }
             else if (token.Metadata is OrderedListItemMetadata orderedListMeta)
             {
-                orderedListMeta.OnInlineToken = tokens.Add;
+                orderedListMeta.RegisterInlineTokenHandler(tokens.Add).Wait();
             }
             else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
             {
                 // For C# code blocks, we receive CSharpToken objects
-                csharpMeta.OnInlineToken = csharpToken => { /* Capture C# tokens if needed */ };
+                csharpMeta.RegisterInlineTokenHandler(token => { /* Capture C# tokens if needed */ });
             }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
             {
                 // For JSON code blocks, we receive JsonToken objects
-                jsonMeta.OnInlineToken = jsonToken => { /* Capture JSON tokens if needed */ };
+                jsonMeta.RegisterInlineTokenHandler(token => { });
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
             {
                 // For XML code blocks, we receive XmlToken objects
-                xmlMeta.OnInlineToken = xmlToken => { /* Capture XML tokens if needed */ };
+                xmlMeta.RegisterInlineTokenHandler(token => { });
             }
             else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
             {
                 // For SQL code blocks, we receive SqlToken objects
-                sqlMeta.OnInlineToken = sqlToken => { /* Capture SQL tokens if needed */ };
+                sqlMeta.RegisterInlineTokenHandler(token => { });
             }
             else if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
             {
                 // For TypeScript code blocks, we receive TypescriptToken objects
-                tsMeta.OnInlineToken = tsToken => { /* Capture TypeScript tokens if needed */ };
+                tsMeta.RegisterInlineTokenHandler(token => { });
             }
             else if (token.Metadata is TableMetadata tableMeta)
             {
-                tableMeta.OnInlineToken = tokens.Add;
+                tableMeta.RegisterInlineTokenHandler(tokens.Add).Wait();
             }
             else if (token.Metadata is GenericCodeBlockMetadata gMeta)
             {
-                gMeta.OnInlineToken = gToken => { /* Capture generic tokens if needed */ };
+                gMeta.RegisterInlineTokenHandler(token => { });
             }
         });
         return tokens;

@@ -11,10 +11,10 @@ public static class MarkupWriter
 
     public static void Write(MarkupToken token)
     {
-        Write(null, token, null);
+        WriteAsync(null, token, null).Wait();
     }
 
-    public static void Write(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
+    public static async Task WriteAsync(Paragraph? liveTarget, MarkupToken token, Style? defaultStyle)
     {
         if (token.Metadata is ICodeBlockMetadata codeBlockMetadata)
         {
@@ -76,17 +76,17 @@ public static class MarkupWriter
         else if (token.Metadata is OrderedListItemMetadata orderedListItemMeta)
         {
             var writer = new MarkupOrderedListItemWriter(MarkupStyles.MarkupOrderedListItemStyles);
-            writer.Write(orderedListItemMeta);
+            await writer.WriteAsync(orderedListItemMeta);
         }
         else if (token.Metadata is ListItemMetadata listItemMeta)
         {
             var writer = new MarkupListItemWriter(MarkupStyles.MarkupListItemStyles);
-            writer.Write(listItemMeta);
+            await writer.WriteAsync(listItemMeta);
         }
         else if (token.Metadata is TableMetadata tableMeta)
         {
             var writer = new MarkupTableWriter(MarkupStyles);
-            writer.Write(tableMeta);
+            await writer.WriteAsync(tableMeta);
         }
         else
         {
