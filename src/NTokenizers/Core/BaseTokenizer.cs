@@ -38,6 +38,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
     public async Task<string> ParseAsync(Stream stream, Action<TToken> onToken)
     {
         _reader = new StreamReader(stream);
@@ -50,6 +51,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
     /// </summary>
+    /// <returns>The input stream as string</returns>
     public string Parse(Stream stream, Action<TToken> onToken)
     {
         // Call the async method but block in a safe way
@@ -76,6 +78,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <param name="reader">The text reader to parse.</param>
     /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
     internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Action<TToken> onToken)
     {
         _reader = reader;
