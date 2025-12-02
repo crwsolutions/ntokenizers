@@ -183,7 +183,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         // Await the client registering the handler
         var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-        await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
+        await InlineMarkupTokenizer.Create().ParseAsync(Reader, Bob, inlineTokenHandler);
 
         // Ensure the heading token emission is complete
         await emitTask;
@@ -247,7 +247,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         // Await the client registering the handler
         var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-        await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
+        await InlineMarkupTokenizer.Create().ParseAsync(Reader, Bob, inlineTokenHandler);
 
         await emitTask;
 
@@ -281,7 +281,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
             var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-            await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
+            await InlineMarkupTokenizer.Create().ParseAsync(Reader, Bob, inlineTokenHandler);
 
             await emitTask;
 
@@ -319,7 +319,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
                 var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-                await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
+                await InlineMarkupTokenizer.Create().ParseAsync(Reader, Bob, inlineTokenHandler);
 
                 await emitTask;
 
@@ -520,7 +520,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         Debug.WriteLine($"'{Peek()}'");
 
-        await tableTokenizer.ParseAsync(Reader, inlineTokenHandler);
+        await tableTokenizer.ParseAsync(Reader, Bob, inlineTokenHandler);
 
         // Ensure the table token emission is complete
         await emitTask;

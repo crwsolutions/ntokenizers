@@ -11,7 +11,12 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     private readonly Queue<char> _lookaheadBuffer = new();
 
     private TextReader _reader = default!;
-    private readonly StringBuilder _stringBuilder = new();
+    private StringBuilder _stringBuilder = default!;
+
+    /// <summary>
+    /// Stringbuilder that captures all characters from the stream
+    /// </summary>
+    internal protected StringBuilder Bob => _stringBuilder;
 
     /// <summary>
     /// The text reader for the input stream.
@@ -37,6 +42,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     {
         _reader = new StreamReader(stream);
         _onToken = onToken;
+        _stringBuilder = new StringBuilder();
         await ParseAsync();
         return _stringBuilder.ToString();
     }
@@ -57,6 +63,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <returns>A list of tokens found in the input string.</returns>
     public List<TToken> Parse(string input)
     {
+        _stringBuilder = new StringBuilder();
         var tokens = new List<TToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         ParseAsync(stream, tokens.Add).GetAwaiter().GetResult();
@@ -67,11 +74,13 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// Parses the input text reader and invokes the onToken action for each token found.
     /// </summary>
     /// <param name="reader">The text reader to parse.</param>
+    /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
-    internal async Task<string> ParseAsync(TextReader reader, Action<TToken> onToken)
+    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Action<TToken> onToken)
     {
         _reader = reader;
         _onToken = onToken;
+        _stringBuilder = stringBuilder;
 
         await ParseAsync();
 
@@ -134,10 +143,10 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// <param name="reader">The text reader to parse.</param>
     /// <param name="stopDelimiter">The delimiter that stops parsing, or null to parse until end of stream.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
-    public async Task ParseAsync(TextReader reader, string? stopDelimiter, Action<TToken> onToken)
+    public async Task<string> ParseAsync(TextReader reader, string? stopDelimiter, Action<TToken> onToken)
     {
         _stopDelimiter = stopDelimiter;
-        await ParseAsync(reader, onToken);
+        return await ParseAsync(reader, new StringBuilder(), onToken);
     }
 
     /// <summary>
