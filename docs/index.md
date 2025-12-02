@@ -7,10 +7,15 @@ title: "Home"
 
 Welcome to the documentation for the `NTokenizers` library. This library provides a collection of **stream-capable** tokenizers for XML, JSON, Markup, TypeScript, C# and SQL processing.
 
+```csharp
+await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token => { /* handle tokens here */ }
+```
+
+> **Especially suitable for parsing AI chat streams**, NTokenizers excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
+
 ## Overview
 
 NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markup, JSON, XML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
-
 
 > [!WARNING]
 >
@@ -101,3 +106,10 @@ await JsonTokenizer.Create().ParseAsync(stream, onToken: token =>
 ```
 
 These examples will output the JSON content with colored tokens, demonstrating how the tokenizer processes structured data in real-time.
+
+## Features
+
+- **Stream Processing**: Can handle large files or real-time data streams without loading everything into memory
+- **Real-time Parsing**: Processes tokens as they are encountered
+- **Flexible Input**: Supports various input sources including streams, readers, and strings
+- **Rich Token Information**: Provides detailed token type information for precise handling
