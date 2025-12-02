@@ -49,7 +49,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
         {
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     EmitPending(state);
@@ -66,7 +66,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
 
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     break;

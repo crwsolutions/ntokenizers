@@ -32,7 +32,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
         {
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     EmitPending(ref inString, ref inNumber, ref inKeyword);
@@ -48,7 +48,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             bool stoppedByDelimiter = false;
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     break;

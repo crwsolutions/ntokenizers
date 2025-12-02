@@ -26,7 +26,7 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
         bool stoppedByDelimiter = false;
         while (true)
         {
-            int ic = _reader.Read();
+            int ic = Read();
             if (ic == -1)
             {
                 break;

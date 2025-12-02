@@ -52,7 +52,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         {
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     EmitPending(ref state);
@@ -68,7 +68,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             bool stoppedByDelimiter = false;
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     break;
@@ -189,11 +189,11 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         else if (c == '@')
         {
             // Check if next character is a quote for verbatim string
-            int next = _reader.Peek();
+            int next = Peek();
             if (next == '"')
             {
                 _buffer.Append(c);
-                _buffer.Append((char)_reader.Read());
+                _buffer.Append((char)Read());
                 state = State.InVerbatimString;
             }
             else
@@ -215,16 +215,16 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         }
         else if (c == '/')
         {
-            int next = _reader.Peek();
+            int next = Peek();
             if (next == '/')
             {
-                _reader.Read(); // consume second /
+                Read(); // consume second /
                 state = State.InCommentLine;
                 _buffer.Append("//");
             }
             else if (next == '*')
             {
-                _reader.Read(); // consume *
+                Read(); // consume *
                 state = State.InCommentBlock;
                 _buffer.Append("/*");
             }
@@ -241,7 +241,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         else if (c == '.')
         {
             // Check if it's part of a number or a dot operator
-            int next = _reader.Peek();
+            int next = Peek();
             if (next != -1 && char.IsDigit((char)next))
             {
                 state = State.InNumber;
@@ -288,10 +288,10 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         if (c == '"')
         {
             // Check if it's an escaped quote (double quote)
-            int next = _reader.Peek();
+            int next = Peek();
             if (next == '"')
             {
-                _buffer.Append((char)_reader.Read());
+                _buffer.Append((char)Read());
             }
             else
             {
@@ -321,10 +321,10 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         _buffer.Append(c);
         if (c == '*')
         {
-            int next = _reader.Peek();
+            int next = Peek();
             if (next == '/')
             {
-                _buffer.Append((char)_reader.Read());
+                _buffer.Append((char)Read());
                 EmitToken(CSharpTokenType.Comment);
                 state = State.Start;
             }
@@ -341,7 +341,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         {
             _buffer.Append(c);
             // Check if we can form an even longer operator
-            int next = _reader.Peek();
+            int next = Peek();
             if (next != -1)
             {
                 string further = combined + (char)next;

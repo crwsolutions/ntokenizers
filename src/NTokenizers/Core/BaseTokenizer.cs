@@ -10,10 +10,12 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
 {
     private readonly Queue<char> _lookaheadBuffer = new();
 
+    private TextReader _reader = default!;
+
     /// <summary>
     /// The text reader for the input stream.
     /// </summary>
-    internal protected TextReader _reader = default!;
+    internal protected TextReader Reader => _reader;
 
     /// <summary>
     /// The action to invoke for each token found.

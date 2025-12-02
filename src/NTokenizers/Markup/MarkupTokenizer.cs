@@ -183,7 +183,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         // Await the client registering the handler
         var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-        await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
+        await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
 
         // Ensure the heading token emission is complete
         await emitTask;
@@ -247,7 +247,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         // Await the client registering the handler
         var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-        await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
+        await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
 
         await emitTask;
 
@@ -281,7 +281,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
             var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-            await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
+            await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
 
             await emitTask;
 
@@ -319,7 +319,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
                 var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
 
-                await InlineMarkupTokenizer.Create().ParseAsync(_reader, inlineTokenHandler);
+                await InlineMarkupTokenizer.Create().ParseAsync(Reader, inlineTokenHandler);
 
                 await emitTask;
 
@@ -402,27 +402,27 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
             {
                 case CSharpCodeBlockMetadata csharpMeta:
                     var csharpHandler = await csharpMeta.GetInlineTokenHandlerAsync();
-                    await CSharpTokenizer.Create().ParseAsync(_reader, "```", csharpHandler);
+                    await CSharpTokenizer.Create().ParseAsync(Reader, "```", csharpHandler);
                     break;
                 case JsonCodeBlockMetadata jsonMeta:
                     var jsonHandler = await jsonMeta.GetInlineTokenHandlerAsync();
-                    await Json.JsonTokenizer.Create().ParseAsync(_reader, "```", jsonHandler);
+                    await Json.JsonTokenizer.Create().ParseAsync(Reader, "```", jsonHandler);
                     break;
                 case XmlCodeBlockMetadata xmlMeta:
                     var xmlHandler = await xmlMeta.GetInlineTokenHandlerAsync();
-                    await Xml.XmlTokenizer.Create().ParseAsync(_reader, "```", xmlHandler);
+                    await Xml.XmlTokenizer.Create().ParseAsync(Reader, "```", xmlHandler);
                     break;
                 case SqlCodeBlockMetadata sqlMeta:
                     var sqlHandler = await sqlMeta.GetInlineTokenHandlerAsync();
-                    await Sql.SqlTokenizer.Create().ParseAsync(_reader, "```", sqlHandler);
+                    await Sql.SqlTokenizer.Create().ParseAsync(Reader, "```", sqlHandler);
                     break;
                 case TypeScriptCodeBlockMetadata tsMeta:
                     var tsHandler = await tsMeta.GetInlineTokenHandlerAsync();
-                    await Typescript.TypescriptTokenizer.Create().ParseAsync(_reader, "```", tsHandler);
+                    await Typescript.TypescriptTokenizer.Create().ParseAsync(Reader, "```", tsHandler);
                     break;
                 case GenericCodeBlockMetadata gMeta:
                     var genHandler = await gMeta.GetInlineTokenHandlerAsync();
-                    await Generic.GenericTokenizer.Create().ParseAsync(_reader, "```", genHandler);
+                    await Generic.GenericTokenizer.Create().ParseAsync(Reader, "```", genHandler);
                     break;
             }
         }
@@ -520,7 +520,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         Debug.WriteLine($"'{Peek()}'");
 
-        await tableTokenizer.ParseAsync(_reader, inlineTokenHandler);
+        await tableTokenizer.ParseAsync(Reader, inlineTokenHandler);
 
         // Ensure the table token emission is complete
         await emitTask;

@@ -49,7 +49,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             // No delimiter, parse until end of stream
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     EmitPending(state);
@@ -67,7 +67,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
 
             while (true)
             {
-                int ic = _reader.Read();
+                int ic = Read();
                 if (ic == -1)
                 {
                     break;
@@ -156,10 +156,10 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         // Comments
         if (c == '-')
         {
-            int next = _reader.Peek();
+            int next = Peek();
             if (next == '-')
             {
-                _reader.Read(); // consume second '-'
+                Read(); // consume second '-'
                 _buffer.Append("--");
                 return State.InLineComment;
             }
@@ -172,10 +172,10 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
 
         if (c == '/')
         {
-            int next = _reader.Peek();
+            int next = Peek();
             if (next == '*')
             {
-                _reader.Read(); // consume '*'
+                Read(); // consume '*'
                 _buffer.Append("/*");
                 return State.InBlockComment;
             }
@@ -498,10 +498,10 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             // Check for comments
             else if (c == '-')
             {
-                int next = _reader.Peek();
+                int next = Peek();
                 if (next == '-')
                 {
-                    _reader.Read(); // consume second '-'
+                    Read(); // consume second '-'
                     _buffer.Append("--");
                     return State.InLineComment;
                 }
@@ -513,10 +513,10 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             }
             else if (c == '/')
             {
-                int next = _reader.Peek();
+                int next = Peek();
                 if (next == '*')
                 {
-                    _reader.Read(); // consume '*'
+                    Read(); // consume '*'
                     _buffer.Append("/*");
                     return State.InBlockComment;
                 }
