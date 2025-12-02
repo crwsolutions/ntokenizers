@@ -14,9 +14,9 @@
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Description>Collection of stream-capable tokenizers for XML and JSON processing. See README for usage and details.</Description>
-		<PackageDescription>Collection of stream-capable tokenizers for XML and JSON processing. See README for usage and details.</PackageDescription>
-		<PackageTags>tokenizer;xml;json;md;markup;typescript;c#;csharp;stream;parsing;dotnet</PackageTags>
+		<Description>Collection of stream-capable tokenizers for XML, JSON, Markup, TypeScript, C# and SQL processing. See README for usage and details.</Description>
+		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, Markup, TypeScript, C# and SQL processing. See README for usage and details.</PackageDescription>
+		<PackageTags>tokenizer;xml;json;md;markup;typescript;c#;csharp;sql; stream;parsing;dotnet</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
