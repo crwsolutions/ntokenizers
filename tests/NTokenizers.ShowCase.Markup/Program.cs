@@ -16,6 +16,8 @@ class Program
         - aaa
         - bbb
 
+        Here is some **bold** text and some *italic* text.
+
         # NTokenizers Showcase
 
         ## XML example
@@ -148,11 +150,9 @@ class Program
                 var value = Markup.Escape(token.Value);
                 var colored = token.TokenType switch
                 {
-                    MarkupTokenType.Text => new Markup($"[white]{value}[/]"),
+                    MarkupTokenType.Text => new Markup($"{value}"),
                     MarkupTokenType.Bold => new Markup($"[bold]{value}[/]"),
                     MarkupTokenType.Italic => new Markup($"[italic]{value}[/]"),
-                    MarkupTokenType.Heading => new Markup($"[bold blue]{value}[/]"),
-                    MarkupTokenType.Link => new Markup($"[blue underline]{value}[/]"),
                     _ => new Markup(value)
                 };
 
