@@ -11,6 +11,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     private readonly Queue<char> _lookaheadBuffer = new();
 
     private TextReader _reader = default!;
+    private readonly StringBuilder _stringBuilder = new();
 
     /// <summary>
     /// The text reader for the input stream.
@@ -32,20 +33,21 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
-    public async Task ParseAsync(Stream stream, Action<TToken> onToken)
+    public async Task<string> ParseAsync(Stream stream, Action<TToken> onToken)
     {
         _reader = new StreamReader(stream);
         _onToken = onToken;
         await ParseAsync();
+        return _stringBuilder.ToString();
     }
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
     /// </summary>
-    public void Parse(Stream stream, Action<TToken> onToken)
+    public string Parse(Stream stream, Action<TToken> onToken)
     {
         // Call the async method but block in a safe way
-        ParseAsync(stream, onToken).GetAwaiter().GetResult();
+        return ParseAsync(stream, onToken).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -66,12 +68,14 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// </summary>
     /// <param name="reader">The text reader to parse.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
-    internal async Task ParseAsync(TextReader reader, Action<TToken> onToken)
+    internal async Task<string> ParseAsync(TextReader reader, Action<TToken> onToken)
     {
         _reader = reader;
         _onToken = onToken;
 
         await ParseAsync();
+
+        return _stringBuilder.ToString();
     }
 
     /// <summary>
@@ -90,7 +94,12 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     {
         if (_lookaheadBuffer.Count > 0)
             return _lookaheadBuffer.Dequeue();
-        return _reader.Read();
+        var c = _reader.Read();
+        if (c != -1)
+        {
+            _stringBuilder.Append((char)c);
+        }
+        return c;
     }
 
     internal char PeekAhead(int offset)
@@ -100,6 +109,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
             int next = _reader.Read();
             if (next == -1) return '\0';
             _lookaheadBuffer.Enqueue((char)next);
+            _stringBuilder.Append((char)next);
         }
         return _lookaheadBuffer.ElementAt(offset);
     }

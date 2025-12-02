@@ -79,6 +79,19 @@ public class MarkupTokenizerTests
     }
 
     [Fact]
+    public async Task TestReturnText()
+    {
+        var markup = "Hello world";
+        var tokens = new List<MarkupToken>();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markup));
+        var result = await MarkupTokenizer.Create().ParseAsync(stream, tokens.Add);
+        Assert.Equal(markup, result);
+        Assert.Single(tokens);
+        Assert.Equal(MarkupTokenType.Text, tokens[0].TokenType);
+        Assert.Equal("Hello world", tokens[0].Value);
+    }
+
+    [Fact]
     public void TestHeadingLevel1()
     {
         var tokens = Tokenize("# Heading 1");
