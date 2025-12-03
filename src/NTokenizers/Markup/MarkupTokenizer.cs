@@ -72,6 +72,11 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
             {
                 _atLineStart = false;
             }
+
+            if (!_atLineStart && c == ' ' && _buffer.Length > 1)
+            {
+                EmitText();
+            }
         }
 
         // Emit any remaining text

@@ -73,9 +73,12 @@ public class MarkupTokenizerTests
     public void TestPlainText()
     {
         var tokens = Tokenize("Hello world");
-        Assert.Single(tokens);
+        Assert.Equal(2, tokens.Count);
         Assert.Equal(MarkupTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("Hello world", tokens[0].Value);
+        Assert.Equal("Hello ", tokens[0].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("world", tokens[1].Value);
+
     }
 
     [Fact]
@@ -86,9 +89,11 @@ public class MarkupTokenizerTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markup));
         var result = await MarkupTokenizer.Create().ParseAsync(stream, tokens.Add);
         Assert.Equal(markup, result);
-        Assert.Single(tokens);
+        Assert.Equal(2, tokens.Count);
         Assert.Equal(MarkupTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("Hello world", tokens[0].Value);
+        Assert.Equal("Hello ", tokens[0].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("world", tokens[1].Value);
     }
 
     [Fact]
@@ -595,19 +600,21 @@ public class MarkupTokenizerTests
     public void TestMixedInlineElements()
     {
         var tokens = Tokenize("Text with **bold** and *italic* and `code`");
-        Assert.Equal(6, tokens.Count);
+        Assert.Equal(7, tokens.Count);
         Assert.Equal(MarkupTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("Text with ", tokens[0].Value);
-        Assert.Equal(MarkupTokenType.Bold, tokens[1].TokenType);
-        Assert.Equal("bold", tokens[1].Value);
-        Assert.Equal(MarkupTokenType.Text, tokens[2].TokenType);
-        Assert.Equal(" and ", tokens[2].Value);
-        Assert.Equal(MarkupTokenType.Italic, tokens[3].TokenType);
-        Assert.Equal("italic", tokens[3].Value);
-        Assert.Equal(MarkupTokenType.Text, tokens[4].TokenType);
-        Assert.Equal(" and ", tokens[4].Value);
-        Assert.Equal(MarkupTokenType.CodeInline, tokens[5].TokenType);
-        Assert.Equal("code", tokens[5].Value);
+        Assert.Equal("Text ", tokens[0].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("with ", tokens[1].Value);
+        Assert.Equal(MarkupTokenType.Bold, tokens[2].TokenType);
+        Assert.Equal("bold", tokens[2].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(" and ", tokens[3].Value);
+        Assert.Equal(MarkupTokenType.Italic, tokens[4].TokenType);
+        Assert.Equal("italic", tokens[4].Value);
+        Assert.Equal(MarkupTokenType.Text, tokens[5].TokenType);
+        Assert.Equal(" and ", tokens[5].Value);
+        Assert.Equal(MarkupTokenType.CodeInline, tokens[6].TokenType);
+        Assert.Equal("code", tokens[6].Value);
     }
 
     [Fact]
@@ -623,10 +630,12 @@ More text.";
         // Verify we have the key tokens (headings have empty value, content via inline tokens)
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Heading && ((HeadingMetadata)t.Metadata!).Level == 1);
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value == "Title"); // Inline token
-        Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value.Contains("This is text."));
+        Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value.Contains("This "));
+        Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value.Contains("is "));
+        Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value.Contains("text."));
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Heading && ((HeadingMetadata)t.Metadata!).Level == 2);
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value == "Subtitle"); // Inline token
-        Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value.Contains("More text."));
+        Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value.Contains("More "));
     }
 
     [Fact]
