@@ -54,7 +54,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
             }
 
             // Try inline constructs
-            if (TryParseInlineConstruct())
+            if (TryParseInlineConstruct(c))
             {
                 continue;
             }
@@ -83,70 +83,33 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         EmitText();
     }
 
-    private async Task<bool> TryParseLineStartConstructAsync()
+    private async Task<bool> TryParseLineStartConstructAsync() => true switch
     {
-        // Try heading
-        if (await TryParseHeadingAsync()) return true;
+        true when await TryParseHeadingAsync() => true,
+        true when TryParseHorizontalRule() => true,
+        true when await TryParseBlockquoteAsync() => true,
+        true when await TryParseListItemAsync() => true,
+        true when await TryParseCodeFence() => true,
+        true when TryParseCustomContainer() => true,
+        true when await TryParseTableAsync() => true,
+        _ => false,
+    };
 
-        // Try horizontal rule
-        if (TryParseHorizontalRule()) return true;
-
-        // Try blockquote
-        if (await TryParseBlockquoteAsync()) return true;
-
-        // Try list items
-        if (await TryParseListItemAsync()) return true;
-
-        // Try code fence
-        if (await TryParseCodeFence()) return true;
-
-        // Try custom container
-        if (TryParseCustomContainer()) return true;
-
-        // Try table
-        if (await TryParseTableAsync()) return true;
-
-        return false;
-    }
-
-    private bool TryParseInlineConstruct()
+    private bool TryParseInlineConstruct(char ch) => ch switch
     {
-        int c = Peek();
-        if (c == -1) return false;
-
-        char ch = (char)c;
-
-        // Try bold/italic
-        if (ch == '*' && TryParseBoldOrItalic()) return true;
-        if (ch == '_' && TryParseBoldOrItalic()) return true;
-
-        // Try inline code
-        if (ch == '`' && TryParseInlineCode()) return true;
-
-        // Try link or image
-        if (ch == '[' && TryParseLink()) return true;
-        if (ch == '!' && PeekAhead(1) == '[' && TryParseImage()) return true;
-
-        // Try emoji
-        if (ch == ':' && TryParseEmoji()) return true;
-
-        // Try subscript
-        if (ch == '^' && TryParseSubscript()) return true;
-
-        // Try superscript
-        if (ch == '~' && TryParseSuperscript()) return true;
-
-        // Try inserted text
-        if (ch == '+' && PeekAhead(1) == '+' && TryParseInsertedText()) return true;
-
-        // Try marked text
-        if (ch == '=' && PeekAhead(1) == '=' && TryParseMarkedText()) return true;
-
-        // Try HTML tag
-        if (ch == '<' && TryParseHtmlTag()) return true;
-
-        return false;
-    }
+        '*' when TryParseBoldOrItalic() => true,
+        '_' when TryParseBoldOrItalic() => true,
+        '`' when TryParseInlineCode() => true,
+        '[' when TryParseLink() => true,
+        '!' when PeekAhead(1) == '[' && TryParseImage() => true,
+        ':' when TryParseEmoji() => true,
+        '^' when TryParseSubscript() => true,
+        '~' when TryParseSuperscript() => true,
+        '+' when PeekAhead(1) == '+' && TryParseInsertedText() => true,
+        '=' when PeekAhead(1) == '=' && TryParseMarkedText() => true,
+        '<' when TryParseHtmlTag() => true,
+        _ => false
+    };
 
     private async Task<bool> TryParseHeadingAsync()
     {
