@@ -43,12 +43,9 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
                     if (Peek() == '\n')
                     {
                         Read();
-                        _atLineStart = true;
                     }
-                    else
-                    {
-                        _atLineStart = false;
-                    }
+                    
+                    _atLineStart = true;
                     continue;
                 }
             }
