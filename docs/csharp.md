@@ -11,10 +11,6 @@ The C# tokenizer is designed to parse C# code and break it down into meaningful 
 
 The C# tokenizer is part of the NTokenizers library and provides a stream-capable approach to parsing C# code. It can process C# source code in real-time, making it suitable for large files or streaming scenarios where loading everything into memory at once is impractical.
 
-> [!WARNING]
->
-> This tokenizer is **not validation-based** and is primarily intended for **prettifying**, **formatting**, or **visualizing** C# code. It does not perform strict validation of the C# syntax, so it may produce unexpected results when processing malformed or invalid C# code. Use it with caution when dealing with untrusted or poorly formatted input.
-
 ## Public API
 
 The C# tokenizer inherits from `BaseTokenizer<CSharpToken>` and provides the following key methods:
@@ -82,6 +78,30 @@ foreach (var token in tokens)
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 }
+```
+
+### Use Processed stream as string
+
+```csharp
+using NTokenizers.CSharp;
+using System.Text;
+
+string csharpCode = "int x = 42;";
+var processedString = await CSharpTokenizer.Create().ParseAsync(csharpCode, token =>
+{
+    return token.TokenType switch
+    {
+        CSharpTokenType.Keyword => $"[blue]{token.Value}[/]",
+        CSharpTokenType.Identifier => $"[cyan]{token.Value}[/]",
+        CSharpTokenType.StringValue => $"[green]{token.Value}[/]",
+        CSharpTokenType.Number => $"[magenta]{token.Value}[/]",
+        CSharpTokenType.Operator => $"[yellow]{token.Value}[/]",
+        CSharpTokenType.Comment => $"[grey]{token.Value}[/]",
+        CSharpTokenType.Whitespace => $"[grey]{token.Value}[/]",
+        _ => token.Value
+    };
+});
+Console.WriteLine(processedString);
 ```
 
 ## Token Types
