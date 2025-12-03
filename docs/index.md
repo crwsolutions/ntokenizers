@@ -7,8 +7,10 @@ title: "Home"
 
 Welcome to the documentation for the `NTokenizers` library. This library provides a collection of **stream-capable** tokenizers for XML, JSON, Markup, TypeScript, C# and SQL processing.
 
+### Kickoff token processing
+
 ```csharp
-await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token => { /* handle tokens here */ }
+await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
 ```
 
 > **Especially suitable for parsing AI chat streams**, NTokenizers excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
