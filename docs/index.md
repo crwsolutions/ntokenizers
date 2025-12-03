@@ -14,7 +14,8 @@ await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* h
 ```
 
 > **NTokenizers.Extensions.Spectre.Console**
-> **Heads up:** Want to visualize your tokens in the console? Explore our companion project [NTokenizers.Extensions.Spectre.Console](https://crwsolutions.github.io/NTokenizers.Extensions.Spectre.Console/) it brings your token streams to life alongside `MarkupTokenizer`.
+>
+> **Heads up:** Want to see your tokenized text with syntax-style highlighting in the console? Check out our companion project [NTokenizers.Extensions.Spectre.Console](https://crwsolutions.github.io/NTokenizers.Extensions.Spectre.Console/) that brings your text streams to life with rich, color-aware output with the help of this library.
 
 ## Overview
 
