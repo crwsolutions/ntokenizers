@@ -28,7 +28,9 @@ The Markup tokenizer inherits from `BaseTokenizer<MarkupToken>` and provides the
 
 ```csharp
 using NTokenizers.Markup;
+using NTokenizers.Markup.Metadata;
 using Spectre.Console;
+using System.Diagnostics;
 using System.Text;
 
 string markupCode = """
@@ -41,22 +43,44 @@ string markupCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markupCode));
-await MarkupTokenizer.Create().ParseAsync(stream, onToken: token =>
+await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
-    var value = Markup.Escape(token.Value);
-    var colored = token.TokenType switch
+    if (token.Metadata is ListItemMetadata listMetadata)
     {
-        MarkupTokenType.Heading => new Markup($"[bold blue]{value}[/]"),
-        MarkupTokenType.Bold => new Markup($"[bold]{value}[/]"),
-        MarkupTokenType.Italic => new Markup($"[italic]{value}[/]"),
-        MarkupTokenType.CodeInline => new Markup($"[yellow]{value}[/]"),
-        MarkupTokenType.Link => new Markup($"[blue underline]{value}[/]"),
-        MarkupTokenType.UnorderedListItem => new Markup($"[cyan]{value}[/]"),
-        MarkupTokenType.OrderedListItem => new Markup($"[cyan]{value}[/]"),
-        MarkupTokenType.Text => new Markup($"{value}"),
-        _ => new Markup(value)
-    };
-    AnsiConsole.Write(colored);
+        AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
+        await listMetadata.RegisterInlineTokenHandler(inlineToken =>
+        {
+            var value = Markup.Escape(inlineToken.Value);
+            AnsiConsole.Write(new Markup($"[bold red]{value}[/]"));
+        });
+        AnsiConsole.WriteLine();
+        Debug.WriteLine("Written listItem inlines");
+
+    }
+    else if (token.Metadata is HeadingMetadata headingMetadata)
+    {
+        await headingMetadata.RegisterInlineTokenHandler(inlineToken =>
+        {
+            var value = Markup.Escape(inlineToken.Value);
+            var colored = headingMetadata.Level != 1 ?
+                new Markup($"[bold GreenYellow]{value}[/]") :
+                new Markup($"[bold yellow]** {value} **[/]");
+            AnsiConsole.Write(colored);
+        });
+        Debug.WriteLine("Written Heading inlines");
+    }
+    else
+    {
+        var value = Markup.Escape(token.Value);
+        var colored = token.TokenType switch
+        {
+            MarkupTokenType.Bold => new Markup($"[bold]{value}[/]"),
+            MarkupTokenType.Italic => new Markup($"[italic]{value}[/]"),
+            MarkupTokenType.Text => new Markup($"{value}"),
+            _ => new Markup(value)
+        };
+        AnsiConsole.Write(colored);
+    }
 });
 ```
 
