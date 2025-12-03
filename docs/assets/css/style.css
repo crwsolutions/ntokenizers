@@ -59,3 +59,7 @@ td, th {
     padding: 8px 12px;
     border: 1px solid purple;
 }
+
+img {
+    border: solid 2px #666;
+}
