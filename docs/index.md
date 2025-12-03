@@ -12,6 +12,8 @@ Welcome to the documentation for the `NTokenizers` library. This library provide
 ```csharp
 await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
 ```
+
+> **NTokenizers.Extensions.Spectre.Console**
 > **Heads up:** Want to visualize your tokens in the console? Explore our companion project [NTokenizers.Extensions.Spectre.Console](https://crwsolutions.github.io/NTokenizers.Extensions.Spectre.Console/) it brings your token streams to life alongside `MarkupTokenizer`.
 
 ## Overview
