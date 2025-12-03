@@ -97,7 +97,7 @@ This gives the following output:
 var result = await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
 ```
 
-In addition to streaming tokens, the original input is returned for convenience
+In addition to streaming tokens, the original input is returned for convenience.
 
 ## Code specific Tokenizers
 
