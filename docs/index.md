@@ -93,7 +93,7 @@ This gives the following output:
 For Code specific tokenizers see:
 
 |**language**|**page**|
-|C#|[CSharp Tokenizer]{/ntokenizers/csharp}|
+|C#|[CSharp Tokenizer](/ntokenizers/csharp)|
 |Json|[Json Tokenizer](/ntokenizers/json)|
 |Sql|[Sql Tokenizer](/ntokenizers/sql)|
 |typescript|[TypeScript Tokenizer](/ntokenizers/typescript)|

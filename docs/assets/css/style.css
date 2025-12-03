@@ -50,3 +50,12 @@ blockquote.warning {
     background-color: #fff3cd;
     border-color: #ffeaa7;
 }
+
+table {
+    border-collapse: collapse; /* makes borders look clean */
+}
+
+td, th {
+    padding: 8px 12px;
+    border: 1px solid purple;
+}
