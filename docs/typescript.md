@@ -5,7 +5,7 @@ title: "Typescript"
 
 # TypeScript Tokenizer
 
-The TypeScript tokenizer is designed to parse TypeScript code and break it down into meaningful components (tokens) for processing. It provides stream-capable functionality for handling large TypeScript files or real-time code analysis.
+The TypeScript tokenizer is designed to parse TypeScript (and javascript) code and break it down into meaningful components (tokens) for processing. It provides stream-capable functionality for handling large TypeScript files or real-time code analysis.
 
 ## Overview
 

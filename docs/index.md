@@ -96,7 +96,7 @@ For Code specific tokenizers see:
 |C#|[CSharp Tokenizer](/ntokenizers/csharp)|
 |Json|[Json Tokenizer](/ntokenizers/json)|
 |Sql|[Sql Tokenizer](/ntokenizers/sql)|
-|typescript|[TypeScript Tokenizer](/ntokenizers/typescript)|
+|typescript/javascript|[TypeScript Tokenizer](/ntokenizers/typescript)|
 |xml|[Xml Tokenizer](/ntokenizers/xml)|
 
 ## Features
