@@ -12,8 +12,7 @@ Welcome to the documentation for the `NTokenizers` library. This library provide
 ```csharp
 await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
 ```
-
-> **Especially suitable for parsing AI chat streams**, NTokenizers excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
+> **Heads up:** Want to visualize your tokens in the console? Explore our companion project [NTokenizers.Extensions.Spectre.Console](https://crwsolutions.github.io/NTokenizers.Extensions.Spectre.Console/) — it brings your token streams to life alongside `MarkupTokenizer`.
 
 ## Overview
 
@@ -116,3 +115,5 @@ The Code specific tokenizers are also available see:
 - **Real-time Parsing**: Processes tokens as they are encountered
 - **Flexible Input**: Supports various input sources including streams, readers, and strings
 - **Rich Token Information**: Provides detailed token type information for precise handling
+
+> **Especially suitable for parsing AI chat streams**, NTokenizers excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
