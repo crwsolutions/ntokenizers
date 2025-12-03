@@ -101,7 +101,7 @@ In addition to streaming tokens, the original input is returned for convenience
 
 ## Code specific Tokenizers
 
-For Code specific tokenizers see:
+The Code specific tokenizers are also available see:
 
 |**language**|**page**|
 |C#|[CSharp Tokenizer](/ntokenizers/csharp)|
