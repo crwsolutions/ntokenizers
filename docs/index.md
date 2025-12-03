@@ -26,7 +26,7 @@ NTokenizers is a .NET library written in C# that provides tokenizers for process
 Here's a simple example showing how to use the `MarkupTokenizer` with a `stream` containing some markup text and json inline code blocks:
 
 ```csharp
-await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token =>
+await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     if (token.Metadata is HeadingMetadata headingMetadata)
     {
