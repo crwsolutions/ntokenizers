@@ -28,9 +28,21 @@ Here's a simple example showing how to use the `MarkupTokenizer` with a `stream`
 ```csharp
 await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
-    //Handle json code fence
-    if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
+    if (token.Metadata is HeadingMetadata headingMetadata)
     {
+        await headingMetadata.RegisterInlineTokenHandler( inlineToken =>
+        {
+            var value = Markup.Escape(inlineToken.Value);
+            var colored = headingMetadata.Level != 1 ?
+                new Markup($"[bold GreenYellow]{value}[/]") :
+                new Markup($"[bold yellow]** {value} **[/]");
+            AnsiConsole.Write(colored);
+        });
+        Debug.WriteLine("Written Heading inlines");
+    }
+    else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
+    {
+        Console.WriteLine($"code: {jsonMetadata.Language}");
         await jsonMetadata.RegisterInlineTokenHandler( inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
@@ -53,6 +65,7 @@ await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token =>
             };
             AnsiConsole.Write(colored);
         });
+        AnsiConsole.WriteLine();
     }
     else
     {
@@ -68,44 +81,23 @@ await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token =>
 
         AnsiConsole.Write(colored);
     }
-
-    if (token.Metadata is InlineMarkupMetadata)
-    {
-        AnsiConsole.WriteLine();
-    }
 });
 ```
 
-## Json Example
+This gives the following output:
 
-Here's a simple example showing how to use the `JsonTokenizer` with a `stream` containing json-data:
+![markupexample](assets\markup_example.png)
 
-```csharp
-await JsonTokenizer.Create().ParseAsync(stream, onToken: token =>
-{
-    var value = Markup.Escape(token.Value);
-    var colored = token.TokenType switch
-    {
-        JsonTokenType.StartObject => new Markup($"[yellow]{value}[/]"),
-        JsonTokenType.EndObject => new Markup($"[yellow]{value}[/]"),
-        JsonTokenType.StartArray => new Markup($"[yellow]{value}[/]"),
-        JsonTokenType.EndArray => new Markup($"[yellow]{value}[/]"),
-        JsonTokenType.PropertyName => new Markup($"[cyan]{value}[/]"),
-        JsonTokenType.StringValue => new Markup($"[green]{value}[/]"),
-        JsonTokenType.Number => new Markup($"[magenta]{value}[/]"),
-        JsonTokenType.True => new Markup($"[orange1]{value}[/]"),
-        JsonTokenType.False => new Markup($"[orange1]{value}[/]"),
-        JsonTokenType.Null => new Markup($"[grey]{value}[/]"),
-        JsonTokenType.Colon => new Markup($"[yellow]{value}[/]"),
-        JsonTokenType.Comma => new Markup($"[yellow]{value}[/]"),
-        JsonTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
-        _ => new Markup(value)
-    };
-    AnsiConsole.Write(colored);
-});
-```
+## Code specific Tokenizers
 
-These examples will output the JSON content with colored tokens, demonstrating how the tokenizer processes structured data in real-time.
+For Code specific tokenizers see:
+
+|**language**|**page**|
+|C#|[CSharp Tokenizer]{/ntokenizers/csharp}|
+|Json|[Json Tokenizer](/ntokenizers/json)|
+|Sql|[Sql Tokenizer](/ntokenizers/sql)|
+|typescript|[TypeScript Tokenizer](/ntokenizers/typescript)|
+|xml|[Xml Tokenizer](/ntokenizers/xml)|
 
 ## Features
 

@@ -13,23 +13,9 @@ class Program
     static async Task Main()
     {
         string markup = """
-        - aaa
-        - bbb
-
         Here is some **bold** text and some *italic* text.
 
-        Here is some larger text: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
         # NTokenizers Showcase
-
-        ## XML example
-        ```xml
-        <user id="4821" active="true">
-            <name>Laura Smith</name>
-        </user>
-        ```
-
-        ## JSON example
         ```json
         {
             "name": "Laura Smith",
@@ -37,13 +23,7 @@ class Program
         }
         ```
 
-        ## TypeScript example
-        ```typescript
-        const user = {
-            name: "Laura Smith",
-            active: true
-        };
-        ```
+        **Pretty cool, huh?**
         """;
 
         // Create connected streams
@@ -56,18 +36,7 @@ class Program
         // Parse markup
         await MarkupTokenizer.Create().ParseAsync(reader, onToken: async token =>
         {
-            if (token.Metadata is ListItemMetadata listMetadata)
-            {
-                AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
-                await listMetadata.RegisterInlineTokenHandler(inlineToken =>
-                {
-                    var value = Markup.Escape(inlineToken.Value);
-                    AnsiConsole.Write(new Markup($"[bold red]{value}[/]"));
-                });
-                Debug.WriteLine("Written listItem inlines");
-
-            }
-            else if (token.Metadata is HeadingMetadata headingMetadata)
+            if (token.Metadata is HeadingMetadata headingMetadata)
             {
                 await headingMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
@@ -79,31 +48,9 @@ class Program
                 });
                 Debug.WriteLine("Written Heading inlines");
             }
-            else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
-            {
-                await xmlMetadata.RegisterInlineTokenHandler(inlineToken =>
-                {
-                    var value = Markup.Escape(inlineToken.Value);
-                    var colored = inlineToken.TokenType switch
-                    {
-                        XmlTokenType.ElementName => new Markup($"[blue]{value}[/]"),
-                        XmlTokenType.EndElement => new Markup($"[blue]{value}[/]"),
-                        XmlTokenType.OpeningAngleBracket => new Markup($"[yellow]{value}[/]"),
-                        XmlTokenType.ClosingAngleBracket => new Markup($"[yellow]{value}[/]"),
-                        XmlTokenType.SelfClosingSlash => new Markup($"[yellow]{value}[/]"),
-                        XmlTokenType.AttributeName => new Markup($"[cyan]{value}[/]"),
-                        XmlTokenType.AttributeEquals => new Markup($"[yellow]{value}[/]"),
-                        XmlTokenType.AttributeQuote => new Markup($"[grey]{value}[/]"),
-                        XmlTokenType.AttributeValue => new Markup($"[green]{value}[/]"),
-                        XmlTokenType.Text => new Markup($"[white]{value}[/]"),
-                        XmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
-                        _ => new Markup(value)
-                    };
-                    AnsiConsole.Write(colored);
-                });
-            }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
             {
+                Console.WriteLine($"code: {jsonMetadata.Language}");
                 await jsonMetadata.RegisterInlineTokenHandler( inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
@@ -126,25 +73,7 @@ class Program
                     };
                     AnsiConsole.Write(colored);
                 });
-            }
-            else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
-            {
-                await tsMetadata.RegisterInlineTokenHandler( inlineToken =>
-                {
-                    var value = Markup.Escape(inlineToken.Value);
-                    var colored = inlineToken.TokenType switch
-                    {
-                        TypescriptTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
-                        TypescriptTokenType.Keyword => new Markup($"[blue]{value}[/]"),
-                        TypescriptTokenType.StringValue => new Markup($"[green]{value}[/]"),
-                        TypescriptTokenType.Number => new Markup($"[magenta]{value}[/]"),
-                        TypescriptTokenType.Operator => new Markup($"[yellow]{value}[/]"),
-                        TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
-                        TypescriptTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
-                        _ => new Markup(value)
-                    };
-                    AnsiConsole.Write(colored);
-                });
+                AnsiConsole.WriteLine();
             }
             else
             {
@@ -160,17 +89,9 @@ class Program
 
                 AnsiConsole.Write(colored);
             }
-
-            if (token.Metadata is InlineMarkupMetadata)
-            {
-                AnsiConsole.WriteLine();
-            }
         });
 
         await writerTask;
-
-        Console.WriteLine();
-        Console.WriteLine("Done.");
     }
 
     static async Task EmitSlowlyAsync(string markup, Stream output)
