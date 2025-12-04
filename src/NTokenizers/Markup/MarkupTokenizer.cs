@@ -79,17 +79,17 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         EmitText();
     }
 
-    private async Task<bool> TryParseLineStartConstructAsync() => true switch
+    private async Task<bool> TryParseLineStartConstructAsync()
     {
-        true when await TryParseHeadingAsync() => true,
-        true when TryParseHorizontalRule() => true,
-        true when await TryParseBlockquoteAsync() => true,
-        true when await TryParseListItemAsync() => true,
-        true when await TryParseCodeFence() => true,
-        true when TryParseCustomContainer() => true,
-        true when await TryParseTableAsync() => true,
-        _ => false,
-    };
+        if (await TryParseHeadingAsync()) return true;
+        if (TryParseHorizontalRule()) return true;
+        if (await TryParseBlockquoteAsync()) return true;
+        if (await TryParseListItemAsync()) return true;
+        if (await TryParseCodeFence()) return true;
+        if (TryParseCustomContainer()) return true;
+        if (await TryParseTableAsync()) return true;
+        return false;
+    }
 
     private bool TryParseInlineConstruct(char ch) => ch switch
     {
