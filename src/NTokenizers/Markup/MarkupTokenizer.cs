@@ -147,10 +147,19 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
             _onToken(new MarkupToken(tokenType, string.Empty, metadata)));
 
         // Await the client registering the handler
-        var handlerTask = await metadata.GetInlineTokenHandlerAsync();
+        var handlerTask = metadata.GetInlineTokenHandlerAsync();
+
+        var completedTask = await Task.WhenAny(handlerTask, Task.Delay(500));
+
+        if (completedTask != handlerTask || handlerTask.Result == null)
+        {
+            // No handler registered within timeout
+            await emitTask;
+            return false;
+        }
 
         // Run the tokenizer
-        await parseAsync(handlerTask);
+        await parseAsync(handlerTask.Result);
 
         // Ensure the heading token emission is complete
         await emitTask;
