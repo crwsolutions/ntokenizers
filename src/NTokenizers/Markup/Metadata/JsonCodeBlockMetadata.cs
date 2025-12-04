@@ -1,6 +1,12 @@
-﻿namespace NTokenizers.Markup.Metadata;
+﻿using NTokenizers.Core;
+using NTokenizers.Json;
+
+namespace NTokenizers.Markup.Metadata;
 
 /// <summary>
 /// Metadata for JSON code block tokens with syntax highlighting support.
 /// </summary>
-public sealed class JsonCodeBlockMetadata(string language) : CodeBlockMetadata<Json.JsonToken>(language);
+public sealed class JsonCodeBlockMetadata(string language) : CodeBlockMetadata<Json.JsonToken>(language)
+{
+    internal override BaseSubTokenizer<JsonToken> CreateTokenizer() => JsonTokenizer.Create();
+}

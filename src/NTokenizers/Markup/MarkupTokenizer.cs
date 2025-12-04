@@ -1,7 +1,5 @@
 using NTokenizers.Core;
-using NTokenizers.CSharp;
 using NTokenizers.Markup.Metadata;
-using System.Diagnostics;
 using System.Text;
 
 namespace NTokenizers.Markup;
@@ -45,7 +43,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
                     {
                         Read();
                     }
-                    
+
                     _atLineStart = true;
                     continue;
                 }
@@ -139,35 +137,33 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         while (char.IsWhiteSpace((char)Peek()) && Peek() != '\n')
             Read();
 
-        await ParseInlines(MarkupTokenType.Heading, new HeadingMetadata(level), InlineMarkupTokenizer.Create());
-
-        return true;
+        return await ParseInlines(MarkupTokenType.Heading, new HeadingMetadata(level), InlineMarkupTokenizer.Create());
     }
 
-    private async Task ParseInlinesCommon<TToken>(MarkupTokenType tokenType, InlineMarkupMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync) where TToken : IToken
+    private async Task<bool> ParseInlines<TToken>(MarkupTokenType tokenType, InlineMarkupMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync) where TToken : IToken
     {
         // Emit heading token with empty value (client can set OnInlineToken to parse inline content)
         var emitTask = Task.Run(() =>
             _onToken(new MarkupToken(tokenType, string.Empty, metadata)));
 
         // Await the client registering the handler
-        var inlineTokenHandler = await metadata.GetInlineTokenHandlerAsync();
+        var handlerTask = await metadata.GetInlineTokenHandlerAsync();
 
         // Run the tokenizer
-        await parseAsync(inlineTokenHandler);
+        await parseAsync(handlerTask);
 
         // Ensure the heading token emission is complete
         await emitTask;
 
         metadata.CompleteProcessing();
+        return true;
     }
 
+    private Task<bool> ParseInlines<TToken>(MarkupTokenType tokenType, InlineMarkupMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer) where TToken : IToken =>
+        ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, handler));
 
-    private Task ParseInlines<TToken>(MarkupTokenType tokenType, InlineMarkupMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer) where TToken : IToken =>
-        ParseInlinesCommon(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, handler));
-
-    private Task ParseCodeInlines<TToken>(MarkupTokenType tokenType, InlineMarkupMetadata<TToken> metadata, BaseSubTokenizer<TToken> tokenizer) where TToken : IToken =>
-        ParseInlinesCommon(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, "```", handler));
+    private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken =>
+        ParseInlines(MarkupTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(Reader, "```", handler));
 
     private bool TryParseHorizontalRule()
     {
@@ -293,52 +289,19 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         if (Peek() == '\n')
             Read();
 
-        string language = lang.ToString().Trim().ToLowerInvariant();
-
         // Create appropriate metadata based on language
-        InlineMarkupMetadata metadata = language.ToLowerInvariant() switch
-        {
-            "csharp" or "cs" or "c#" => new CSharpCodeBlockMetadata(language),
-            "json" => new JsonCodeBlockMetadata(language),
-            "xml" or "html" => new XmlCodeBlockMetadata(language),
-            "sql" => new SqlCodeBlockMetadata(language),
-            "typescript" or "ts" or "javascript" or "js" => new TypeScriptCodeBlockMetadata(language),
-            _ => new GenericCodeBlockMetadata(language)
-        };
-
-        await DelegateToLanguageTokenizerAsync(metadata);
-
-        return true;
+        return await ParseCodeInlines(lang.ToString());
     }
 
-    /// <summary>
-    /// Delegates code block content to the appropriate language tokenizer.
-    /// Emits language-specific tokens (e.g., CSharpToken, JsonToken) via the OnInlineToken callback.
-    /// </summary>
-    private async Task DelegateToLanguageTokenizerAsync(MarkupMetadata metadata)
+    private async Task<bool> ParseCodeInlines(string language) => language.Trim().ToLowerInvariant() switch
     {
-        switch (metadata)
-        {
-            case CSharpCodeBlockMetadata csharpMeta:
-                await ParseCodeInlines(MarkupTokenType.CodeBlock, csharpMeta, CSharpTokenizer.Create());
-                break;
-            case JsonCodeBlockMetadata jsonMeta:
-                await ParseCodeInlines(MarkupTokenType.CodeBlock, jsonMeta, Json.JsonTokenizer.Create());
-                break;
-            case XmlCodeBlockMetadata xmlMeta:
-                await ParseCodeInlines(MarkupTokenType.CodeBlock, xmlMeta, Xml.XmlTokenizer.Create());
-                break;
-            case SqlCodeBlockMetadata sqlMeta:
-                await ParseCodeInlines(MarkupTokenType.CodeBlock, sqlMeta, Sql.SqlTokenizer.Create());
-                break;
-            case TypeScriptCodeBlockMetadata tsMeta:
-                await ParseCodeInlines(MarkupTokenType.CodeBlock, tsMeta, Typescript.TypescriptTokenizer.Create());
-                break;
-            case GenericCodeBlockMetadata gMeta:
-                await ParseCodeInlines(MarkupTokenType.CodeBlock, gMeta, Generic.GenericTokenizer.Create());
-                break;
-        }
-    }
+        "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language)),
+        "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language)),
+        "xml" or "html" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
+        "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
+        "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
+        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
+    };
 
     private bool TryParseCustomContainer()
     {

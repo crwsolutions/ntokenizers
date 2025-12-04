@@ -1,9 +1,11 @@
-﻿namespace NTokenizers.Markup.Metadata;
+﻿using NTokenizers.Core;
+
+namespace NTokenizers.Markup.Metadata;
 
 /// <summary>
 /// Markup metadata with inline tokenization support.
 /// </summary>
-public abstract class InlineMarkupMetadata<TToken>() : InlineMarkupMetadata
+public abstract class InlineMarkupMetadata<TToken>() : InlineMarkupMetadata where TToken : IToken
 {
     private readonly TaskCompletionSource<Action<TToken>> _onInlineTokenTcs = new();
 
@@ -21,6 +23,7 @@ public abstract class InlineMarkupMetadata<TToken>() : InlineMarkupMetadata
         _onInlineTokenTcs.TrySetResult(handler);
         return _processingTcs.Task;
     }
+
 }
 
 /// <summary>
