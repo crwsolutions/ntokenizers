@@ -9,18 +9,18 @@ internal class InlineMarkupTokenizer : BaseMarkupTokenizer
 
     internal protected override Task ParseAsync()
     {
-        while (Peek() != -1 && Peek() != '\n' && Peek() != '\r')
+        while (true)
         {
-            // Try inline constructs
-            if (TryParseBoldOrItalic()) continue;
-            if (TryParseInlineCode()) continue;
-            if (TryParseLink()) continue;
-            if (TryParseImage()) continue;
-            if (TryParseEmoji()) continue;
-            if (TryParseSubscript()) continue;
-            if (TryParseSuperscript()) continue;
-            if (TryParseInsertedText()) continue;
-            if (TryParseMarkedText()) continue;
+            var ch = Peek();
+            if (ch == -1 || ch == '\n' || ch == '\r')
+            {
+                break;
+            }
+
+            if (TryParseInlineConstruct((char)ch))
+            {
+                continue;
+            }
 
             // Regular character
             _buffer.Append((char)Read());

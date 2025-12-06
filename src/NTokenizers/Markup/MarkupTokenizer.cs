@@ -1,5 +1,6 @@
 using NTokenizers.Core;
 using NTokenizers.Markup.Metadata;
+using System.Diagnostics;
 using System.Text;
 
 namespace NTokenizers.Markup;
@@ -90,22 +91,6 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         if (await TryParseTableAsync()) return true;
         return false;
     }
-
-    private bool TryParseInlineConstruct(char ch) => ch switch
-    {
-        '*' when TryParseBoldOrItalic() => true,
-        '_' when TryParseBoldOrItalic() => true,
-        '`' when TryParseInlineCode() => true,
-        '[' when TryParseLink() => true,
-        '!' when PeekAhead(1) == '[' && TryParseImage() => true,
-        ':' when TryParseEmoji() => true,
-        '^' when TryParseSubscript() => true,
-        '~' when TryParseSuperscript() => true,
-        '+' when PeekAhead(1) == '+' && TryParseInsertedText() => true,
-        '=' when PeekAhead(1) == '=' && TryParseMarkedText() => true,
-        '<' when TryParseHtmlTag() => true,
-        _ => false
-    };
 
     private async Task<bool> TryParseHeadingAsync()
     {
@@ -346,41 +331,6 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
 
         _onToken(new MarkupToken(MarkupTokenType.CustomContainer, containerType.ToString().Trim()));
 
-        return true;
-    }
-
-    private bool TryParseHtmlTag()
-    {
-        if (Peek() != '<') return false;
-
-        // Check if it looks like an HTML tag
-        char next = PeekAhead(1);
-
-        // Must start with letter or / for closing tags
-        if (!char.IsLetter(next) && next != '/')
-            return false;
-
-        EmitText();
-        Read(); // Consume <
-
-        // Read tag content until >
-        var tagContent = new StringBuilder();
-        tagContent.Append('<');
-
-        while (Peek() != -1)
-        {
-            char c = (char)Read();
-            tagContent.Append(c);
-
-            if (c == '>')
-            {
-                _onToken(new MarkupToken(MarkupTokenType.HtmlTag, tagContent.ToString()));
-                return true;
-            }
-        }
-
-        // No closing found, treat as text
-        _buffer.Append(tagContent);
         return true;
     }
 

@@ -369,9 +369,15 @@ public abstract class BaseMarkupTokenizer : BaseTokenizer<MarkupToken>
 
         // Read inserted text until closing ++
         var insText = new StringBuilder();
-        while (Peek() != -1)
+        while (true)
         {
-            if (PeekAhead(0) == '+' && PeekAhead(1) == '+')
+            var ch = Peek();
+            if (ch == -1 || ch == '\n')
+            {
+                break;
+            }
+
+            if (ch == '+' && PeekAhead(1) == '+')
             {
                 Read();
                 Read();
@@ -421,5 +427,59 @@ public abstract class BaseMarkupTokenizer : BaseTokenizer<MarkupToken>
             _onToken(new MarkupToken(MarkupTokenType.Text, _buffer.ToString()));
             _buffer.Clear();
         }
+    }
+
+    /// <summary>
+    /// Parses inline constructs such as bold, italic
+    /// </summary>
+    internal protected bool TryParseInlineConstruct(char ch) => ch switch
+    {
+        '*' when TryParseBoldOrItalic() => true,
+        '_' when TryParseBoldOrItalic() => true,
+        '`' when TryParseInlineCode() => true,
+        '[' when TryParseLink() => true,
+        '!' when PeekAhead(1) == '[' && TryParseImage() => true,
+        ':' when TryParseEmoji() => true,
+        '^' when TryParseSubscript() => true,
+        '~' when TryParseSuperscript() => true,
+        '+' when PeekAhead(1) == '+' && TryParseInsertedText() => true,
+        '=' when PeekAhead(1) == '=' && TryParseMarkedText() => true,
+        '<' when TryParseHtmlTag() => true,
+        _ => false
+    };
+
+    private bool TryParseHtmlTag()
+    {
+        if (Peek() != '<') return false;
+
+        // Check if it looks like an HTML tag
+        char next = PeekAhead(1);
+
+        // Must start with letter or / for closing tags
+        if (!char.IsLetter(next) && next != '/')
+            return false;
+
+        EmitText();
+        Read(); // Consume <
+
+        // Read tag content until >
+        var tagContent = new StringBuilder();
+        tagContent.Append('<');
+
+        while (Peek() != -1)
+        {
+            char c = (char)Read();
+            tagContent.Append(c);
+
+            if (c == '>')
+            {
+                _onToken(new MarkupToken(MarkupTokenType.HtmlTag, tagContent.ToString()));
+                return true;
+            }
+        }
+
+        // No closing found, treat as text
+        _buffer.Append(tagContent);
+        return true;
     }
 }

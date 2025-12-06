@@ -715,9 +715,7 @@ More text.";
     [Fact]
     public void TestListWithMultipleItems()
     {
-        var markup = @"- Item 1
-- Item 2
-- Item 3";
+        var markup = "- Item 1\n- Item 2\n- Item 3";
         
         var (tokens, text) = Tokenize(markup);
         Assert.Equal(6, tokens.Count);
@@ -728,6 +726,14 @@ More text.";
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[4].TokenType);
         Assert.Equal(string.Empty, tokens[4].Value); // List items have empty value
         Assert.Equal(markup, text);
+    }
+
+    [Fact]
+    public void TestListWithTrickyCppMultipleItems()
+    {
+        var markup = "**supported languages**:\n- c/c++\n- java\n";
+        var (tokens, text) = Tokenize(markup);
+        Assert.Equal(2, tokens.Where(t => t.TokenType == MarkupTokenType.UnorderedListItem).Count());
     }
 
     [Fact]
