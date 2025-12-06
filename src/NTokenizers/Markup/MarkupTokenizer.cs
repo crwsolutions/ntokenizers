@@ -172,7 +172,7 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, handler));
 
     private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken =>
-        ParseInlines(MarkupTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(Reader, "```", handler));
+        ParseInlines(MarkupTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(Reader, Bob, "```", handler));
 
     private bool TryParseHorizontalRule()
     {

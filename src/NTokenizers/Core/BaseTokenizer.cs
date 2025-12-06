@@ -153,6 +153,20 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     }
 
     /// <summary>
+    /// Parses the input text reader and invokes the onToken action for each token found,
+    /// stopping when the specified delimiter is encountered.
+    /// </summary>
+    /// <param name="reader">The text reader to parse.</param>
+    /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
+    /// <param name="stopDelimiter">The delimiter that stops parsing, or null to parse until end of stream.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    public async Task ParseAsync(TextReader reader, StringBuilder stringBuilder, string? stopDelimiter, Action<TToken> onToken)
+    {
+        _stopDelimiter = stopDelimiter;
+        await ParseAsync(reader, stringBuilder, onToken);
+    }
+
+    /// <summary>
     /// Removes a final line feed (CR, LF, or CRLF) from the internal StringBuilder, if present. 
     /// </summary>
     internal protected void StripFinalLineFeed()
