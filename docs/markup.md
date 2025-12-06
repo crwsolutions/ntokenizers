@@ -13,6 +13,14 @@ The Markup tokenizer is part of the NTokenizers library and provides a stream-ca
 
 > **Especially suitable for parsing AI chat streams**, the Markup tokenizer excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
 
+<blockquote class="warning">
+ <b>Warning</b><br/><br/>
+ The <code>MarkupTokenizer</code> makes heavy use of <b>inline tokenizers</b> for features like code fences, links, tables, emojis, footnotes, and more.<br/><br/>
+ To get the <b>full functionality</b>, you must inspect <code>token.Metadata</code> and dispatch to the correct writer for each token type. Simply writing out <code>token.Value</code> will <b>not</b> render headings, code blocks, lists, links, or other advanced markup elements correctly.<br/><br/>
+ If you skip handling these metadata types, <b>some characters may be eaten or disappear</b>, because the inline tokenizers strip or transform markup symbols during parsing.<br/><br/>
+ Make sure your renderer handles the metadata types you intend to support.
+</blockquote>
+
 ## Public API
 
 The Markup tokenizer inherits from `BaseTokenizer<MarkupToken>` and provides the following key methods:
@@ -21,6 +29,30 @@ The Markup tokenizer inherits from `BaseTokenizer<MarkupToken>` and provides the
 - `Parse(Stream stream, Action<MarkupToken> onToken)` - Synchronously parses a stream of Markup code
 - `Parse(string input)` - Parses a string of Markup code and returns a list of tokens
 - `ParseAsync(TextReader reader, Action<MarkupToken> onToken)` - Asynchronously parses from a TextReader
+
+## Inline tokenizers
+
+The `MarkupTokenizer` produces tokens that carry **metadata** describing the type of content they represent.  
+Handling this metadata correctly is essential to render the markup accurately.  
+Below is a breakdown of the different metadata types, separated into **code block types** and **other markup types**:
+
+### Code block metadata
+- `CSharpCodeBlockMetadata`
+- `XmlCodeBlockMetadata`
+- `TypeScriptCodeBlockMetadata`
+- `JsonCodeBlockMetadata`
+- `SqlCodeBlockMetadata`
+- `GenericCodeBlockMetadata`
+
+### Other markup metadata
+- `HeadingMetadata`
+- `BlockquoteMetadata`
+- `ListItemMetadata`
+- `OrderedListItemMetadata`
+- `TableMetadata`
+- `LinkMetadata`
+- `FootnoteMetadata`
+- `EmojiMetadata`
 
 ## Usage Examples
 
