@@ -30,13 +30,13 @@ The Markup tokenizer inherits from `BaseTokenizer<MarkupToken>` and provides the
 - `Parse(string input)` - Parses a string of Markup code and returns a list of tokens
 - `ParseAsync(TextReader reader, Action<MarkupToken> onToken)` - Asynchronously parses from a TextReader
 
-## Inline tokenizers
+### Inline tokenizers
 
 The `MarkupTokenizer` produces tokens that carry **metadata** describing the type of content they represent.  
 Handling this metadata correctly is essential to render the markup accurately.  
 Below is a breakdown of the different metadata types, separated into **code block types** and **other markup types**:
 
-### Code block metadata
+#### Code block metadata
 - `CSharpCodeBlockMetadata`
 - `XmlCodeBlockMetadata`
 - `TypeScriptCodeBlockMetadata`
@@ -44,7 +44,7 @@ Below is a breakdown of the different metadata types, separated into **code bloc
 - `SqlCodeBlockMetadata`
 - `GenericCodeBlockMetadata`
 
-### Other markup metadata
+#### Other markup metadata
 - `HeadingMetadata`
 - `BlockquoteMetadata`
 - `ListItemMetadata`
@@ -53,6 +53,27 @@ Below is a breakdown of the different metadata types, separated into **code bloc
 - `LinkMetadata`
 - `FootnoteMetadata`
 - `EmojiMetadata`
+
+##### Example: Handling Inline Tokens
+
+```csharp
+// Main MarkupTokenizer
+await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
+{
+    // Handle inline tokens for list items, do this for all the metadata types you expect
+    if (token.Metadata is ListItemMetadata listMetadata)
+    {
+        await listMetadata.RegisterInlineTokenHandler(async inlineToken =>
+        {
+            // Example: simply write the inline token value
+            await ansiConsole.WriteAsync(inlineToken.Value);
+
+        });
+    }
+
+    // You can handle other token types here...
+});
+```
 
 ## Usage Examples
 
