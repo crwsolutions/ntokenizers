@@ -30,14 +30,13 @@ The Markup tokenizer inherits from `BaseTokenizer<MarkupToken>` and provides the
 
 ### Inline tokenizers
 
-The `MarkupTokenizer` produces tokens that carry **metadata** describing the type of content they represent. They also contain a Inline token handler. Make sure to register to it:
+The `MarkupTokenizer` produces tokens that carry **metadata** describing the type of content they represent. They also contain an inline token handler. Make sure to register to it:
 
 ```csharp
 await listMetadata.RegisterInlineTokenHandler(async inlineToken => { /* Handle inline tokens here */ })
 ```
 
-Handling this metadata correctly is essential to render the markup accurately.  
-Below is a breakdown of the different metadata types, separated into **code block types** and **other markup types**:
+Handling this metadata correctly is essential to render the markup accurately. Below is a breakdown of the different metadata types, separated into **code block types** and **other markup types**:
 
 #### Code block metadata
 - `CSharpCodeBlockMetadata`
