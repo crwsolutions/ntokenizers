@@ -149,7 +149,16 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
         // Await the client registering the handler
         var handlerTask = metadata.GetInlineTokenHandlerAsync();
 
-        var completedTask = await Task.WhenAny(handlerTask, Task.Delay(500));
+        using var cts = new CancellationTokenSource();
+        var delayTask = Task.Delay(2000, cts.Token); // 2-second timeout
+
+        var completedTask = await Task.WhenAny(handlerTask, delayTask);
+
+        if (completedTask == handlerTask)
+        {
+            cts.Cancel();
+            Debug.WriteLine("Canceling wait token");
+        }
 
         if (completedTask != handlerTask || handlerTask.Result == null)
         {
