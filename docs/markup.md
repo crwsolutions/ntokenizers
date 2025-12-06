@@ -15,10 +15,8 @@ The Markup tokenizer is part of the NTokenizers library and provides a stream-ca
 
 <blockquote class="warning">
  <b>Warning</b><br/><br/>
- The <code>MarkupTokenizer</code> makes heavy use of <b>inline tokenizers</b> for features like code fences, links, tables, emojis, footnotes, and more.<br/><br/>
- To get the <b>full functionality</b>, you must inspect <code>token.Metadata</code> and dispatch to the correct writer for each token type. Simply writing out <code>token.Value</code> will <b>not</b> render headings, code blocks, lists, links, or other advanced markup elements correctly.<br/><br/>
- If you skip handling these metadata types, <b>some characters may be eaten or disappear</b>, because the inline tokenizers strip or transform markup symbols during parsing.<br/><br/>
- Make sure your renderer handles the metadata types you intend to support.
+ The <code>MarkupTokenizer</code> makes heavy use of inline tokenizers for features like code fences, links, tables, emojis, footnotes, and more.<br/><br/>
+ To get the full functionality, you need to handle each token’s <code>Metadata</code> and process any inline tokens it contains. If you skip handling these metadata types, <b>some characters may be eaten or disappear</b>, because the inline tokenizers strip or transform markup symbols during parsing.
 </blockquote>
 
 ## Public API
