@@ -193,6 +193,4 @@ class Program
 }
 ```
 
-This gives the following output:
-
-![XML Example](https://github.com/crwsolutions/ntokenizers/raw/main/art/xml_example.png)
+Check out the documentation [here](https://crwsolutions.github.io/ntokenizers/).
