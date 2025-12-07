@@ -687,7 +687,7 @@ int x = 5; /* Block comment */ int y = 10;";
                     cts.Cancel();
                 }
             });
-        });
+        }, TestContext.Current.CancellationToken);
         
         await parseTask;
         

@@ -93,7 +93,7 @@ public class MarkupTokenizerTests
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<HeadingMetadata>(tokens[0].Metadata);
-        Assert.Equal(1, ((HeadingMetadata)tokens[0].Metadata).Level);
+        Assert.Equal(1, ((HeadingMetadata)tokens[0].Metadata!).Level);
         
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
@@ -228,7 +228,7 @@ public class MarkupTokenizerTests
         Assert.Equal("link text", tokens[0].Value);
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<LinkMetadata>(tokens[0].Metadata);
-        Assert.Equal("http://example.com", ((LinkMetadata)tokens[0].Metadata).Url);
+        Assert.Equal("http://example.com", ((LinkMetadata)tokens[0].Metadata!).Url);
         Assert.Equal(markup, text);
     }
 
@@ -256,7 +256,7 @@ public class MarkupTokenizerTests
         Assert.Equal("alt text", tokens[0].Value);
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<LinkMetadata>(tokens[0].Metadata);
-        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata).Url);
+        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata!).Url);
         Assert.Equal(markup, text);
     }
 
@@ -320,7 +320,7 @@ public class MarkupTokenizerTests
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<OrderedListItemMetadata>(tokens[0].Metadata);
-        Assert.Equal(1, ((OrderedListItemMetadata)tokens[0].Metadata).Number);
+        Assert.Equal(1, ((OrderedListItemMetadata)tokens[0].Metadata!).Number);
         
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
@@ -386,7 +386,7 @@ public class MarkupTokenizerTests
     {
         var markup = "---\n";
         var (tokens, text) = Tokenize(markup);
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("---", tokens[0].Value);
         Assert.Equal(markup, text);
@@ -397,7 +397,7 @@ public class MarkupTokenizerTests
     {
         var markup = "***\n";
         var (tokens, text) = Tokenize(markup);
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("***", tokens[0].Value);
         Assert.Equal(markup, text);
@@ -408,7 +408,7 @@ public class MarkupTokenizerTests
     {
         var markup = "---\r\n";
         var (tokens, text) = Tokenize(markup);
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("---", tokens[0].Value);
         Assert.Equal(markup, text);
@@ -419,7 +419,7 @@ public class MarkupTokenizerTests
     {
         var markup = "***\r\n";
         var (tokens, text) = Tokenize(markup);
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(MarkupTokenType.HorizontalRule, tokens[0].TokenType);
         Assert.Equal("***", tokens[0].Value);
         Assert.Equal(markup, text);
@@ -435,7 +435,7 @@ public class MarkupTokenizerTests
         Assert.Equal("smile", tokens[0].Value);
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<EmojiMetadata>(tokens[0].Metadata);
-        Assert.Equal("smile", ((EmojiMetadata)tokens[0].Metadata).Name);
+        Assert.Equal("smile", ((EmojiMetadata)tokens[0].Metadata!).Name);
         Assert.Equal(markup, text);
     }
 
@@ -849,7 +849,7 @@ Visit [Google](https://google.com) for more.";
                     cts.Cancel();
                 }
             });
-        });
+        }, TestContext.Current.CancellationToken);
         
         await parseTask;
         

@@ -589,7 +589,7 @@ public class TypescriptTokenizerTests
                     cts.Cancel();
                 }
             });
-        });
+        }, TestContext.Current.CancellationToken);
         
         await parseTask;
         

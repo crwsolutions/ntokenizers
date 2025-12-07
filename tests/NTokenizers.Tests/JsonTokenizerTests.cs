@@ -320,7 +320,7 @@ public class JsonTokenizerTests
     public void TestStopDelimiterAtBeginning()
     {
         var tokens = Tokenize(" END{\"name\": \"John\"}", " END");
-        Assert.Equal(0, tokens.Count);
+        Assert.Empty(tokens);
     }
 
     [Fact]
@@ -380,7 +380,7 @@ public class JsonTokenizerTests
                     cts.Cancel();
                 }
             });
-        });
+        }, TestContext.Current.CancellationToken);
         
         await parseTask;
         

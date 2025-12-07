@@ -144,7 +144,7 @@ public class XmlTokenizerTests
     public void TestComment()
     {
         var tokens = Tokenize("<!-- This is a comment -->");
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(XmlTokenType.Comment, tokens[0].TokenType);
         Assert.Equal("<!-- This is a comment -->", tokens[0].Value);
     }
@@ -153,7 +153,7 @@ public class XmlTokenizerTests
     public void TestProcessingInstruction()
     {
         var tokens = Tokenize("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(XmlTokenType.ProcessingInstruction, tokens[0].TokenType);
         Assert.Equal("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", tokens[0].Value);
     }
@@ -162,7 +162,7 @@ public class XmlTokenizerTests
     public void TestDocumentTypeDeclaration()
     {
         var tokens = Tokenize("<!DOCTYPE html>");
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(XmlTokenType.DocumentTypeDeclaration, tokens[0].TokenType);
         Assert.Equal("<!DOCTYPE html>", tokens[0].Value);
     }
@@ -171,7 +171,7 @@ public class XmlTokenizerTests
     public void TestCData()
     {
         var tokens = Tokenize("<![CDATA[<greeting>Hello, world!</greeting>]]>");
-        Assert.Equal(1, tokens.Count);
+        Assert.Single(tokens);
         Assert.Equal(XmlTokenType.CData, tokens[0].TokenType);
         Assert.Equal("<![CDATA[<greeting>Hello, world!</greeting>]]>", tokens[0].Value);
     }
@@ -325,7 +325,7 @@ public class XmlTokenizerTests
     public void TestStopDelimiterAtBeginning()
     {
         var tokens = Tokenize(" END<element>text</element>", " END");
-        Assert.Equal(0, tokens.Count);
+        Assert.Empty(tokens);
     }
 
     [Fact]
@@ -526,7 +526,7 @@ public class XmlTokenizerTests
                     cts.Cancel();
                 }
             });
-        });
+        }, TestContext.Current.CancellationToken);
         
         await parseTask;
         

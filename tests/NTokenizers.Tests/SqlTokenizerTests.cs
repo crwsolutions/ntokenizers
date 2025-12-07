@@ -543,7 +543,7 @@ public class SqlTokenizerTests
                     cts.Cancel();
                 }
             });
-        });
+        }, TestContext.Current.CancellationToken);
         
         await parseTask;
         
