@@ -662,4 +662,36 @@ int x = 5; /* Block comment */ int y = 10;";
         CSharpTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
+
+    [Fact]
+    public async Task TestCancellation()
+    {
+        // Create a large C# code to parse
+        var largeCode = string.Join("\n", Enumerable.Range(1, 1000).Select(i => $"int var{i} = {i};"));
+        
+        using var cts = new CancellationTokenSource();
+        var tokens = new List<CSharpToken>();
+        int tokenCount = 0;
+        
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeCode));
+        
+        // Cancel after a few tokens
+        var parseTask = Task.Run(async () =>
+        {
+            await CSharpTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            {
+                tokens.Add(token);
+                tokenCount++;
+                if (tokenCount == 20)
+                {
+                    cts.Cancel();
+                }
+            });
+        });
+        
+        await parseTask;
+        
+        // Should have stopped early
+        Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
+    }
 }

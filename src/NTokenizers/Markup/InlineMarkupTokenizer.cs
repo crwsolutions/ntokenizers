@@ -7,9 +7,9 @@ internal class InlineMarkupTokenizer : BaseMarkupTokenizer
 {
     internal static InlineMarkupTokenizer Create() => new();
 
-    internal protected override Task ParseAsync()
+    internal protected override Task ParseAsync(CancellationToken ct)
     {
-        while (true)
+        while (!ct.IsCancellationRequested)
         {
             var ch = Peek();
             if (ch == -1 || ch == '\n' || ch == '\r')

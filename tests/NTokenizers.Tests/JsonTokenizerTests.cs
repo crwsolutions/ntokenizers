@@ -355,4 +355,36 @@ public class JsonTokenizerTests
         JsonTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
+
+    [Fact]
+    public async Task TestCancellation()
+    {
+        // Create a large JSON to parse
+        var largeJson = "{" + string.Join(",", Enumerable.Range(1, 10000).Select(i => $"\"prop{i}\":{i}")) + "}";
+        
+        using var cts = new CancellationTokenSource();
+        var tokens = new List<JsonToken>();
+        int tokenCount = 0;
+        
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeJson));
+        
+        // Cancel after a few tokens
+        var parseTask = Task.Run(async () =>
+        {
+            await JsonTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            {
+                tokens.Add(token);
+                tokenCount++;
+                if (tokenCount == 10)
+                {
+                    cts.Cancel();
+                }
+            });
+        });
+        
+        await parseTask;
+        
+        // Should have stopped early
+        Assert.True(tokenCount < 10000, "Tokenization should have been cancelled");
+    }
 }

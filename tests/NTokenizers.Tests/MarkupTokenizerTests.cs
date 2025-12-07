@@ -824,4 +824,36 @@ Visit [Google](https://google.com) for more.";
         Assert.Equal("wink", tokens[2].Value);
         Assert.Equal(markup, text);
     }
+
+    [Fact]
+    public async Task TestCancellation()
+    {
+        // Create a large markdown to parse
+        var largeMarkup = string.Join("\n\n", Enumerable.Range(1, 1000).Select(i => $"# Heading {i}\n\nSome text for paragraph {i}."));
+        
+        using var cts = new CancellationTokenSource();
+        var tokens = new List<MarkupToken>();
+        int tokenCount = 0;
+        
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeMarkup));
+        
+        // Cancel after a few tokens
+        var parseTask = Task.Run(async () =>
+        {
+            await MarkupTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            {
+                tokens.Add(token);
+                tokenCount++;
+                if (tokenCount == 20)
+                {
+                    cts.Cancel();
+                }
+            });
+        });
+        
+        await parseTask;
+        
+        // Should have stopped early
+        Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
+    }
 }

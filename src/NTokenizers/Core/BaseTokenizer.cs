@@ -46,11 +46,32 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// Parses the input stream and invokes the onToken action for each token found.
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
+    public async Task<string> ParseAsync(Stream stream, CancellationToken cancellationToken, Action<TToken> onToken) =>
+        await ParseAsync(new StreamReader(stream), new StringBuilder(), cancellationToken, onToken);
+
+    /// <summary>
+    /// Parses the input stream and invokes the onToken action for each token found.
+    /// </summary>
+    /// <param name="stream">The input stream to parse.</param>
     /// <param name="encoding">The encoding to use when reading the stream.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
     public async Task<string> ParseAsync(Stream stream, Encoding encoding, Action<TToken> onToken) =>
         await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), onToken);
+
+    /// <summary>
+    /// Parses the input stream and invokes the onToken action for each token found.
+    /// </summary>
+    /// <param name="stream">The input stream to parse.</param>
+    /// <param name="encoding">The encoding to use when reading the stream.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
+    public async Task<string> ParseAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken, Action<TToken> onToken) =>
+        await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), cancellationToken, onToken);
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
@@ -65,11 +86,32 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// Parses the input stream and invokes the onToken action for each token found.
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
+    public string Parse(Stream stream, CancellationToken cancellationToken, Action<TToken> onToken) =>
+        ParseAsync(stream, cancellationToken, onToken).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Parses the input stream and invokes the onToken action for each token found.
+    /// </summary>
+    /// <param name="stream">The input stream to parse.</param>
     /// <param name="encoding">The encoding to use when reading the stream.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
     public string Parse(Stream stream, Encoding encoding, Action<TToken> onToken) =>
         ParseAsync(stream, encoding, onToken).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Parses the input stream and invokes the onToken action for each token found.
+    /// </summary>
+    /// <param name="stream">The input stream to parse.</param>
+    /// <param name="encoding">The encoding to use when reading the stream.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
+    public string Parse(Stream stream, Encoding encoding, CancellationToken cancellationToken, Action<TToken> onToken) =>
+        ParseAsync(stream, encoding, cancellationToken, onToken).GetAwaiter().GetResult();
 
     /// <summary>
     /// Parses the input string and returns a list of tokens found.
@@ -98,7 +140,26 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
         _onToken = onToken;
         _stringBuilder = stringBuilder;
 
-        await ParseAsync();
+        await ParseAsync(CancellationToken.None);
+
+        return _stringBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Parses the input text reader and invokes the onToken action for each token found.
+    /// </summary>
+    /// <param name="reader">The text reader to parse.</param>
+    /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
+    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, CancellationToken cancellationToken, Action<TToken> onToken)
+    {
+        _reader = reader;
+        _onToken = onToken;
+        _stringBuilder = stringBuilder;
+
+        await ParseAsync(cancellationToken);
 
         return _stringBuilder.ToString();
     }
@@ -106,7 +167,8 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <summary>
     /// Performs the actual parsing logic. This method must be implemented by derived classes.
     /// </summary>
-    internal protected abstract Task ParseAsync();
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    internal protected abstract Task ParseAsync(CancellationToken ct);
 
     internal int Peek()
     {
@@ -170,6 +232,20 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// stopping when the specified delimiter is encountered.
     /// </summary>
     /// <param name="reader">The text reader to parse.</param>
+    /// <param name="stopDelimiter">The delimiter that stops parsing, or null to parse until end of stream.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    public async Task<string> ParseAsync(TextReader reader, string? stopDelimiter, CancellationToken cancellationToken, Action<TToken> onToken)
+    {
+        _stopDelimiter = stopDelimiter;
+        return await ParseAsync(reader, new StringBuilder(), cancellationToken, onToken);
+    }
+
+    /// <summary>
+    /// Parses the input text reader and invokes the onToken action for each token found,
+    /// stopping when the specified delimiter is encountered.
+    /// </summary>
+    /// <param name="reader">The text reader to parse.</param>
     /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
     /// <param name="stopDelimiter">The delimiter that stops parsing, or null to parse until end of stream.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
@@ -177,6 +253,21 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     {
         _stopDelimiter = stopDelimiter;
         await ParseAsync(reader, stringBuilder, onToken);
+    }
+
+    /// <summary>
+    /// Parses the input text reader and invokes the onToken action for each token found,
+    /// stopping when the specified delimiter is encountered.
+    /// </summary>
+    /// <param name="reader">The text reader to parse.</param>
+    /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
+    /// <param name="stopDelimiter">The delimiter that stops parsing, or null to parse until end of stream.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    public async Task ParseAsync(TextReader reader, StringBuilder stringBuilder, string? stopDelimiter, CancellationToken cancellationToken, Action<TToken> onToken)
+    {
+        _stopDelimiter = stopDelimiter;
+        await ParseAsync(reader, stringBuilder, cancellationToken, onToken);
     }
 
     /// <summary>
