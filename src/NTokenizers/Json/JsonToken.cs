@@ -1,10 +1,12 @@
 using NTokenizers.Core;
+using System.Diagnostics;
 
 namespace NTokenizers.Json;
 
 /// <summary>
 /// Represents a JSON token with its type and value.
 /// </summary>
+[DebuggerDisplay("JsonToken: {TokenType} '{Value}'")]
 public class JsonToken : IToken<JsonTokenType>
 {
     /// <summary>

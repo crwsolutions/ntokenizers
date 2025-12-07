@@ -1,4 +1,5 @@
 ﻿using NTokenizers.Core;
+using System.Diagnostics;
 
 namespace NTokenizers.Xml;
 
@@ -7,6 +8,7 @@ namespace NTokenizers.Xml;
 /// </summary>
 /// <param name="TokenType">The type of the XML token.</param>
 /// <param name="Value">The string value of the XML token.</param>
+[DebuggerDisplay("XmlTokenType: {TokenType} '{Value}'")]
 public class XmlToken(XmlTokenType TokenType, string Value) : IToken<XmlTokenType>
 {
     /// <summary>

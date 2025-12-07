@@ -1,10 +1,12 @@
 using NTokenizers.Core;
+using System.Diagnostics;
 
 namespace NTokenizers.Typescript;
 
 /// <summary>
 /// Represents a TypeScript token with its type and value.
 /// </summary>
+[DebuggerDisplay("TypescriptToken: {TokenType} '{Value}'")]
 public class TypescriptToken : IToken<TypescriptTokenType>
 {
     /// <summary>

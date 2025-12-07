@@ -1,10 +1,12 @@
 using NTokenizers.Core;
+using System.Diagnostics;
 
 namespace NTokenizers.CSharp;
 
 /// <summary>
 /// Represents a C# token with its type and value.
 /// </summary>
+[DebuggerDisplay("CSharpToken: {TokenType} '{Value}'")]
 public class CSharpToken : IToken<CSharpTokenType>
 {
     /// <summary>

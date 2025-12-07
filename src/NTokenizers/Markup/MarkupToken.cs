@@ -10,7 +10,7 @@ namespace NTokenizers.Markup;
 /// <param name="TokenType">The type of the markup token.</param>
 /// <param name="Value">The string value of the markup token (renderable content only, no syntax markers).</param>
 /// <param name="Metadata">Optional metadata associated with the token.</param>
-[DebuggerDisplay("MarkupToken: {TokenType} {Value}")]
+[DebuggerDisplay("MarkupToken: {TokenType} '{Value}'")]
 public sealed class MarkupToken(
     MarkupTokenType TokenType,
     string Value,

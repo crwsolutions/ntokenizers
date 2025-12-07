@@ -1,10 +1,12 @@
 using NTokenizers.Core;
+using System.Diagnostics;
 
 namespace NTokenizers.Sql;
 
 /// <summary>
 /// Represents a SQL token with its type and value.
 /// </summary>
+[DebuggerDisplay("SqlToken: {TokenType} '{Value}'")]
 public class SqlToken : IToken<SqlTokenType>
 {
     /// <summary>
