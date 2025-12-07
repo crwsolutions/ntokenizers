@@ -39,24 +39,37 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public async Task<string> ParseAsync(Stream stream, Action<TToken> onToken)
-    {
-        _reader = new StreamReader(stream);
-        _onToken = onToken;
-        _stringBuilder = new StringBuilder();
-        await ParseAsync();
-        return _stringBuilder.ToString();
-    }
+    public async Task<string> ParseAsync(Stream stream, Action<TToken> onToken) =>
+        await ParseAsync(new StreamReader(stream), new StringBuilder(), onToken);
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
     /// </summary>
+    /// <param name="stream">The input stream to parse.</param>
+    /// <param name="encoding">The encoding to use when reading the stream.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public string Parse(Stream stream, Action<TToken> onToken)
-    {
-        // Call the async method but block in a safe way
-        return ParseAsync(stream, onToken).GetAwaiter().GetResult();
-    }
+    public async Task<string> ParseAsync(Stream stream, Encoding encoding, Action<TToken> onToken) =>
+        await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), onToken);
+
+    /// <summary>
+    /// Parses the input stream and invokes the onToken action for each token found.
+    /// </summary>
+    /// <param name="stream">The input stream to parse.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
+    public string Parse(Stream stream, Action<TToken> onToken) =>
+        ParseAsync(stream, onToken).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Parses the input stream and invokes the onToken action for each token found.
+    /// </summary>
+    /// <param name="stream">The input stream to parse.</param>
+    /// <param name="encoding">The encoding to use when reading the stream.</param>
+    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <returns>The input stream as string</returns>
+    public string Parse(Stream stream, Encoding encoding, Action<TToken> onToken) =>
+        ParseAsync(stream, encoding, onToken).GetAwaiter().GetResult();
 
     /// <summary>
     /// Parses the input string and returns a list of tokens found.

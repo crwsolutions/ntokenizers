@@ -383,6 +383,114 @@ public class XmlTokenizerTests
         Assert.Empty(incorrectAttrTokens);
     }
 
+    [Fact]
+    public async Task ParseAsync_WithStreamAndEncoding_UTF8_ShouldTokenizeCorrectly()
+    {
+        var xml = "<element>text with unicode: café 🚀</element>";
+        var encoding = Encoding.UTF8;
+        var tokens = new List<XmlToken>();
+
+        using var stream = new MemoryStream(encoding.GetBytes(xml));
+        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, tokens.Add);
+
+        Assert.NotEmpty(tokens);
+        Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
+        Assert.Equal("<", tokens[0].Value);
+        Assert.Equal(XmlTokenType.ElementName, tokens[1].TokenType);
+        Assert.Equal("element", tokens[1].Value);
+        Assert.Equal(xml, result);
+    }
+
+    [Fact]
+    public void Parse_WithStreamAndEncoding_UTF8_ShouldTokenizeCorrectly()
+    {
+        var xml = "<element>text with unicode: café 🚀</element>";
+        var encoding = Encoding.UTF8;
+        var tokens = new List<XmlToken>();
+
+        using var stream = new MemoryStream(encoding.GetBytes(xml));
+        var result = XmlTokenizer.Create().Parse(stream, encoding, tokens.Add);
+
+        Assert.NotEmpty(tokens);
+        Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
+        Assert.Equal("<", tokens[0].Value);
+        Assert.Equal(XmlTokenType.ElementName, tokens[1].TokenType);
+        Assert.Equal("element", tokens[1].Value);
+        Assert.Equal(xml, result);
+    }
+
+    [Fact]
+    public async Task ParseAsync_WithStreamAndEncoding_Unicode_ShouldTokenizeCorrectly()
+    {
+        var xml = "<element>text with unicode: 你好 🌍</element>";
+        var encoding = Encoding.Unicode;
+        var tokens = new List<XmlToken>();
+
+        using var stream = new MemoryStream(encoding.GetBytes(xml));
+        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, tokens.Add);
+
+        Assert.NotEmpty(tokens);
+        Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
+        Assert.Equal("<", tokens[0].Value);
+        Assert.Equal(XmlTokenType.ElementName, tokens[1].TokenType);
+        Assert.Equal("element", tokens[1].Value);
+        Assert.Equal(xml, result);
+    }
+
+    [Fact]
+    public void Parse_WithStreamAndEncoding_Unicode_ShouldTokenizeCorrectly()
+    {
+        var xml = "<element>text with unicode: 你好 🌍</element>";
+        var encoding = Encoding.Unicode;
+        var tokens = new List<XmlToken>();
+
+        using var stream = new MemoryStream(encoding.GetBytes(xml));
+        var result = XmlTokenizer.Create().Parse(stream, encoding, tokens.Add);
+
+        Assert.NotEmpty(tokens);
+        Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
+        Assert.Equal("<", tokens[0].Value);
+        Assert.Equal(XmlTokenType.ElementName, tokens[1].TokenType);
+        Assert.Equal("element", tokens[1].Value);
+        Assert.Equal(xml, result);
+    }
+
+    [Fact]
+    public async Task ParseAsync_WithStreamAndEncoding_ASCII_ShouldTokenizeCorrectly()
+    {
+        var xml = "<element>text with ascii: test</element>";
+        var encoding = Encoding.ASCII;
+        var tokens = new List<XmlToken>();
+
+        using var stream = new MemoryStream(encoding.GetBytes(xml));
+        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, tokens.Add);
+
+        Assert.NotEmpty(tokens);
+        Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
+        Assert.Equal("<", tokens[0].Value);
+        Assert.Equal(XmlTokenType.ElementName, tokens[1].TokenType);
+        Assert.Equal("element", tokens[1].Value);
+        Assert.Equal(xml, result);
+    }
+
+    [Fact]
+    public void Parse_WithStreamAndEncoding_ASCII_ShouldTokenizeCorrectly()
+    {
+        var xml = "<element>text with ascii: test</element>";
+        var encoding = Encoding.ASCII;
+        var tokens = new List<XmlToken>();
+
+        using var stream = new MemoryStream(encoding.GetBytes(xml));
+        var result = XmlTokenizer.Create().Parse(stream, encoding, tokens.Add);
+
+        Assert.NotEmpty(tokens);
+        Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
+        Assert.Equal("<", tokens[0].Value);
+        Assert.Equal(XmlTokenType.ElementName, tokens[1].TokenType);
+        Assert.Equal("element", tokens[1].Value);
+        Assert.Equal(xml, result);
+    }
+
     private static List<XmlToken> Tokenize(string input) => XmlTokenizer.Create().Parse(input);
 
     private static List<XmlToken> Tokenize(string input, string stopDelimiter)
@@ -390,7 +498,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        XmlTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
+        XmlTokenizer.Create().ParseAsync(reader, stopDelimiter, tokens.Add).GetAwaiter().GetResult();
         return tokens;
     }
 }

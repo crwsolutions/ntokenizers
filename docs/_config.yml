@@ -1,4 +1,3 @@
-
 title: NTokenizers
 description: Documentation for the NTokenizers library
 markdown: kramdown
@@ -20,6 +19,8 @@ sidebar:
       url: "typescript"
     - title: "Xml"
       url: "xml"
+    - title: "Encoding"
+      url: "encoding"
 
 # Breadcrumb
 breadcrumb_home_label : "Home"
