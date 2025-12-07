@@ -518,4 +518,36 @@ public class SqlTokenizerTests
         var tokens = Tokenize(input, stopDelimiter);
         return tokens.Where(t => t.TokenType != SqlTokenType.Whitespace).ToList();
     }
+
+    [Fact]
+    public async Task TestCancellation()
+    {
+        // Create a large SQL to parse
+        var largeSql = "SELECT * FROM users WHERE " + string.Join(" OR ", Enumerable.Range(1, 1000).Select(i => $"id = {i}"));
+        
+        using var cts = new CancellationTokenSource();
+        var tokens = new List<SqlToken>();
+        int tokenCount = 0;
+        
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeSql));
+        
+        // Cancel after a few tokens
+        var parseTask = Task.Run(async () =>
+        {
+            await SqlTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            {
+                tokens.Add(token);
+                tokenCount++;
+                if (tokenCount == 20)
+                {
+                    cts.Cancel();
+                }
+            });
+        });
+        
+        await parseTask;
+        
+        // Should have stopped early
+        Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
+    }
 }

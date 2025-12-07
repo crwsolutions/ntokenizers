@@ -37,7 +37,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     /// Parses SQL content from the given <see cref="TextReader"/> and produces a sequence
     /// of <see cref="SqlToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync()
+    internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = State.Start;
         char stringQuote = '\0';
@@ -47,7 +47,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         if (delLength == 0)
         {
             // No delimiter, parse until end of stream
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)
@@ -65,7 +65,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             var delQueue = new Queue<char>();
             bool stoppedByDelimiter = false;
 
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)

@@ -17,7 +17,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
     /// Parses JSON or JSON-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="JsonToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync()
+    internal protected override Task ParseAsync(CancellationToken ct)
     {
         var stack = new Stack<ContainerType>();
         bool inString = false;
@@ -30,7 +30,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
 
         if (delLength == 0)
         {
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)
@@ -46,7 +46,7 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
         {
             var delQueue = new Queue<char>();
             bool stoppedByDelimiter = false;
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)

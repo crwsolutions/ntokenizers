@@ -501,4 +501,36 @@ public class XmlTokenizerTests
         XmlTokenizer.Create().ParseAsync(reader, stopDelimiter, tokens.Add).GetAwaiter().GetResult();
         return tokens;
     }
+
+    [Fact]
+    public async Task TestCancellation()
+    {
+        // Create a large XML to parse
+        var largeXml = "<root>" + string.Join("", Enumerable.Range(1, 1000).Select(i => $"<item{i}>value{i}</item{i}>")) + "</root>";
+        
+        using var cts = new CancellationTokenSource();
+        var tokens = new List<XmlToken>();
+        int tokenCount = 0;
+        
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeXml));
+        
+        // Cancel after a few tokens
+        var parseTask = Task.Run(async () =>
+        {
+            await XmlTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            {
+                tokens.Add(token);
+                tokenCount++;
+                if (tokenCount == 20)
+                {
+                    cts.Cancel();
+                }
+            });
+        });
+        
+        await parseTask;
+        
+        // Should have stopped early
+        Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
+    }
 }

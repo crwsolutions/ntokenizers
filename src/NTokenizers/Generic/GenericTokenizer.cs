@@ -17,14 +17,14 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
     /// <summary>
     /// Parses the input text reader and invokes the onToken action for each token found,
     /// </summary>
-    internal protected override Task ParseAsync()
+    internal protected override Task ParseAsync(CancellationToken ct)
     {
         string delimiter = _stopDelimiter ?? string.Empty;
         int delLength = delimiter.Length;
 
         var delQueue = new Queue<char>();
         bool stoppedByDelimiter = false;
-        while (true)
+        while (!ct.IsCancellationRequested)
         {
             int ic = Read();
             if (ic == -1)

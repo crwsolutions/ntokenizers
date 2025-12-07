@@ -7,10 +7,12 @@ internal class TableMarkupTokenizer : BaseMarkupTokenizer
 
     internal TableMarkupTokenizer(TableMetadata metadata) => _tableMetaData = metadata;
 
-    internal protected override Task ParseAsync()
+    internal protected override Task ParseAsync(CancellationToken ct)
     {
         do
         {
+            if (ct.IsCancellationRequested) break;
+
             if (Peek() == '|')
             {
                 Read();
@@ -77,7 +79,7 @@ internal class TableMarkupTokenizer : BaseMarkupTokenizer
                 Read();
             }
 
-        } while (Peek() == '|'); //Next line of the table
+        } while (Peek() == '|' && !ct.IsCancellationRequested); //Next line of the table
 
         EmitText();
 

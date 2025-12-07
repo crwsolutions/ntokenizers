@@ -34,7 +34,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
     /// Parses XML or XML-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="XmlToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync()
+    internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = State.Text;
         string delimiter = _stopDelimiter ?? string.Empty;
@@ -47,7 +47,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
 
         if (delLength == 0)
         {
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)
@@ -64,7 +64,7 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
             var delQueue = new Queue<char>();
             bool stoppedByDelimiter = false;
 
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)

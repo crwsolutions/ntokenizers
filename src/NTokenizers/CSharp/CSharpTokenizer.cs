@@ -41,7 +41,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync()
+    internal protected override Task ParseAsync(CancellationToken ct)
     {
         State state = State.Start;
         bool escape = false;
@@ -50,7 +50,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
 
         if (delLength == 0)
         {
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)
@@ -66,7 +66,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         {
             var delQueue = new Queue<char>();
             bool stoppedByDelimiter = false;
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
                 if (ic == -1)

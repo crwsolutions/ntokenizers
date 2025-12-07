@@ -21,9 +21,9 @@ public sealed class MarkupTokenizer : BaseMarkupTokenizer
     /// <summary>
     /// Parses the input stream and emits markup tokens via the OnToken callback.
     /// </summary>
-    internal protected override async Task ParseAsync()
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
-        while (true)
+        while (!ct.IsCancellationRequested)
         {
             int peek = Peek();
             if (peek == -1) break;

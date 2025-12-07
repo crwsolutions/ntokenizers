@@ -564,4 +564,36 @@ public class TypescriptTokenizerTests
         TypescriptTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
+
+    [Fact]
+    public async Task TestCancellation()
+    {
+        // Create a large TypeScript code to parse
+        var largeCode = string.Join("\n", Enumerable.Range(1, 1000).Select(i => $"let var{i}: number = {i};"));
+        
+        using var cts = new CancellationTokenSource();
+        var tokens = new List<TypescriptToken>();
+        int tokenCount = 0;
+        
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeCode));
+        
+        // Cancel after a few tokens
+        var parseTask = Task.Run(async () =>
+        {
+            await TypescriptTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            {
+                tokens.Add(token);
+                tokenCount++;
+                if (tokenCount == 20)
+                {
+                    cts.Cancel();
+                }
+            });
+        });
+        
+        await parseTask;
+        
+        // Should have stopped early
+        Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
+    }
 }
