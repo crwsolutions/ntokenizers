@@ -236,4 +236,4 @@ class Program
 }
 ```
 
-Check out the documentation [here](https://crwsolutions.github.io/ntokenizers/).
+For more information, check out the documentation [here](https://crwsolutions.github.io/ntokenizers/).
