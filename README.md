@@ -4,7 +4,23 @@ Collection of tokenizers for Markup, JSON, XML, SQL, Typescript and CSharp proce
 ### Kickoff token processing
 
 ```csharp
-await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
+// kickoff markup tokenizer
+await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markup-tokens here */ })
+
+// kickoff csharp tokenizer
+await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ })
+
+// kickoff json tokenizer
+await JsonTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle json-tokens here */ })
+
+// kickoff sql tokenizer
+await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql-tokens here */ })
+
+// kickoff typescript tokenizer
+await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ })
+
+// kickoff xml tokenizer
+await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ }
 ```
 
 ## Overview
