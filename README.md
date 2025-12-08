@@ -1,5 +1,5 @@
 # NTokenizers
-Collection of tokenizers for Markup, JSON, XML, SQL, Typescript and CSharp processing.
+Collection of **stream-capable** tokenizers for Markup, JSON, XML, SQL, Typescript and CSharp processing.
 
 ### Kickoff token processing
 
