@@ -1,17 +1,60 @@
 # NTokenizers
-Collection of tokenizers for Markup, JSON, XML, SQL, Typescript and CSharp processing
+Collection of tokenizers for Markup, JSON, XML, SQL, Typescript and CSharp processing.
+
+### Kickoff token processing
+
+```csharp
+await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
+```
 
 ## Overview
 
 NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markup, JSON, XML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
-
 > [!WARNING] 
 >
 > These tokenizers are **not validation-based** and are primarily intended for **prettifying**, **formatting**, or **visualizing** structured text. They do not perform strict validation of the input format, so they may produce unexpected results when processing malformed or invalid XML, JSON, or HTML. Use them with caution when dealing with untrusted or poorly formatted input.
+
+## Used by
+
+- [NTokenizers.Extensions.Spectre.Console](https://www.nuget.org/packages/NTokenizers.Extensions.Spectre.Console/) Spectre.Console rendering extensions for NTokenizers, Style-rich console syntax highlighting.
+
+# Architecture
+
+Most **tokenizers**, such as json, xml, or etc..., can be used individually, depending on the specific format you want to parse.
+
+The `MarkupTokenizer` however is a special case. Instead of working on a single format, it acts as a **composite tokenizer**, using the other tokenizers as **subtokenizers**. When parsing a stream, MarkupTokenizer delegates portions of the input to the appropriate subtokenizer, allowing it to handle multiple formats seamlessly in one pass.
+
+The same principle applies to inline tokenizers such as Heading, Blockquote, ListItem, and others. However, they cannot be used individually and produce the same token types as the `MarkupTokenizer`.
+
+### Schema
+
+```
+        ┌─────────┐
+        │ stream  │
+        └─────────┘
+             │  ParseAsync()
+             ▼
+   ┌───────────────────┐
+   │  MarkupTokenizer  │
+   └───────────────────┘
+             │
+             ▼       ┌─────────┐
+             ├──────►│   json  │
+             │       └─────────┘
+             │
+             │       ┌─────────┐
+             ├──────►│ Heading │
+             │       └─────────┘
+             │
+             │       ┌─────────┐
+             └──────►│  etc..  │
+                     └─────────┘
+```
+
 ## Example
 
-Here's a simple example showing how to use the XML tokenizer:
+Here's a simple example showing how to use the `MarkupTokenizer`:
 
 ```csharp
 using NTokenizers.Json;
