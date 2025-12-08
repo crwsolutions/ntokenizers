@@ -5,22 +5,22 @@ Collection of **stream-capable** tokenizers for Markup, JSON, XML, SQL, Typescri
 
 ```csharp
 // kickoff markup tokenizer
-await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markup-tokens here */ })
+await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markup-tokens here */ });
 
 // kickoff csharp tokenizer
-await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ })
+await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ });
 
 // kickoff json tokenizer
-await JsonTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle json-tokens here */ })
+await JsonTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle json-tokens here */ });
 
 // kickoff sql tokenizer
-await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql-tokens here */ })
+await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql-tokens here */ });
 
 // kickoff typescript tokenizer
-await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ })
+await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ });
 
 // kickoff xml tokenizer
-await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ }
+await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ };
 ```
 
 ## Overview
