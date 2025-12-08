@@ -43,7 +43,7 @@ The `MarkupTokenizer` however is a special case. Instead of working on a single 
 
 The same principle applies to inline tokenizers such as Heading, Blockquote, ListItem, and others. However, they cannot be used individually and produce the same token types as the `MarkupTokenizer`.
 
-### Schema
+### Diagram
 
 ```
         ┌─────────┐
@@ -52,19 +52,19 @@ The same principle applies to inline tokenizers such as Heading, Blockquote, Lis
              │  ParseAsync()
              ▼
    ┌───────────────────┐
-   │  MarkupTokenizer  │
+   │  MarkupTokenizer  │ ───────────► fire markup tokens
    └───────────────────┘
              │
              ▼       ┌─────────┐
-             ├──────►│   json  │
+             ├──────►│   json  │ ───► fire json tokens
              │       └─────────┘
              │
              │       ┌─────────┐
-             ├──────►│ Heading │
+             ├──────►│ Heading │ ───► fire markup tokens
              │       └─────────┘
              │
              │       ┌─────────┐
-             └──────►│  etc..  │
+             └──────►│  etc..  │ ───► etc
                      └─────────┘
 ```
 
