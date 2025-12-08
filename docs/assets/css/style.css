@@ -80,6 +80,11 @@ blockquote.warning {
     overflow-x: auto;
 }
 
+/* Remove border from images that are children of links */
+a img {
+        border: none;
+}
+
 /* Improve image styling */
 img {
     border: solid 2px #666;
