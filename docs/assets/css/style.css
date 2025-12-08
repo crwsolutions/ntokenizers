@@ -26,23 +26,38 @@ nav ul {
     padding: 0;
 }
 
-    nav ul li {
-        margin-bottom: 10px;
-    }
-
-        nav ul li a {
-            text-decoration: none;
-            color: #0366d6;
-        }
-
-            nav ul li a:hover {
-                text-decoration: underline;
-            }
-
-.highlight pre {
-    padding: 12px;
+nav ul li {
+    margin-bottom: 10px;
 }
 
+nav ul li a {
+    text-decoration: none;
+    color: #0366d6;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Add a subtle border to the main content area */
+main {
+    border-left: 1px solid #eee;
+    padding-left: 20px;
+}
+
+/* Improve table styling */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+td, th {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+}
+
+/* Improve blockquote styling */
 blockquote {
     border-left: 4px solid #ccc;
     padding: 1rem;
@@ -58,15 +73,89 @@ blockquote.warning {
     border-color: #ffeaa7;
 }
 
-table {
-    border-collapse: collapse; /* makes borders look clean */
+/* Improve code block styling */
+.highlight pre {
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
 }
 
-td, th {
-    padding: 8px 12px;
-    border: 1px solid purple;
-}
-
+/* Improve image styling */
 img {
     border: solid 2px #666;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Add some spacing to headings */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Improve paragraph spacing */
+p {
+    margin: 0.5rem 0;
+}
+
+/* Mobile menu styles */
+@media screen and (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    aside {
+        width: 100%;
+        border-left: none;
+        border-bottom: 1px solid #ddd;
+        padding: 10px;
+    }
+
+    .mobile-menu-toggle {
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .hamburger {
+        display: flex;
+        flex-direction: column;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .hamburger-line {
+        width: 25px;
+        height: 3px;
+        background-color: #333;
+        margin: 3px 0;
+        transition: 0.3s;
+    }
+
+    .mobile-menu {
+        display: none;
+        margin-top: 10px;
+    }
+
+    .mobile-menu.active {
+        display: block;
+    }
+
+    main {
+        padding: 15px;
+        border-left: none;
+        border-top: 1px solid #eee;
+    }
+}
+
+/* For screens larger than 768px, hide the mobile menu toggle */
+@media screen and (min-width: 769px) {
+    .mobile-menu-toggle {
+        display: none;
+    }
+
+    .mobile-menu {
+        display: block;
+    }
 }
