@@ -55,7 +55,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                     break;
                 }
                 char c = (char)ic;
-                state = ProcessChar(c, state, ref stringQuote);
+                ProcessChar(c, ref state, ref stringQuote);
             }
         }
         else
@@ -78,7 +78,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 if (delQueue.Count > delLength)
                 {
                     char toProcess = delQueue.Dequeue();
-                    state = ProcessChar(toProcess, state, ref stringQuote);
+                    ProcessChar(toProcess, ref state, ref stringQuote);
                 }
 
                 if (delQueue.IsEqualTo(delimiter))
@@ -93,7 +93,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 while (delQueue.Count > 0)
                 {
                     char toProcess = delQueue.Dequeue();
-                    state = ProcessChar(toProcess, state, ref stringQuote);
+                    ProcessChar(toProcess, ref state, ref stringQuote);
                 }
             }
 
@@ -108,18 +108,21 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         return Task.CompletedTask;
     }
 
-    private State ProcessChar(char c, State state, ref char stringQuote) => state switch
+    private void ProcessChar(char c, ref State state, ref char stringQuote)
     {
-        State.Start => ProcessStart(c, ref stringQuote),
-        State.InString => ProcessInString(c, stringQuote),
-        State.InNumber => ProcessInNumber(c),
-        State.InIdentifier => ProcessInIdentifier(c),
-        State.InOperator => ProcessInOperator(c),
-        State.InLineComment => ProcessInLineComment(c),
-        State.InBlockComment => ProcessInBlockComment(c),
-        State.InWhitespace => ProcessInWhitespace(c, ref stringQuote),
-        _ => State.Start,
-    };
+        state = state switch
+        {
+            State.Start => ProcessStart(c, ref stringQuote),
+            State.InString => ProcessInString(c, stringQuote),
+            State.InNumber => ProcessInNumber(c),
+            State.InIdentifier => ProcessInIdentifier(c),
+            State.InOperator => ProcessInOperator(c),
+            State.InLineComment => ProcessInLineComment(c),
+            State.InBlockComment => ProcessInBlockComment(c),
+            State.InWhitespace => ProcessInWhitespace(c, ref stringQuote),
+            _ => State.Start,
+        };
+    }
 
     private State ProcessStart(char c, ref char stringQuote)
     {
