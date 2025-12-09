@@ -87,6 +87,8 @@ class Program
     static async Task Main()
     {
         string markup = """
+        Here is some **bold** text and some *italic* text.
+
         # NTokenizers Showcase
 
         ## XML example
@@ -115,28 +117,28 @@ class Program
 
         // Create connected streams
         using var pipe = new AnonymousPipeServerStream(PipeDirection.Out);
-        using var reader = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
+        using var stream = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
         // Start slow writer
         var writerTask = EmitSlowlyAsync(markup, pipe);
 
         // Parse markup
-        MarkupTokenizer.Create().Parse(reader, onToken: token =>
+        await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
         {
             if (token.Metadata is HeadingMetadata headingMetadata)
-            { 
-                headingMetadata.OnInlineToken = inlineToken =>
+            {
+                await headingMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
-                    var colored = headingMetadata.Level != 1 ? 
-                        new Markup($"[bold blue]{value}[/]") :
+                    var colored = headingMetadata.Level != 1 ?
+                        new Markup($"[bold GreenYellow]{value}[/]") :
                         new Markup($"[bold yellow]** {value} **[/]");
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
             {
-                xmlMetadata.OnInlineToken = inlineToken =>
+                await xmlMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -155,11 +157,11 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
             {
-                jsonMetadata.OnInlineToken = inlineToken =>
+                await jsonMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -180,11 +182,11 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
             {
-                tsMetadata.OnInlineToken = inlineToken =>
+                await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -199,7 +201,7 @@ class Program
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
-                };
+                });
             }
             else
             {
@@ -207,24 +209,17 @@ class Program
                 var value = Markup.Escape(token.Value);
                 var colored = token.TokenType switch
                 {
-                    MarkupTokenType.Text => new Markup($"[white]{value}[/]"),
+                    MarkupTokenType.Text => new Markup($"{value}"),
                     MarkupTokenType.Bold => new Markup($"[bold]{value}[/]"),
                     MarkupTokenType.Italic => new Markup($"[italic]{value}[/]"),
-                    MarkupTokenType.Heading => new Markup($"[bold blue]{value}[/]"),
-                    MarkupTokenType.Link => new Markup($"[blue underline]{value}[/]"),
                     _ => new Markup(value)
                 };
 
                 AnsiConsole.Write(colored);
             }
 
-            //Important: wait for inline processing to complete before proceeding
-            if (token.Metadata is IInlineMarkupMedata inlineMetadata)
+            if (token.Metadata is InlineMarkupMetadata)
             {
-                while (inlineMetadata.IsProcessing)
-                {
-                    Thread.Sleep(3);
-                }
                 AnsiConsole.WriteLine();
             }
         });
