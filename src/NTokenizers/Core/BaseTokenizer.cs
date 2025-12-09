@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using NTokenizers.Extensions;
+using System.Text;
 
 namespace NTokenizers.Core;
 
@@ -268,6 +269,83 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     {
         _stopDelimiter = stopDelimiter;
         await ParseAsync(reader, stringBuilder, cancellationToken, onToken);
+    }
+
+    /// <summary>
+    /// Tokenizes the input stream using the specified delimiter, or parses until the end of the stream if no delimiter is specified.
+    /// </summary>
+    /// <param name="ct">The cancellation token to monitor for cancellation requests.</param>
+    /// <param name="processChar">The action to invoke for each character during tokenization.</param>
+    /// <remarks>
+    /// If no delimiter is specified, the method reads the entire input stream until the end.
+    /// If a delimiter is specified, the method uses a sliding window approach to process characters
+    /// until the delimiter is encountered. When the delimiter is found, the method strips any final
+    /// line feed character and stops processing.
+    /// </remarks>
+    protected void TokenizeCharacters(CancellationToken ct, Action<char> processChar)
+    {
+        string delimiter = _stopDelimiter ?? string.Empty;
+        int delLength = delimiter.Length;
+
+        if (delLength == 0)
+        {
+            // No delimiter, parse until end of stream
+            while (!ct.IsCancellationRequested)
+            {
+                int ic = Read();
+                if (ic == -1)
+                {
+                    break;
+                }
+
+                char c = (char)ic;
+                processChar(c);
+            }
+        }
+        else
+        {
+            // With delimiter, use a sliding window
+            var delQueue = new Queue<char>();
+            bool stoppedByDelimiter = false;
+
+            while (!ct.IsCancellationRequested)
+            {
+                int ic = Read();
+                if (ic == -1)
+                {
+                    break;
+                }
+
+                char c = (char)ic;
+                delQueue.Enqueue(c);
+
+                if (delQueue.Count > delLength)
+                {
+                    char toProcess = delQueue.Dequeue();
+                    processChar(toProcess);
+                }
+
+                if (delQueue.IsEqualTo(delimiter))
+                {
+                    stoppedByDelimiter = true;
+                    break;
+                }
+            }
+
+            if (!stoppedByDelimiter)
+            {
+                while (delQueue.Count > 0)
+                {
+                    char toProcess = delQueue.Dequeue();
+                    processChar(toProcess);
+                }
+            }
+
+            if (stoppedByDelimiter)
+            {
+                StripFinalLineFeed();
+            }
+        }
     }
 
     /// <summary>

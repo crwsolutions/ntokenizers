@@ -1,5 +1,4 @@
 using NTokenizers.Core;
-using NTokenizers.Extensions;
 
 namespace NTokenizers.Typescript;
 
@@ -36,62 +35,8 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     {
         var state = State.Start;
         char? stringDelimiter = null;
-        string delimiter = _stopDelimiter ?? string.Empty;
-        int delLength = delimiter.Length;
 
-        if (delLength == 0)
-        {
-            while (!ct.IsCancellationRequested)
-            {
-                int ic = Read();
-                if (ic == -1)
-                {
-                    break;
-                }
-                char c = (char)ic;
-                ProcessChar(c, ref state, ref stringDelimiter);
-            }
-        }
-        else
-        {
-            var delQueue = new Queue<char>();
-            bool stoppedByDelimiter = false;
-            while (!ct.IsCancellationRequested)
-            {
-                int ic = Read();
-                if (ic == -1)
-                {
-                    break;
-                }
-                char c = (char)ic;
-                delQueue.Enqueue(c);
-                if (delQueue.Count > delLength)
-                {
-                    char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref stringDelimiter);
-                }
-
-                if (delQueue.IsEqualTo(delimiter))
-                {
-                    stoppedByDelimiter = true;
-                    break;
-                }
-            }
-
-            if (!stoppedByDelimiter)
-            {
-                while (delQueue.Count > 0)
-                {
-                    char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref stringDelimiter);
-                }
-            }
-
-            if (stoppedByDelimiter)
-            {
-                StripFinalLineFeed();
-            }
-        }
+        TokenizeCharacters(ct, (c) => ProcessChar(c, ref state, ref stringDelimiter));
 
         EmitPending(state);
 

@@ -1,5 +1,4 @@
 ﻿using NTokenizers.Core;
-using NTokenizers.Extensions;
 using NTokenizers.Markup;
 
 namespace NTokenizers.Generic;
@@ -19,55 +18,20 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
     /// </summary>
     internal protected override Task ParseAsync(CancellationToken ct)
     {
-        string delimiter = _stopDelimiter ?? string.Empty;
-        int delLength = delimiter.Length;
-
-        var delQueue = new Queue<char>();
-        bool stoppedByDelimiter = false;
-        while (!ct.IsCancellationRequested)
-        {
-            int ic = Read();
-            if (ic == -1)
-            {
-                break;
-            }
-            char c = (char)ic;
-
-            delQueue.Enqueue(c);
-
-            if (delQueue.Count > delLength)
-            {
-                char toProcess = delQueue.Dequeue();
-                _buffer.Append(toProcess);
-                if (toProcess == ' ')
-                {
-                    EmitPending();
-                }
-            }
-
-            if (delQueue.IsEqualTo(delimiter))
-            {
-                stoppedByDelimiter = true;
-                break;
-            }
-        }
-        if (!stoppedByDelimiter)
-        {
-            while (delQueue.Count > 0)
-            {
-                char toProcess = delQueue.Dequeue();
-                _buffer.Append(toProcess);
-            }
-        }
-
-        if (stoppedByDelimiter)
-        {
-            StripFinalLineFeed();
-        }
+        TokenizeCharacters(ct, ProcessChar);
 
         EmitPending();
 
         return Task.CompletedTask;
+    }
+
+    private void ProcessChar(char toProcess)
+    {
+        _buffer.Append(toProcess);
+        if (toProcess == ' ')
+        {
+            EmitPending();
+        }
     }
 
     private void EmitPending()

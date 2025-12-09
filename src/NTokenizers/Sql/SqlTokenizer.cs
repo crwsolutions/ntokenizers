@@ -1,5 +1,4 @@
 using NTokenizers.Core;
-using NTokenizers.Extensions;
 
 namespace NTokenizers.Sql;
 
@@ -41,69 +40,10 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     {
         var state = State.Start;
         char stringQuote = '\0';
-        string delimiter = _stopDelimiter ?? string.Empty;
-        int delLength = delimiter.Length;
 
-        if (delLength == 0)
-        {
-            // No delimiter, parse until end of stream
-            while (!ct.IsCancellationRequested)
-            {
-                int ic = Read();
-                if (ic == -1)
-                {
-                    break;
-                }
-                char c = (char)ic;
-                ProcessChar(c, ref state, ref stringQuote);
-            }
-        }
-        else
-        {
-            // With delimiter, use a sliding window
-            var delQueue = new Queue<char>();
-            bool stoppedByDelimiter = false;
+        TokenizeCharacters(ct, (c) => ProcessChar(c, ref state, ref stringQuote));
 
-            while (!ct.IsCancellationRequested)
-            {
-                int ic = Read();
-                if (ic == -1)
-                {
-                    break;
-                }
-
-                char c = (char)ic;
-                delQueue.Enqueue(c);
-
-                if (delQueue.Count > delLength)
-                {
-                    char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref stringQuote);
-                }
-
-                if (delQueue.IsEqualTo(delimiter))
-                {
-                    stoppedByDelimiter = true;
-                    break;
-                }
-            }
-
-            if (!stoppedByDelimiter)
-            {
-                while (delQueue.Count > 0)
-                {
-                    char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref stringQuote);
-                }
-            }
-
-            if (stoppedByDelimiter)
-            {
-                StripFinalLineFeed();
-            }
-        }
-
-        EmitPending(state);
+        EmitPending(state); // Emit last token
 
         return Task.CompletedTask;
     }

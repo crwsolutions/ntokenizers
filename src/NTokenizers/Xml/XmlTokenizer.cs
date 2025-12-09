@@ -1,5 +1,4 @@
 ﻿using NTokenizers.Core;
-using NTokenizers.Extensions;
 
 namespace NTokenizers.Xml;
 
@@ -37,69 +36,14 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
     internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = State.Text;
-        string delimiter = _stopDelimiter ?? string.Empty;
-        int delLength = delimiter.Length;
+
         char? quoteChar = null;
         bool insideTag = false;
         bool seenElementName = false;
         int depth = 0; // Track element nesting depth
         bool isClosingTag = false; // Track if current tag is a closing tag </...>
 
-        if (delLength == 0)
-        {
-            while (!ct.IsCancellationRequested)
-            {
-                int ic = Read();
-                if (ic == -1)
-                {
-                    break;
-                }
-                char c = (char)ic;
-                ProcessChar(c, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
-            }
-        }
-        else
-        {
-            var delQueue = new Queue<char>();
-            bool stoppedByDelimiter = false;
-
-            while (!ct.IsCancellationRequested)
-            {
-                int ic = Read();
-                if (ic == -1)
-                {
-                    break;
-                }
-                char c = (char)ic;
-                delQueue.Enqueue(c);
-
-                if (delQueue.Count > delLength)
-                {
-                    char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
-                }
-
-                if (delQueue.IsEqualTo(delimiter))
-                {
-                    stoppedByDelimiter = true;
-                    break;
-                }
-            }
-
-            if (!stoppedByDelimiter)
-            {
-                while (delQueue.Count > 0)
-                {
-                    char toProcess = delQueue.Dequeue();
-                    ProcessChar(toProcess, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag);
-                }
-            }
-
-            if (stoppedByDelimiter)
-            {
-                StripFinalLineFeed();
-            }
-        }
+        TokenizeCharacters(ct, (c) => ProcessChar(c, ref state, ref quoteChar, ref insideTag, ref seenElementName, ref depth, ref isClosingTag));
 
         EmitPending(state);
 
