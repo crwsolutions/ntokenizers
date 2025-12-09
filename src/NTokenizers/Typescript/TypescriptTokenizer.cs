@@ -46,7 +46,6 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                 int ic = Read();
                 if (ic == -1)
                 {
-                    EmitPending(state);
                     break;
                 }
                 char c = (char)ic;
@@ -92,9 +91,9 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
             {
                 StripFinalLineFeed();
             }
-
-            EmitPending(state);
         }
+
+        EmitPending(state);
 
         return Task.CompletedTask;
     }

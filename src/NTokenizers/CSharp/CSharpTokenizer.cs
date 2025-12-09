@@ -55,7 +55,6 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                 int ic = Read();
                 if (ic == -1)
                 {
-                    EmitPending(ref state);
                     break;
                 }
                 char c = (char)ic;
@@ -99,9 +98,9 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             {
                 StripFinalLineFeed();
             }
-
-            EmitPending(ref state);
         }
+
+        EmitPending(ref state);
 
         return Task.CompletedTask;
     }

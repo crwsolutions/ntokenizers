@@ -52,7 +52,6 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 int ic = Read();
                 if (ic == -1)
                 {
-                    EmitPending(state);
                     break;
                 }
                 char c = (char)ic;
@@ -102,9 +101,9 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             {
                 StripFinalLineFeed();
             }
-
-            EmitPending(state);
         }
+
+        EmitPending(state);
 
         return Task.CompletedTask;
     }

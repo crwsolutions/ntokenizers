@@ -52,7 +52,6 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
                 int ic = Read();
                 if (ic == -1)
                 {
-                    EmitPending(state);
                     break;
                 }
                 char c = (char)ic;
@@ -100,9 +99,9 @@ public sealed class XmlTokenizer : BaseSubTokenizer<XmlToken>
             {
                 StripFinalLineFeed();
             }
-
-            EmitPending(state);
         }
+
+        EmitPending(state);
 
         return Task.CompletedTask;
     }

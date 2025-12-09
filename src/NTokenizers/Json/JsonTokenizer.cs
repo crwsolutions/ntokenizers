@@ -35,7 +35,6 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
                 int ic = Read();
                 if (ic == -1)
                 {
-                    EmitPending(ref inString, ref inNumber, ref inKeyword);
                     break;
                 }
                 char c = (char)ic;
@@ -79,9 +78,9 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             {
                 StripFinalLineFeed();
             }
-
-            EmitPending(ref inString, ref inNumber, ref inKeyword);
         }
+
+        EmitPending(ref inString, ref inNumber, ref inKeyword);
 
         return Task.CompletedTask;
     }
