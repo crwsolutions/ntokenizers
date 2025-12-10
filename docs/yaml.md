@@ -7,6 +7,10 @@ title: "Yaml"
 
 The YAML tokenizer is designed to parse YAML code and break it down into meaningful components (tokens) for processing. It provides stream-capable functionality for handling large YAML files or real-time YAML data analysis.
 
+<blockquote class="warning">
+ <b>Please note:</b> Will be part of v1.1 and later
+</blockquote>
+
 ## Overview
 
 The YAML tokenizer is part of the NTokenizers library and provides a stream-capable approach to parsing YAML code. It can process YAML source code in real-time, making it suitable for large files or streaming scenarios where loading everything into memory at once is impractical.
