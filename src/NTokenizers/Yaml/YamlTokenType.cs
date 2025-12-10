@@ -6,6 +6,21 @@ namespace NTokenizers.Yaml;
 public enum YamlTokenType
 {
     /// <summary>
+    /// Represents a % directive
+    /// </summary>
+    Directive,
+
+    /// <summary>
+    /// Directive key, YAML or TAG
+    /// </summary>
+    DirectiveKey,
+
+    /// <summary>
+    /// Directive value
+    /// </summary>
+    DirectiveValue,
+
+    /// <summary>
     /// Represents the document start marker (---).
     /// </summary>
     DocumentStart,

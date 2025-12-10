@@ -105,8 +105,8 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 {
                     _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     inValue = false;
-                _buffer.Clear();
-            }
+                    _buffer.Clear();
+                }
             }
 
             // Append newline to buffer - it will be emitted as part of the next Whitespace token
@@ -203,6 +203,53 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         {
             _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
             _buffer.Clear();
+        }
+
+        //Check for directives
+        if (wasLineStart && c == '%')
+        {
+            _onToken(new YamlToken(YamlTokenType.Directive, c.ToString()));
+            var readKey = true;
+            while (true)
+            {
+                var cc = Read();
+                if (cc == -1)
+                {
+                    if (_buffer.Length > 0)
+                    {
+                        if (readKey)
+                        {
+                            _onToken(new YamlToken(YamlTokenType.DirectiveKey, _buffer.ToString()));
+                        }
+                        else
+                        {
+                            _onToken(new YamlToken(YamlTokenType.DirectiveValue, _buffer.ToString()));
+                        }
+                        _buffer.Clear();
+                    }
+                    return;
+                }
+                else
+                {
+                    var rc = (char)cc;
+                    if (readKey && char.IsWhiteSpace(rc))
+                    {
+                        _onToken(new YamlToken(YamlTokenType.DirectiveKey, _buffer.ToString()));
+                        _onToken(new YamlToken(YamlTokenType.Whitespace, rc.ToString()));
+                        _buffer.Clear();
+                        readKey = false;
+                        continue;
+                    }
+                    else if (!readKey && (Peek() == '\n' || Peek() == '\r' || Peek() == '\0'))
+                    {
+                        _buffer.Append(rc);
+                        _onToken(new YamlToken(YamlTokenType.DirectiveValue, _buffer.ToString()));
+                        _buffer.Clear();
+                        return;
+                    }
+                    _buffer.Append(rc);
+                }
+            }
         }
 
         // Check for document markers at line start

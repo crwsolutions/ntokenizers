@@ -8,20 +8,19 @@ public class YamlTokenizerTests
     [Fact]
     public void TestDirective()
     {
-        var input = "name: Alice # comment\n";
+        var input = "%YAML 1.2";
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
         Assert.Equal(4, tokens.Count);
-        Assert.Equal(YamlTokenType.Key, tokens[0].TokenType);
-        Assert.Equal("name", tokens[0].Value);
-        Assert.Equal(YamlTokenType.Colon, tokens[1].TokenType);
-        Assert.Equal(":", tokens[1].Value);
-        Assert.Equal(YamlTokenType.Value, tokens[2].TokenType);
-        Assert.Equal(" Alice ", tokens[2].Value);
-        Assert.Equal(YamlTokenType.Comment, tokens[3].TokenType);
-        Assert.Equal("# comment\n", tokens[3].Value);
+        Assert.Equal(YamlTokenType.Directive, tokens[0].TokenType);
+        Assert.Equal("%", tokens[0].Value);
+        Assert.Equal(YamlTokenType.DirectiveKey, tokens[1].TokenType);
+        Assert.Equal("YAML", tokens[1].Value);
+        Assert.Equal(YamlTokenType.Whitespace, tokens[2].TokenType);
+        Assert.Equal(" ", tokens[2].Value);
+        Assert.Equal(YamlTokenType.DirectiveValue, tokens[3].TokenType);
+        Assert.Equal("1.2", tokens[3].Value);
     }
-
 
     [Fact]
     public void TestDocumentStart()
