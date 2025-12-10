@@ -16,7 +16,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
     /// Parses YAML or YAML-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="YamlToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    protected internal override Task ParseAsync(CancellationToken ct)
     {
         var stack = new Stack<ContainerType>();
         bool inQuotedString = false;
