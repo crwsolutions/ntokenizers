@@ -19,6 +19,8 @@ sidebar:
       url: "typescript"
     - title: "Xml"
       url: "xml"
+    - title: "Yaml"
+      url: "yaml"
     - title: "Encoding"
       url: "encoding"
 

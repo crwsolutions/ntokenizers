@@ -122,34 +122,59 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             // If we're in a key or value, we need to decide whether to include the whitespace
             if (inKey || inValue)
             {
-                // Check what's next - if it's a special character
-                int nextChar = Peek();
-                if (nextChar == ':' || nextChar == '#' || nextChar == ',' || nextChar == ']' || nextChar == '}' || nextChar == -1)
+                // For keys: never include trailing whitespace - emit immediately
+                if (inKey)
                 {
-                    // For value, include trailing whitespace before comment or structural char
-                    if (inValue && nextChar == '#')
-                    {
-                        _buffer.Append(c);
-                    }
-                    // Emit the key or value
-                    if (inKey)
+                    // Emit key without trailing whitespace
+                    if (_buffer.Length > 0)
                     {
                         _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
-                        inKey = false;
+                        _buffer.Clear();
                     }
-                    else if (inValue)
-                    {
-                        _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
-                        inValue = false;
-                    }
-                    _buffer.Clear();
+                    inKey = false;
+                    // Fall through to handle whitespace
                 }
-                else
+                else if (inValue)
                 {
-                    // Not followed by special char, include whitespace in key/value
-                    _buffer.Append(c);
+                    // For values: accumulate whitespace, but handle specially based on context
+                    int nextChar = Peek();
+                    
+                    if (nextChar == '#')
+                    {
+                        // Include whitespace before comment
+                        _buffer.Append(c);
+                        // Check if there's more whitespace
+                        if (Peek() == '#')
+                        {
+                            // Immediately followed by #, emit value with trailing space
+                            _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                            _buffer.Clear();
+                            inValue = false;
+                        }
+                        return;
+                    }
+                    else
+                    {
+                        // Accumulate whitespace in buffer
+                        _buffer.Append(c);
+                        // But if next is not whitespace and not part of value, emit
+                        if (!char.IsWhiteSpace((char)nextChar) && 
+                            (nextChar == ':' || nextChar == ',' || nextChar == ']' || nextChar == '}' || nextChar == '\n' || nextChar == -1))
+                        {
+                            // Emit value, trim trailing whitespace
+                            string val = _buffer.ToString().TrimEnd();
+                            if (val.Length > 0)
+                            {
+                                _onToken(new YamlToken(YamlTokenType.Value, val));
+                            }
+                            _buffer.Clear();
+                            inValue = false;
+                            // Re-process just the current whitespace char
+                            _buffer.Append(c);
+                        }
+                        return;
+                    }
                 }
-                return;
             }
             
             _buffer.Append(c);
@@ -240,7 +265,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 _onToken(new YamlToken(YamlTokenType.FlowSeqStart, "["));
                 stack.Push(ContainerType.FlowSeq);
                 isAfterColon = false;
-                isAfterBlockSeqEntry = true; // Treat like after block seq entry - next content is a value
+                isAfterBlockSeqEntry = false;
                 return;
 
             case ']':
@@ -300,12 +325,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 }
                 _onToken(new YamlToken(YamlTokenType.FlowEntry, ","));
                 isAfterColon = false;
-                // After comma in flow collection, treat next item as value (for sequences) or key (for maps)
-                // For now, assume it could be either - let the content determine
-                if (stack.Count > 0 && stack.Peek() == ContainerType.FlowSeq)
-                {
-                    isAfterBlockSeqEntry = true; // Treat like value context
-                }
+                isAfterBlockSeqEntry = false;
                 return;
 
             case ':':
@@ -508,8 +528,16 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 }
                 else if (!inValue)
                 {
-                    // Before colon, we're in a key
-                    inKey = true;
+                    // Check if we're in a flow sequence - if so, treat as value
+                    if (stack.Count > 0 && stack.Peek() == ContainerType.FlowSeq)
+                    {
+                        inValue = true;
+                    }
+                    else
+                    {
+                        // Before colon, we're in a key
+                        inKey = true;
+                    }
                 }
                 _buffer.Append(c);
                 return;
