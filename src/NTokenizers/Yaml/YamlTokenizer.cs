@@ -99,13 +99,14 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 {
                     _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
                     inKey = false;
+                    _buffer.Clear();
                 }
                 else if (inValue)
                 {
                     _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     inValue = false;
-                }
                 _buffer.Clear();
+            }
             }
 
             // Append newline to buffer - it will be emitted as part of the next Whitespace token
