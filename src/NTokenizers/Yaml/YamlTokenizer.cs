@@ -84,6 +84,11 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             return;
         }
 
+        if (c == '\r') //ignore returns
+        {
+            return;
+        }
+
         // Handle newlines - they reset line state
         if (c == '\n')
         {
@@ -182,17 +187,6 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             
             _buffer.Append(c);
             
-            // Check if whitespace ends and we should emit
-            int peek = Peek();
-            if (peek != -1 && !char.IsWhiteSpace((char)peek))
-            {
-                if (_buffer.Length > 0)
-                {
-                    _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
-                    _buffer.Clear();
-                    isLineStart = false;
-                }
-            }
             return;
         }
 
@@ -231,6 +225,11 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 _onToken(new YamlToken(YamlTokenType.BlockSeqEntry, "-"));
                 isAfterColon = false;
                 isAfterBlockSeqEntry = true;
+                if (char.IsWhiteSpace(next1))
+                {
+                    var whitespace = (char)Read();
+                    _onToken(new YamlToken(YamlTokenType.Whitespace, $"{whitespace}"));
+                }
                 return;
             }
         }

@@ -6,6 +6,24 @@ namespace Yaml;
 public class YamlTokenizerTests
 {
     [Fact]
+    public void TestDirective()
+    {
+        var input = "name: Alice # comment\n";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(YamlTokenType.Key, tokens[0].TokenType);
+        Assert.Equal("name", tokens[0].Value);
+        Assert.Equal(YamlTokenType.Colon, tokens[1].TokenType);
+        Assert.Equal(":", tokens[1].Value);
+        Assert.Equal(YamlTokenType.Value, tokens[2].TokenType);
+        Assert.Equal(" Alice ", tokens[2].Value);
+        Assert.Equal(YamlTokenType.Comment, tokens[3].TokenType);
+        Assert.Equal("# comment\n", tokens[3].Value);
+    }
+
+
+    [Fact]
     public void TestDocumentStart()
     {
         var input = "---";
@@ -172,17 +190,46 @@ public class YamlTokenizerTests
         var input = "- item1\n- item2";
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
-        Assert.Equal(5, tokens.Count);
+        Assert.Equal(7, tokens.Count);
         Assert.Equal(YamlTokenType.BlockSeqEntry, tokens[0].TokenType);
         Assert.Equal("-", tokens[0].Value);
-        Assert.Equal(YamlTokenType.Value, tokens[1].TokenType);
-        Assert.Equal(" item1", tokens[1].Value);
+        Assert.Equal(YamlTokenType.Whitespace, tokens[1].TokenType);
+        Assert.Equal(YamlTokenType.Value, tokens[2].TokenType);
+        Assert.Equal("item1", tokens[2].Value);
+        Assert.Equal(YamlTokenType.Whitespace, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(YamlTokenType.BlockSeqEntry, tokens[4].TokenType);
+        Assert.Equal("-", tokens[4].Value);
+        Assert.Equal(YamlTokenType.Whitespace, tokens[5].TokenType);
+        Assert.Equal(YamlTokenType.Value, tokens[6].TokenType);
+        Assert.Equal("item2", tokens[6].Value);
+    }
+
+    [Fact]
+    public void TestBlockSequenceEntryAfterKey()
+    {
+        var input = "head:\r\n - item1\n - item2";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
+        Assert.Equal(10, tokens.Count);
+        Assert.Equal(YamlTokenType.Key, tokens[0].TokenType);
+        Assert.Equal("head", tokens[0].Value);
+        Assert.Equal(YamlTokenType.Colon, tokens[1].TokenType);
+        Assert.Equal(":", tokens[1].Value);
         Assert.Equal(YamlTokenType.Whitespace, tokens[2].TokenType);
-        Assert.Equal("\n", tokens[2].Value);
+        Assert.Equal("\n ", tokens[2].Value);
         Assert.Equal(YamlTokenType.BlockSeqEntry, tokens[3].TokenType);
         Assert.Equal("-", tokens[3].Value);
-        Assert.Equal(YamlTokenType.Value, tokens[4].TokenType);
-        Assert.Equal(" item2", tokens[4].Value);
+        Assert.Equal(YamlTokenType.Whitespace, tokens[4].TokenType);
+        Assert.Equal(YamlTokenType.Value, tokens[5].TokenType);
+        Assert.Equal("item1", tokens[5].Value);
+        Assert.Equal(YamlTokenType.Whitespace, tokens[6].TokenType);
+        Assert.Equal("\n ", tokens[6].Value);
+        Assert.Equal(YamlTokenType.BlockSeqEntry, tokens[7].TokenType);
+        Assert.Equal("-", tokens[7].Value);
+        Assert.Equal(YamlTokenType.Whitespace, tokens[8].TokenType);
+        Assert.Equal(YamlTokenType.Value, tokens[9].TokenType);
+        Assert.Equal("item2", tokens[9].Value);
     }
 
     [Fact]
