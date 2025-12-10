@@ -65,15 +65,16 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             }
             else if (c == '"')
             {
-                // Emit the string content (without the closing quote yet)
+                // Emit the string content (buffer now contains: opening quote + content + closing quote)
                 string str = _buffer.ToString();
                 _buffer.Clear();
                 
-                // Remove opening quote from string content
+                // Extract content between quotes
                 if (str.Length > 1)
                 {
                     _onToken(new YamlToken(YamlTokenType.String, str.Substring(1, str.Length - 2)));
                 }
+                // Emit the closing quote
                 _onToken(new YamlToken(YamlTokenType.Quote, "\""));
                 
                 inQuotedString = false;
@@ -102,6 +103,8 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 _buffer.Clear();
             }
 
+            // Append newline to buffer - it will be emitted as part of the next Whitespace token
+            // along with any following indentation/spaces
             _buffer.Append(c);
             isLineStart = true;
             isAfterColon = false;
