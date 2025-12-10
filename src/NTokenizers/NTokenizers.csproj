@@ -10,7 +10,7 @@
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
 		<VersionSuffix Condition="'$(VersionSuffix)' == ''">preview</VersionSuffix>
-		<Version>1.0</Version>
+		<Version>1.0.1</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -22,7 +22,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>Added Cancellation and Encoding support</PackageReleaseNotes>
+		<PackageReleaseNotes>Updated readme</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
