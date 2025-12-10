@@ -8,7 +8,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestDocumentStart()
     {
-        var tokens = Tokenize("---");
+        var input = "---";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Single(tokens);
         Assert.Equal(YamlTokenType.DocumentStart, tokens[0].TokenType);
         Assert.Equal("---", tokens[0].Value);
@@ -17,7 +19,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestDocumentEnd()
     {
-        var tokens = Tokenize("...");
+        var input = "...";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Single(tokens);
         Assert.Equal(YamlTokenType.DocumentEnd, tokens[0].TokenType);
         Assert.Equal("...", tokens[0].Value);
@@ -26,7 +30,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestSimpleKeyValue()
     {
-        var tokens = Tokenize("name: Alice");
+        var input = "name: Alice";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(3, tokens.Count);
         Assert.Equal(YamlTokenType.Key, tokens[0].TokenType);
         Assert.Equal("name", tokens[0].Value);
@@ -39,7 +45,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestKeyValueWithWhitespace()
     {
-        var tokens = Tokenize("  name  :  Alice  ");
+        var input = "  name  :  Alice  ";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         
         // Check that we have whitespace, key, colon, and value tokens
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Whitespace);
@@ -51,7 +59,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestComment()
     {
-        var tokens = Tokenize("# This is a comment\n");
+        var input = "# This is a comment\n";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Single(tokens);
         Assert.Equal(YamlTokenType.Comment, tokens[0].TokenType);
         Assert.Equal("# This is a comment\n", tokens[0].Value);
@@ -60,7 +70,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestKeyValueWithComment()
     {
-        var tokens = Tokenize("name: Alice # comment\n");
+        var input = "name: Alice # comment\n";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(4, tokens.Count);
         Assert.Equal(YamlTokenType.Key, tokens[0].TokenType);
         Assert.Equal("name", tokens[0].Value);
@@ -75,7 +87,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestQuotedString()
     {
-        var tokens = Tokenize("\"Hello World\"");
+        var input = "\"Hello World\"";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(3, tokens.Count);
         Assert.Equal(YamlTokenType.Quote, tokens[0].TokenType);
         Assert.Equal("\"", tokens[0].Value);
@@ -88,7 +102,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestKeyWithQuotedValue()
     {
-        var tokens = Tokenize("name: \"Alice\"");
+        var input = "name: \"Alice\"";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(6, tokens.Count);
         Assert.Equal(YamlTokenType.Key, tokens[0].TokenType);
         Assert.Equal("name", tokens[0].Value);
@@ -107,7 +123,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestFlowSequence()
     {
-        var tokens = Tokenize("[1, 2, 3]");
+        var input = "[1, 2, 3]";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(9, tokens.Count);
         Assert.Equal(YamlTokenType.FlowSeqStart, tokens[0].TokenType);
         Assert.Equal("[", tokens[0].Value);
@@ -132,7 +150,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestFlowMapping()
     {
-        var tokens = Tokenize("{name: Alice}");
+        var input = "{name: Alice}";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(5, tokens.Count);
         Assert.Equal(YamlTokenType.FlowMapStart, tokens[0].TokenType);
         Assert.Equal("{", tokens[0].Value);
@@ -149,7 +169,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestBlockSequenceEntry()
     {
-        var tokens = Tokenize("- item1\n- item2");
+        var input = "- item1\n- item2";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(5, tokens.Count);
         Assert.Equal(YamlTokenType.BlockSeqEntry, tokens[0].TokenType);
         Assert.Equal("-", tokens[0].Value);
@@ -166,7 +188,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestAnchor()
     {
-        var tokens = Tokenize("&anchor");
+        var input = "&anchor";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Single(tokens);
         Assert.Equal(YamlTokenType.Anchor, tokens[0].TokenType);
         Assert.Equal("&anchor", tokens[0].Value);
@@ -175,7 +199,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestAnchorWithKey()
     {
-        var tokens = Tokenize("name: &p Alice");
+        var input = "name: &p Alice";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         
         // Check that we have the key, colon, and anchor tokens
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Key && t.Value == "name");
@@ -187,7 +213,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestAlias()
     {
-        var tokens = Tokenize("*alias");
+        var input = "*alias";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Single(tokens);
         Assert.Equal(YamlTokenType.Alias, tokens[0].TokenType);
         Assert.Equal("*alias", tokens[0].Value);
@@ -196,7 +224,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestTag()
     {
-        var tokens = Tokenize("!tag");
+        var input = "!tag";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Single(tokens);
         Assert.Equal(YamlTokenType.Tag, tokens[0].TokenType);
         Assert.Equal("!tag", tokens[0].Value);
@@ -205,7 +235,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestDoubleTag()
     {
-        var tokens = Tokenize("!!str");
+        var input = "!!str";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Single(tokens);
         Assert.Equal(YamlTokenType.Tag, tokens[0].TokenType);
         Assert.Equal("!!str", tokens[0].Value);
@@ -214,7 +246,9 @@ public class YamlTokenizerTests
     [Fact]
     public void TestTagWithValue()
     {
-        var tokens = Tokenize("!!str \"value\"");
+        var input = "!!str \"value\"";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(5, tokens.Count);
         Assert.Equal(YamlTokenType.Tag, tokens[0].TokenType);
         Assert.Equal("!!str", tokens[0].Value);
@@ -235,7 +269,9 @@ public class YamlTokenizerTests
 name: Alice
 age: 30
 ...";
-        var tokens = Tokenize(yaml);
+        var input = yaml;
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         
         // Find key tokens
         var keyTokens = tokens.Where(t => t.TokenType == YamlTokenType.Key).ToList();
@@ -251,7 +287,9 @@ age: 30
     [Fact]
     public void TestNestedFlowSequence()
     {
-        var tokens = Tokenize("[[1, 2], [3, 4]]");
+        var input = "[[1, 2], [3, 4]]";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(YamlTokenType.FlowSeqStart, tokens[0].TokenType);
         Assert.Equal("[", tokens[0].Value);
         Assert.Equal(YamlTokenType.FlowSeqStart, tokens[1].TokenType);
@@ -265,7 +303,9 @@ age: 30
   name: ""Alice""
   age: 30
 manager: *p";
-        var tokens = Tokenize(yaml);
+        var input = yaml;
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         
         // Verify we have key tokens
         var keyTokens = tokens.Where(t => t.TokenType == YamlTokenType.Key).ToList();
@@ -315,12 +355,9 @@ name: Bob";
         {
             await Task.Delay(10);
             cts.Cancel();
-        });
+        }, TestContext.Current.CancellationToken);
         
-        await YamlTokenizer.Create().ParseAsync(stream, cts.Token, token =>
-        {
-            tokens.Add(token);
-        });
+        await YamlTokenizer.Create().ParseAsync(stream, cts.Token, tokens.Add);
         
         // Should have been cancelled and not parsed all 10000 keys
         var keyCount = tokens.Count(t => t.TokenType == YamlTokenType.Key);
@@ -330,7 +367,9 @@ name: Bob";
     [Fact]
     public void TestEscapedQuotedString()
     {
-        var tokens = Tokenize("\"Hello \\\"World\\\"\"");
+        var input = "\"Hello \\\"World\\\"\"";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(3, tokens.Count);
         Assert.Equal(YamlTokenType.Quote, tokens[0].TokenType);
         Assert.Equal("\"", tokens[0].Value);
@@ -343,7 +382,9 @@ name: Bob";
     [Fact]
     public void TestFlowMappingWithMultipleEntries()
     {
-        var tokens = Tokenize("{name: Alice, age: 30}");
+        var input = "{name: Alice, age: 30}";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         
         var keyTokens = tokens.Where(t => t.TokenType == YamlTokenType.Key).ToList();
         Assert.Equal(2, keyTokens.Count);
@@ -357,7 +398,9 @@ name: Bob";
     [Fact]
     public void TestEmptyFlowSequence()
     {
-        var tokens = Tokenize("[]");
+        var input = "[]";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(2, tokens.Count);
         Assert.Equal(YamlTokenType.FlowSeqStart, tokens[0].TokenType);
         Assert.Equal("[", tokens[0].Value);
@@ -368,7 +411,9 @@ name: Bob";
     [Fact]
     public void TestEmptyFlowMapping()
     {
-        var tokens = Tokenize("{}");
+        var input = "{}";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.Equal(2, tokens.Count);
         Assert.Equal(YamlTokenType.FlowMapStart, tokens[0].TokenType);
         Assert.Equal("{", tokens[0].Value);
@@ -384,7 +429,9 @@ name: Alice
 ---
 name: Bob
 ...";
-        var tokens = Tokenize(yaml);
+        var input = yaml;
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         
         var docStarts = tokens.Where(t => t.TokenType == YamlTokenType.DocumentStart).ToList();
         Assert.Equal(2, docStarts.Count);
@@ -396,7 +443,9 @@ name: Bob
     [Fact]
     public void TestWhitespaceOnly()
     {
-        var tokens = Tokenize("   \n\t  \n  ");
+        var input = "   \n\t  \n  ";
+        var (tokens, text) = Tokenize(input);
+        Assert.Equal(input, text);
         Assert.All(tokens, t => Assert.Equal(YamlTokenType.Whitespace, t.TokenType));
     }
 
@@ -408,7 +457,14 @@ name: Bob
         Assert.Equal("Key: 'name'", str);
     }
 
-    private static List<YamlToken> Tokenize(string input) => YamlTokenizer.Create().Parse(input);
+    private static (List<YamlToken> tokens, string text) Tokenize(string input)
+    {
+        var tokens = new List<YamlToken>();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
+        var result = YamlTokenizer.Create().Parse(stream, tokens.Add);
+
+        return (tokens, result);
+    }
 
     private static List<YamlToken> Tokenize(string input, string stopDelimiter)
     {
