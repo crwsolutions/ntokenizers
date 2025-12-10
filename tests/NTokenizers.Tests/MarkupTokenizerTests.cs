@@ -1,7 +1,6 @@
 using NTokenizers.Markup;
 using NTokenizers.Markup.Metadata;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Markup;
 
@@ -94,7 +93,7 @@ public class MarkupTokenizerTests
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<HeadingMetadata>(tokens[0].Metadata);
         Assert.Equal(1, ((HeadingMetadata)tokens[0].Metadata!).Level);
-        
+
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
         Assert.Equal("Heading 1", tokens[1].Value);
@@ -110,7 +109,7 @@ public class MarkupTokenizerTests
         Assert.Equal(MarkupTokenType.Heading, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.Equal(2, ((HeadingMetadata)tokens[0].Metadata!).Level);
-        
+
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
         Assert.Equal("Heading 2", tokens[1].Value);
@@ -126,7 +125,7 @@ public class MarkupTokenizerTests
         Assert.Equal(MarkupTokenType.Heading, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.Equal(6, ((HeadingMetadata)tokens[0].Metadata!).Level);
-        
+
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
         Assert.Equal("Heading 6", tokens[1].Value);
@@ -210,7 +209,7 @@ public class MarkupTokenizerTests
         var codeBlock = tokens.First(t => t.TokenType == MarkupTokenType.CodeBlock);
         Assert.Equal(string.Empty, codeBlock.Value); // Code blocks have empty value
         Assert.NotNull(codeBlock.Metadata);
-        
+
         // For non-specialized languages like "javascript", metadata is CodeBlockMetadata<MarkupToken>
         var codeMeta = codeBlock.Metadata as dynamic;
         Assert.NotNull(codeMeta);
@@ -321,7 +320,7 @@ public class MarkupTokenizerTests
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<OrderedListItemMetadata>(tokens[0].Metadata);
         Assert.Equal(1, ((OrderedListItemMetadata)tokens[0].Metadata!).Number);
-        
+
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
         Assert.Equal("item 1", tokens[1].Value);
@@ -337,7 +336,7 @@ public class MarkupTokenizerTests
         Assert.Equal(MarkupTokenType.OrderedListItem, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
         Assert.Equal(42, ((OrderedListItemMetadata)tokens[0].Metadata!).Number);
-        
+
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
         Assert.Equal("item", tokens[1].Value);
@@ -352,7 +351,7 @@ public class MarkupTokenizerTests
         Assert.Equal(2, tokens.Count); // Blockquote token + inline text token
         Assert.Equal(MarkupTokenType.Blockquote, tokens[0].TokenType);
         Assert.Equal(string.Empty, tokens[0].Value); // Value is empty when OnInlineToken is used
-        
+
         // Inline content
         Assert.Equal(MarkupTokenType.Text, tokens[1].TokenType);
         Assert.Equal("quoted text", tokens[1].Value);
@@ -697,9 +696,9 @@ public class MarkupTokenizerTests
 This is text.
 ## Subtitle
 More text.";
-        
+
         var (tokens, text) = Tokenize(markup);
-        
+
         // Verify we have the key tokens (headings have empty value, content via inline tokens)
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Heading && ((HeadingMetadata)t.Metadata!).Level == 1);
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value == "Title"); // Inline token
@@ -716,7 +715,7 @@ More text.";
     public void TestListWithMultipleItems()
     {
         var markup = "- Item 1\n- Item 2\n- Item 3";
-        
+
         var (tokens, text) = Tokenize(markup);
         Assert.Equal(6, tokens.Count);
         Assert.Equal(MarkupTokenType.UnorderedListItem, tokens[0].TokenType);
@@ -752,7 +751,7 @@ var x = 1;
 Visit [Google](https://google.com) for more.";
 
         var (tokens, text) = Tokenize(markup);
-        
+
         // Verify we have expected tokens (headings have empty value, content via inline tokens)
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Heading && ((HeadingMetadata)t.Metadata!).Level == 1);
         Assert.Contains(tokens, t => t.TokenType == MarkupTokenType.Text && t.Value == "My Document"); // Inline token
@@ -830,13 +829,13 @@ Visit [Google](https://google.com) for more.";
     {
         // Create a large markdown to parse
         var largeMarkup = string.Join("\n\n", Enumerable.Range(1, 1000).Select(i => $"# Heading {i}\n\nSome text for paragraph {i}."));
-        
+
         using var cts = new CancellationTokenSource();
         var tokens = new List<MarkupToken>();
         int tokenCount = 0;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeMarkup));
-        
+
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
@@ -850,9 +849,9 @@ Visit [Google](https://google.com) for more.";
                 }
             });
         }, TestContext.Current.CancellationToken);
-        
+
         await parseTask;
-        
+
         // Should have stopped early
         Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
     }
