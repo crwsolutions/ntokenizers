@@ -27,15 +27,16 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         bool isLineStart = true;
         bool isAfterColon = false;
         bool isAfterBlockSeqEntry = false;
+        bool isDocumentStartOrBlockSeqEntry = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, ref inQuotedString, ref inKey, ref inValue, ref inComment, ref escape, ref isLineStart, ref isAfterColon, ref isAfterBlockSeqEntry, stack));
+        TokenizeCharacters(ct, (c) => ProcessChar(c, ref inQuotedString, ref inKey, ref inValue, ref inComment, ref escape, ref isLineStart, ref isAfterColon, ref isAfterBlockSeqEntry, ref isDocumentStartOrBlockSeqEntry, stack));
 
         EmitPending(ref inQuotedString, ref inKey, ref inValue, ref inComment);
 
         return Task.CompletedTask;
     }
 
-    private void ProcessChar(char c, ref bool inQuotedString, ref bool inKey, ref bool inValue, ref bool inComment, ref bool escape, ref bool isLineStart, ref bool isAfterColon, ref bool isAfterBlockSeqEntry, Stack<ContainerType> stack)
+    private void ProcessChar(char c, ref bool inQuotedString, ref bool inKey, ref bool inValue, ref bool inComment, ref bool escape, ref bool isLineStart, ref bool isAfterColon, ref bool isAfterBlockSeqEntry, ref bool isDocumentStartOrBlockSeqEntry, Stack<ContainerType> stack)
     {
         // Handle comments - comments consume everything until newline
         if (inComment)
@@ -68,7 +69,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 // Emit the string content (buffer now contains: opening quote + content + closing quote)
                 string str = _buffer.ToString();
                 _buffer.Clear();
-                
+
                 // Extract content between quotes
                 if (str.Length > 1)
                 {
@@ -76,11 +77,34 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 }
                 // Emit the closing quote
                 _onToken(new YamlToken(YamlTokenType.Quote, "\""));
-                
+
                 inQuotedString = false;
                 inValue = false;
                 isAfterColon = false;
             }
+            return;
+        }
+
+        if (isDocumentStartOrBlockSeqEntry)
+        {
+            if (c == '-' && _buffer.Length == 2)
+            {
+                _onToken(new YamlToken(YamlTokenType.DocumentStart, "---"));
+                _buffer.Clear();
+                isDocumentStartOrBlockSeqEntry = false;
+                return;
+            }
+            if (char.IsWhiteSpace(c))
+            {
+                // Block sequence entry
+                _onToken(new YamlToken(YamlTokenType.BlockSeqEntry, "-"));
+                _onToken(new YamlToken(YamlTokenType.Whitespace, c.ToString()));
+                _buffer.Clear();
+                isDocumentStartOrBlockSeqEntry = false;
+                inValue = true;
+                return;
+            }
+            _buffer.Append(c);
             return;
         }
 
@@ -127,7 +151,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 isAfterColon = false;
                 isAfterBlockSeqEntry = false;
             }
-            
+
             // If we're in a key or value, we need to decide whether to include the whitespace
             if (inKey || inValue)
             {
@@ -147,7 +171,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 {
                     // For values: accumulate whitespace, but handle specially based on context
                     int nextChar = Peek();
-                    
+
                     if (nextChar == '#')
                     {
                         // Include whitespace before comment
@@ -167,7 +191,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                         // Accumulate whitespace in buffer
                         _buffer.Append(c);
                         // But if next is not whitespace and not part of value, emit
-                        if (!char.IsWhiteSpace((char)nextChar) && 
+                        if (!char.IsWhiteSpace((char)nextChar) &&
                             (nextChar == ':' || nextChar == ',' || nextChar == ']' || nextChar == '}' || nextChar == '\n' || nextChar == -1))
                         {
                             // Emit value, trim trailing whitespace
@@ -185,9 +209,9 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     }
                 }
             }
-            
+
             _buffer.Append(c);
-            
+
             return;
         }
 
@@ -256,30 +280,9 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         if (wasLineStart && c == '-')
         {
             // Check for --- or block sequence entry
-            char next1 = PeekAhead(0);
-            char next2 = PeekAhead(1);
-            
-            if (next1 == '-' && next2 == '-')
-            {
-                // Document start
-                Read(); // consume second -
-                Read(); // consume third -
-                _onToken(new YamlToken(YamlTokenType.DocumentStart, "---"));
-                return;
-            }
-            else if (char.IsWhiteSpace(next1) || next1 == '\0')
-            {
-                // Block sequence entry
-                _onToken(new YamlToken(YamlTokenType.BlockSeqEntry, "-"));
-                isAfterColon = false;
-                isAfterBlockSeqEntry = true;
-                if (char.IsWhiteSpace(next1))
-                {
-                    var whitespace = (char)Read();
-                    _onToken(new YamlToken(YamlTokenType.Whitespace, $"{whitespace}"));
-                }
-                return;
-            }
+            isDocumentStartOrBlockSeqEntry = true;
+            _buffer.Append(c);
+            return;
         }
 
         if (wasLineStart && c == '.')
@@ -287,7 +290,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             // Check for document end ...
             char next1 = PeekAhead(0);
             char next2 = PeekAhead(1);
-            
+
             if (next1 == '.' && next2 == '.')
             {
                 Read(); // consume second .
@@ -625,7 +628,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             }
             _buffer.Clear();
         }
-        
+
         inQuotedString = false;
         inKey = false;
         inValue = false;
