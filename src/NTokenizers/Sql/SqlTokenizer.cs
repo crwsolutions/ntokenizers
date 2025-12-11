@@ -378,6 +378,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         if (c == '\n' || c == '\r')
         {
             // Line comment is complete
+            _buffer.Append(c);
             string value = _buffer.ToString();
             _onToken(new SqlToken(SqlTokenType.Comment, value));
             _buffer.Clear();
