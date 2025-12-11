@@ -1,6 +1,5 @@
 ﻿using NTokenizers.Core;
 using NTokenizers.Markdown;
-using NTokenizers.Markdown;
 
 namespace NTokenizers.Generic;
 
