@@ -1,12 +1,12 @@
 ﻿using NTokenizers.Core;
-using NTokenizers.Markup;
+using NTokenizers.Markdown;
 
 namespace NTokenizers.Generic;
 
 /// <summary>
 /// A generic tokenizer that reads text until a specified stop delimiter is encountered.
 /// </summary>
-public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
+public sealed class GenericTokenizer : BaseSubTokenizer<MarkdownToken>
 {
     /// <summary>
     /// Creates a new instance of the <see cref="GenericTokenizer"/> class.
@@ -38,7 +38,7 @@ public sealed class GenericTokenizer : BaseSubTokenizer<MarkupToken>
     {
         if (_buffer.Length > 0)
         {
-            _onToken(new MarkupToken(MarkupTokenType.Text, _buffer.ToString()));
+            _onToken(new MarkdownToken(MarkdownTokenType.Text, _buffer.ToString()));
             _buffer.Clear();
         }
     }
