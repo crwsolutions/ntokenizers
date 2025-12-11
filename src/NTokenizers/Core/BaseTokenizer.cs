@@ -8,7 +8,7 @@ namespace NTokenizers.Core;
 /// <typeparam name="TToken">The type of token to be produced by the tokenizer.</typeparam>
 public abstract class BaseTokenizer<TToken> where TToken : IToken
 {
-    private readonly Queue<char> _lookaheadBuffer = new();
+    internal protected readonly Queue<char> _lookaheadBuffer = new();
 
     private TextReader _reader = default!;
     private StringBuilder _stringBuilder = default!;
@@ -177,7 +177,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
         return _reader.Peek();
     }
 
-    internal int Read()
+    internal virtual int Read()
     {
         if (_lookaheadBuffer.Count > 0)
             return _lookaheadBuffer.Dequeue();

@@ -10,10 +10,9 @@ namespace NTokenizers.Core;
 /// <typeparam name="TToken">The type of token to be produced by the sub-tokenizer.</typeparam>
 public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TToken : IToken
 {
-    /// <summary>
-    /// delimiter that stops parsing.
-    /// </summary>
-    internal protected string? _stopDelimiter;
+    private bool _stop = false;
+    private string delimiter = string.Empty;
+    private int delLength = 0;
 
     /// <summary>
     /// Parses the input text reader and invokes the onToken action for each token found,
@@ -24,7 +23,7 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// <param name="onToken">The action to invoke for each token found.</param>
     public async Task<string> ParseAsync(TextReader reader, string? stopDelimiter, Action<TToken> onToken)
     {
-        _stopDelimiter = stopDelimiter;
+        SetDelimiter(stopDelimiter);
         return await ParseAsync(reader, new StringBuilder(), onToken);
     }
 
@@ -38,7 +37,7 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// <param name="onToken">The action to invoke for each token found.</param>
     public async Task<string> ParseAsync(TextReader reader, string? stopDelimiter, CancellationToken cancellationToken, Action<TToken> onToken)
     {
-        _stopDelimiter = stopDelimiter;
+        SetDelimiter(stopDelimiter);
         return await ParseAsync(reader, new StringBuilder(), cancellationToken, onToken);
     }
 
@@ -52,7 +51,7 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// <param name="onToken">The action to invoke for each token found.</param>
     public async Task ParseAsync(TextReader reader, StringBuilder stringBuilder, string? stopDelimiter, Action<TToken> onToken)
     {
-        _stopDelimiter = stopDelimiter;
+        SetDelimiter(stopDelimiter);
         await ParseAsync(reader, stringBuilder, onToken);
     }
 
@@ -67,7 +66,7 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// <param name="onToken">The action to invoke for each token found.</param>
     public async Task ParseAsync(TextReader reader, StringBuilder stringBuilder, string? stopDelimiter, CancellationToken cancellationToken, Action<TToken> onToken)
     {
-        _stopDelimiter = stopDelimiter;
+        SetDelimiter(stopDelimiter);
         await ParseAsync(reader, stringBuilder, cancellationToken, onToken);
     }
 
@@ -82,11 +81,8 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     /// until the delimiter is encountered. When the delimiter is found, the method strips any final
     /// line feed character and stops processing.
     /// </remarks>
-    protected void TokenizeCharacters(CancellationToken ct, Action<char> processChar)
+    internal protected void TokenizeCharacters(CancellationToken ct, Action<char> processChar)
     {
-        string delimiter = _stopDelimiter ?? string.Empty;
-        int delLength = delimiter.Length;
-
         if (delLength == 0)
         {
             // No delimiter, parse until end of stream
@@ -104,10 +100,6 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
         }
         else
         {
-            // With delimiter, use a sliding window
-            var delQueue = new Queue<char>();
-            bool stoppedByDelimiter = false;
-
             while (!ct.IsCancellationRequested)
             {
                 int ic = Read();
@@ -116,42 +108,68 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
                     break;
                 }
 
-                char c = (char)ic;
-                delQueue.Enqueue(c);
-
-                if (delQueue.Count > delLength)
+                if (_stop)
                 {
-                    char toProcess = delQueue.Dequeue();
-                    processChar(toProcess);
-                }
-
-                if (delQueue.IsEqualTo(delimiter))
-                {
-                    stoppedByDelimiter = true;
                     break;
                 }
+
+                processChar((char)ic);
             }
 
-            if (!stoppedByDelimiter)
+            if (!_stop)
             {
-                while (delQueue.Count > 0)
+                while (_lookaheadBuffer.Count > 0)
                 {
-                    char toProcess = delQueue.Dequeue();
+                    char toProcess = _lookaheadBuffer.Dequeue();
                     processChar(toProcess);
                 }
             }
 
-            if (stoppedByDelimiter)
+            if (_stop)
             {
                 StripFinalLineFeed();
             }
         }
     }
 
-    /// <summary>
-    /// Removes a final line feed (CR, LF, or CRLF) from the internal StringBuilder, if present. 
-    /// </summary>
-    internal protected void StripFinalLineFeed()
+    internal override int Read()
+    {
+        if (delLength == 0)
+        {
+            var ic = base.Read();
+            return ic;
+        }
+
+        for (var i = _lookaheadBuffer.Count; _lookaheadBuffer.Count < delLength; i++)
+        {
+            var p = PeekAhead(i);
+            if (p == '\0')
+            {
+                return base.Read();
+            }
+        }
+
+        if (_lookaheadBuffer.IsEqualTo(delimiter))
+        {
+            _stop = true;
+            _lookaheadBuffer.Clear();
+            return '\0';
+        }
+        return base.Read();
+    }
+
+    private void SetDelimiter(string? stopDelimiter)
+    {
+        if (stopDelimiter is null)
+        {
+            return;
+        }
+
+        delimiter = stopDelimiter;
+        delLength = delimiter.Length;
+    }
+
+    private void StripFinalLineFeed()
     {
         if (_buffer.Length > 0)
         {
