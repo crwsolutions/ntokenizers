@@ -5,13 +5,13 @@ title: "Home"
 
 # NTokenizers Documentation
 
-Welcome to the documentation for the `NTokenizers` library. This library provides a collection of **stream-capable** tokenizers for XML, JSON, Markup, TypeScript, C# and SQL processing.
+Welcome to the documentation for the `NTokenizers` library. This library provides a collection of **stream-capable** tokenizers for XML, JSON, Markdown, TypeScript, C# and SQL processing.
 
 ### Kickoff token processing
 
 ```csharp
-// kickoff markup tokenizer
-await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markup-tokens here */ });
+// kickoff markdown tokenizer
+await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markdown-tokens here */ });
 
 // kickoff csharp tokenizer
 await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ });
@@ -35,19 +35,19 @@ await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml
 
 ## Overview
 
-NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markup, JSON, XML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
 <blockquote class="warning">
  <b>Warning</b><br/><br/>
  These tokenizers are <b>not validation-based</b> and are primarily intended for <b>prettifying</b>, <b>formatting</b>, or <b>visualizing</b> structured text. They do not perform strict validation of the input format, so they may produce unexpected results when processing malformed or invalid XML, JSON, or HTML. Use them with caution when dealing with untrusted or poorly formatted input.
 </blockquote>
 
-## Markup Example
+## Markdown Example
 
-Here's a simple example showing how to use the `MarkupTokenizer` with a `stream` containing some markup text and json inline code blocks:
+Here's a simple example showing how to use the `MarkdownTokenizer` with a `stream` containing some markdown text and json inline code blocks:
 
 ```csharp
-await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
+await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     if (token.Metadata is HeadingMetadata headingMetadata)
     {
@@ -90,7 +90,7 @@ await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
     }
     else
     {
-        // Handle regular markup tokens
+        // Handle regular markdown tokens
         var value = Markup.Escape(token.Value);
         var colored = token.TokenType switch
         {
@@ -107,12 +107,12 @@ await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
 
 This gives the following output:
 
-![markupexample](assets\markup_example.png)
+![markdownexample](assets\markdown_example.png)
 
 ## String output
 
 ```csharp
-var result = await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
+var result = await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
 ```
 
 In addition to streaming tokens, the original input is returned for convenience.

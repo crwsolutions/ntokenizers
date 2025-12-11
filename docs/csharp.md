@@ -123,5 +123,5 @@ More info: [CSharpTokenType.cs](https://github.com/crwsolutions/ntokenizers/blob
 
 ## See Also
 
-- [Markup Tokenizer](/ntokenizers/markup)
+- [Markdown Tokenizer](/ntokenizers/markdown)
 - [Home](/ntokenizers/)

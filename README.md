@@ -1,11 +1,11 @@
 # NTokenizers
-Collection of **stream-capable** tokenizers for Markup, JSON, XML, YAML, SQL, Typescript and CSharp processing.
+Collection of **stream-capable** tokenizers for Markdown, JSON, XML, YAML, SQL, Typescript and CSharp processing.
 
 ### Kickoff token processing
 
 ```csharp
-// kickoff markup tokenizer
-await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markup-tokens here */ });
+// kickoff markdown tokenizer
+await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markdown-tokens here */ });
 
 // kickoff csharp tokenizer
 await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ });
@@ -28,11 +28,16 @@ await YamlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle ya
 
 ## Overview
 
-NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markup, JSON, XML, YAML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, YAML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
 > [!WARNING] 
 >
 > These tokenizers are **not validation-based** and are primarily intended for **prettifying**, **formatting**, or **visualizing** structured text. They do not perform strict validation of the input format, so they may produce unexpected results when processing malformed or invalid XML, JSON, or HTML. Use them with caution when dealing with untrusted or poorly formatted input.
+
+> [!WARNING] 
+>
+> MarkupTokenizer was renamed to MarkdownTokenizer in v2.
+
 
 ## Used by
 
@@ -42,43 +47,43 @@ NTokenizers is a .NET library written in C# that provides tokenizers for process
 
 Most **tokenizers**, such as json, xml, or etc..., can be used individually, depending on the specific format you want to parse.
 
-The `MarkupTokenizer` however is a special case. Instead of working on a single format, it acts as a **composite tokenizer**, using the other tokenizers as **subtokenizers**. When parsing a stream, MarkupTokenizer delegates portions of the input to the appropriate subtokenizer, allowing it to handle multiple formats seamlessly in one pass.
+The `MarkdownTokenizer` however is a special case. Instead of working on a single format, it acts as a **composite tokenizer**, using the other tokenizers as **subtokenizers**. When parsing a stream, MarkdownTokenizer delegates portions of the input to the appropriate subtokenizer, allowing it to handle multiple formats seamlessly in one pass.
 
-The same principle applies to inline tokenizers such as Heading, Blockquote, ListItem, and others. However, they cannot be used individually and produce the same token types as the `MarkupTokenizer`.
+The same principle applies to inline tokenizers such as Heading, Blockquote, ListItem, and others. However, they cannot be used individually and produce the same token types as the `MarkdownTokenizer`.
 
 ### Diagram
 
 ```
-        ┌─────────┐
-        │ stream  │
-        └─────────┘
-             │  ParseAsync()
-             ▼
-   ┌───────────────────┐
-   │  MarkupTokenizer  │ ───────────► fire markup tokens
-   └───────────────────┘
-             │
-             ▼       ┌─────────┐
-             ├──────►│   json  │ ───► fire json tokens
-             │       └─────────┘
-             │
-             │       ┌─────────┐
-             ├──────►│ Heading │ ───► fire markup tokens
-             │       └─────────┘
-             │
-             │       ┌─────────┐
-             └──────►│  etc..  │ ───► etc
-                     └─────────┘
+         ┌─────────┐
+         │ stream  │
+         └─────────┘
+              │  ParseAsync()
+              ▼
+   ┌─────────────────────┐
+   │  MarkdownTokenizer  │ ───────────► fire markdown tokens
+   └─────────────────────┘
+              │
+              ▼       ┌─────────┐
+              ├──────►│   json  │ ───► fire json tokens
+              │       └─────────┘
+              │
+              │       ┌─────────┐
+              ├──────►│ Heading │ ───► fire markdown tokens
+              │       └─────────┘
+              │
+              │       ┌─────────┐
+              └──────►│  etc..  │ ───► etc
+                      └─────────┘
 ```
 
 ## Example
 
-Here's a simple example showing how to use the `MarkupTokenizer`:
+Here's a simple example showing how to use the `MarkdownTokenizer`:
 
 ```csharp
 using NTokenizers.Json;
-using NTokenizers.Markup;
-using NTokenizers.Markup.Metadata;
+using NTokenizers.Markdown;
+using NTokenizers.Markdown.Metadata;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using Spectre.Console;
@@ -89,7 +94,7 @@ class Program
 {
     static async Task Main()
     {
-        string markup = """
+        string markdown = """
         Here is some **bold** text and some *italic* text.
 
         # NTokenizers Showcase
@@ -123,10 +128,10 @@ class Program
         using var stream = new AnonymousPipeClientStream(PipeDirection.In, pipe.ClientSafePipeHandle);
 
         // Start slow writer
-        var writerTask = EmitSlowlyAsync(markup, pipe);
+        var writerTask = EmitSlowlyAsync(markdown, pipe);
 
-        // Parse markup
-        await MarkupTokenizer.Create().ParseAsync(stream, onToken: async token =>
+        // Parse markdown
+        await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
         {
             if (token.Metadata is HeadingMetadata headingMetadata)
             {
@@ -208,20 +213,20 @@ class Program
             }
             else
             {
-                // Handle regular markup tokens
+                // Handle regular markdown tokens
                 var value = Markup.Escape(token.Value);
                 var colored = token.TokenType switch
                 {
-                    MarkupTokenType.Text => new Markup($"{value}"),
-                    MarkupTokenType.Bold => new Markup($"[bold]{value}[/]"),
-                    MarkupTokenType.Italic => new Markup($"[italic]{value}[/]"),
+                    MarkdownTokenType.Text => new Markup($"{value}"),
+                    MarkdownTokenType.Bold => new Markup($"[bold]{value}[/]"),
+                    MarkdownTokenType.Italic => new Markup($"[italic]{value}[/]"),
                     _ => new Markup(value)
                 };
 
                 AnsiConsole.Write(colored);
             }
 
-            if (token.Metadata is InlineMarkupMetadata)
+            if (token.Metadata is InlineMarkdownMetadata)
             {
                 AnsiConsole.WriteLine();
             }
@@ -233,10 +238,10 @@ class Program
         Console.WriteLine("Done.");
     }
 
-    static async Task EmitSlowlyAsync(string markup, Stream output)
+    static async Task EmitSlowlyAsync(string markdown, Stream output)
     {
         var rng = new Random();
-        byte[] bytes = Encoding.UTF8.GetBytes(markup);
+        byte[] bytes = Encoding.UTF8.GetBytes(markdown);
 
         foreach (var b in bytes)
         {
