@@ -237,7 +237,7 @@ public class SqlTokenizerTests
         Assert.Equal(SqlTokenType.Identifier, tokens[3].TokenType);
         Assert.Equal("users", tokens[3].Value);
         Assert.Equal(SqlTokenType.Comment, tokens[4].TokenType);
-        Assert.Equal("-- This is a comment", tokens[4].Value);
+        Assert.Equal("-- This is a comment\n", tokens[4].Value);
         Assert.Equal(SqlTokenType.Keyword, tokens[5].TokenType);
         Assert.Equal("WHERE", tokens[5].Value);
     }
