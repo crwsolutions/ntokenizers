@@ -8,6 +8,9 @@ namespace NTokenizers.Core;
 /// <typeparam name="TToken">The type of token to be produced by the tokenizer.</typeparam>
 public abstract class BaseTokenizer<TToken> where TToken : IToken
 {
+    /// <summary>
+    /// Buffer for characters that have been read ahead
+    /// </summary>
     internal protected readonly Queue<char> _lookaheadBuffer = new();
 
     private TextReader _reader = default!;
