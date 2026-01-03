@@ -1,4 +1,5 @@
-﻿using NTokenizers.Json;
+﻿using NTokenizers.Css;
+using NTokenizers.Json;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
 using NTokenizers.Typescript;
@@ -21,6 +22,14 @@ class Program
         Here is some larger text: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
         # NTokenizers Showcase
+        
+        ## Css example
+        ```css
+        .user {
+            color: #FFFFFF;
+            active: true;
+        }
+        ```
 
         ## XML example
         ```xml
@@ -141,6 +150,24 @@ class Program
                         TypescriptTokenType.Operator => new Markup($"[yellow]{value}[/]"),
                         TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
                         TypescriptTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is CssCodeBlockMetadata cssMetadata)
+            {
+                await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        CssTokenType.Identifier => new Markup($"[white]{value}[/]"),
+                        CssTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        CssTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        CssTokenType.Selector => new Markup($"[yellow]{value}[/]"),
+                        CssTokenType.Comment => new Markup($"[green]{value}[/]"),
+                        CssTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);

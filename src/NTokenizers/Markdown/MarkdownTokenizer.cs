@@ -304,6 +304,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language)),
         "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
         "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
+        "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language)),
         _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
     };
 
