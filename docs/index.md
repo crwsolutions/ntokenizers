@@ -25,8 +25,14 @@ await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql
 // kickoff typescript tokenizer
 await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ });
 
+// kickoff css tokenizer
+await CssTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle css-tokens here */ });
+
 // kickoff xml tokenizer
-await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ };
+await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ });
+
+// kickoff yaml tokenizer
+await YamlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle yaml-tokens here */ });
 ```
 
 > **NTokenizers.Extensions.Spectre.Console**
