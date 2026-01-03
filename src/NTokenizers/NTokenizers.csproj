@@ -10,19 +10,19 @@
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
 		<VersionSuffix Condition="'$(VersionSuffix)' == ''">preview</VersionSuffix>
-		<Version>2.1</Version>
+		<Version>2.2</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Description>Collection of stream-capable tokenizers for XML, JSON, YAML, Markdown, TypeScript, C# and SQL processing. See README for usage and details.</Description>
-		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, YAML, Markdown, TypeScript, C# and SQL processing. See README for usage and details.</PackageDescription>
-		<PackageTags>tokenizer;xml;json;yaml;md;markdown;typescript;c#;csharp;sql;stream;streaming;parse;parsing;dotnet</PackageTags>
+		<Description>Collection of stream-capable tokenizers for XML, JSON, YAML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</Description>
+		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, YAML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</PackageDescription>
+		<PackageTags>tokenizer;xml;json;yaml;md;markdown;typescript;javascript;css;c#;csharp;sql;stream;streaming;parse;parsing;dotnet</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>Fix for inlines, sql and yaml</PackageReleaseNotes>
+		<PackageReleaseNotes>Added CSS Tokenizer</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
