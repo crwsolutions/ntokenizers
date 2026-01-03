@@ -16,7 +16,7 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>Collection of stream-capable tokenizers for XML, JSON, YAML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</Description>
 		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, YAML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</PackageDescription>
-		<PackageTags>tokenizer;xml;json;yaml;md;markdown;typescript;javascript;css;c#;csharp;sql; stream;parsing;dotnet</PackageTags>
+		<PackageTags>tokenizer;xml;json;yaml;md;markdown;typescript;javascript;css;c#;csharp;sql;stream;streaming;parse;parsing;dotnet</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
