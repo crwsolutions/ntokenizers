@@ -855,4 +855,35 @@ Visit [Google](https://google.com) for more.";
         // Should have stopped early
         Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
     }
+
+    [Fact]
+    public void TestHtmlCodeBlockWithStyleAndScript()
+    {
+        var markdown = @"# Test
+
+```html
+<html>
+<head>
+    <style>
+        body { color: red; }
+    </style>
+</head>
+<body>
+    <script>
+        console.log('Hi');
+    </script>
+</body>
+</html>
+```";
+        
+        var (tokens, text) = Tokenize(markdown);
+        
+        // Should have heading and code block tokens
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+        
+        // The HTML content should be tokenized
+        var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+        Assert.NotEmpty(codeBlockTokens);
+    }
 }
