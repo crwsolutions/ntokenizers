@@ -300,7 +300,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     {
         "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language)),
         "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language)),
-        "xml" or "html" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
+        "xml" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
+        "html" => await ParseCodeInlines(new HtmlCodeBlockMetadata(language)),
         "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language)),
         "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
         "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
