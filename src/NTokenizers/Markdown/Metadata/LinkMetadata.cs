@@ -5,7 +5,7 @@
 /// </summary>
 /// <param name="Url">The URL.</param>
 /// <param name="Title">Optional title.</param>
-public sealed class LinkMetadata(string Url, string? Title = null) : MarkdownMetadata
+public sealed class LinkMetadata(string Url, string? Title = null) : Core.Metadata
 {
     /// <summary>
     /// Gets the URL associated with the link or image.

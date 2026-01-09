@@ -1,7 +1,6 @@
 using NTokenizers.Core;
-using NTokenizers.Html;
 
-namespace NTokenizers.Markdown.Metadata;
+namespace NTokenizers.Html;
 
 /// <summary>
 /// Metadata for HTML code block tokens with syntax highlighting support.

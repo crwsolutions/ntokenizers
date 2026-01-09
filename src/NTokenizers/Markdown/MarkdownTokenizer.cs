@@ -1,5 +1,14 @@
 using NTokenizers.Core;
+using NTokenizers.CSharp;
+using NTokenizers.Css;
+using NTokenizers.Generic;
+using NTokenizers.Html;
+using NTokenizers.Json;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Sql;
+using NTokenizers.Typescript;
+using NTokenizers.Xml;
+using NTokenizers.Yaml;
 using System.Diagnostics;
 using System.Text;
 
@@ -125,7 +134,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         return await ParseInlines(MarkdownTokenType.Heading, new HeadingMetadata(level), InlineMarkdownTokenizer.Create());
     }
 
-    private async Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMarkdownMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync) where TToken : IToken
+    private async Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync) where TToken : IToken
     {
         // Emit heading token with empty value (client can set OnInlineToken to parse inline content)
         var emitTask = Task.Run(() =>
@@ -134,8 +143,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // Await the client registering the handler
         var handlerTask = metadata.GetInlineTokenHandlerAsync();
 
+        // Ensure the heading token emission is complete
+        await emitTask;
+
         using var cts = new CancellationTokenSource();
-        var delayTask = Task.Delay(2000, cts.Token); // 2-second timeout
+        var delayTask = Task.Delay(2000, cts.Token);
 
         var completedTask = await Task.WhenAny(handlerTask, delayTask);
 
@@ -147,23 +159,19 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         if (completedTask != handlerTask || handlerTask.Result == null)
         {
-            // No handler registered within timeout
-            await emitTask;
             return false;
         }
 
         // Run the tokenizer
         await parseAsync(handlerTask.Result);
 
-        // Ensure the heading token emission is complete
-        await emitTask;
 
         metadata.CompleteProcessing();
         return true;
     }
 
-    private Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMarkdownMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer) where TToken : IToken =>
-        ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, handler));
+    private Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer) where TToken : IToken =>
+        ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, _lookaheadBuffer, handler));
 
     private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken =>
         ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(Reader, Bob, "```", handler));

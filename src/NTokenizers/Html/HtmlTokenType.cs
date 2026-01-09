@@ -56,5 +56,15 @@ public enum HtmlTokenType
     /// <summary>
     /// Represents a self-closing slash (/) used in self-closing tags (e.g., &lt;br/&gt;).
     /// </summary>
-    SelfClosingSlash
+    SelfClosingSlash,
+
+    /// <summary>
+    /// Represents a script element within a html document
+    /// </summary>
+    ScriptElement,
+
+    /// <summary>
+    /// Represents a style element (css) within a html document
+    /// </summary>
+    StyleElement
 }

@@ -1,11 +1,9 @@
-﻿using NTokenizers.Core;
-
-namespace NTokenizers.Markdown.Metadata;
+﻿namespace NTokenizers.Core;
 
 /// <summary>
 /// Markdown metadata with inline tokenization support.
 /// </summary>
-public abstract class InlineMarkdownMetadata<TToken>() : InlineMarkdownMetadata where TToken : IToken
+public abstract class InlineMetadata<TToken>() : InlineMetadata where TToken : IToken
 {
     private readonly TaskCompletionSource<Action<TToken>> _onInlineTokenTcs = new();
 
@@ -23,13 +21,12 @@ public abstract class InlineMarkdownMetadata<TToken>() : InlineMarkdownMetadata 
         _onInlineTokenTcs.TrySetResult(handler);
         return _processingTcs.Task;
     }
-
 }
 
 /// <summary>
-/// Markdown metadata with inline tokenization support.
+/// Metadata with inline tokenization support.
 /// </summary>
-public abstract class InlineMarkdownMetadata : MarkdownMetadata
+public abstract class InlineMetadata : Metadata
 {
     /// <summary>
     /// Task that completes when processing is done

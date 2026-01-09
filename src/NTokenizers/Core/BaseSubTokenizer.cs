@@ -24,7 +24,7 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     public async Task<string> ParseAsync(TextReader reader, string? stopDelimiter, Action<TToken> onToken)
     {
         SetDelimiter(stopDelimiter);
-        return await ParseAsync(reader, new StringBuilder(), onToken);
+        return await ParseAsync(reader, new StringBuilder(), _lookaheadBuffer, onToken);
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     public async Task<string> ParseAsync(TextReader reader, string? stopDelimiter, CancellationToken cancellationToken, Action<TToken> onToken)
     {
         SetDelimiter(stopDelimiter);
-        return await ParseAsync(reader, new StringBuilder(), cancellationToken, onToken);
+        return await ParseAsync(reader, new StringBuilder(), _lookaheadBuffer, cancellationToken, onToken);
     }
 
     /// <summary>
@@ -52,7 +52,13 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     public async Task ParseAsync(TextReader reader, StringBuilder stringBuilder, string? stopDelimiter, Action<TToken> onToken)
     {
         SetDelimiter(stopDelimiter);
-        await ParseAsync(reader, stringBuilder, onToken);
+        await ParseAsync(reader, stringBuilder, _lookaheadBuffer, onToken);
+    }
+
+    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Queue<char> lookaheadBuffer, string? stopDelimiter, CancellationToken ct, Action<TToken> onToken)
+    {
+        SetDelimiter(stopDelimiter);
+        return await ParseAsync(reader, new StringBuilder(), lookaheadBuffer, ct, onToken);
     }
 
     /// <summary>
@@ -67,7 +73,65 @@ public abstract class BaseSubTokenizer<TToken> : BaseTokenizer<TToken> where TTo
     public async Task ParseAsync(TextReader reader, StringBuilder stringBuilder, string? stopDelimiter, CancellationToken cancellationToken, Action<TToken> onToken)
     {
         SetDelimiter(stopDelimiter);
-        await ParseAsync(reader, stringBuilder, cancellationToken, onToken);
+        await ParseAsync(reader, stringBuilder, _lookaheadBuffer, cancellationToken, onToken);
+    }
+
+    /// <summary>
+    /// Asynchronously tokenizes characters from the input stream, processing each character using the provided async delegate.
+    /// This method ensures sequential execution of the character processing tasks and handles cancellation through the provided token.
+    /// </summary>
+    /// <param name="ct">The cancellation token to monitor for cancellation requests.</param>
+    /// <param name="processCharAsync">The asynchronous function to invoke for each character during tokenization.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    internal protected async Task TokenizeCharactersAsync(CancellationToken ct, Func<char, Task> processCharAsync)
+    {
+        if (delLength == 0)
+        {
+            // No delimiter, parse until end of stream
+            while (!ct.IsCancellationRequested)
+            {
+                int ic = Read();
+                if (ic == -1)
+                {
+                    break;
+                }
+
+                char c = (char)ic;
+                await processCharAsync(c);
+            }
+        }
+        else
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                int ic = Read();
+                if (ic == -1)
+                {
+                    break;
+                }
+
+                if (_stop)
+                {
+                    break;
+                }
+
+                await processCharAsync((char)ic);
+            }
+
+            if (!_stop)
+            {
+                while (_lookaheadBuffer.Count > 0)
+                {
+                    char toProcess = _lookaheadBuffer.Dequeue();
+                    await processCharAsync(toProcess);
+                }
+            }
+
+            if (_stop)
+            {
+                StripFinalLineFeed();
+            }
+        }
     }
 
     /// <summary>

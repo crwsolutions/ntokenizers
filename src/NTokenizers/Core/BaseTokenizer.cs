@@ -11,7 +11,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <summary>
     /// Buffer for characters that have been read ahead
     /// </summary>
-    internal protected readonly Queue<char> _lookaheadBuffer = new();
+    internal protected Queue<char> _lookaheadBuffer = new();
 
     private TextReader _reader = default!;
     private StringBuilder _stringBuilder = default!;
@@ -43,7 +43,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
     public async Task<string> ParseAsync(Stream stream, Action<TToken> onToken) =>
-        await ParseAsync(new StreamReader(stream), new StringBuilder(), onToken);
+        await ParseAsync(new StreamReader(stream), new StringBuilder(), new Queue<char>(), onToken);
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
@@ -53,7 +53,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
     public async Task<string> ParseAsync(Stream stream, CancellationToken cancellationToken, Action<TToken> onToken) =>
-        await ParseAsync(new StreamReader(stream), new StringBuilder(), cancellationToken, onToken);
+        await ParseAsync(new StreamReader(stream), new StringBuilder(), new Queue<char>(), cancellationToken, onToken);
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
@@ -63,7 +63,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
     public async Task<string> ParseAsync(Stream stream, Encoding encoding, Action<TToken> onToken) =>
-        await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), onToken);
+        await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), new Queue<char>(), onToken);
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
@@ -74,7 +74,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
     public async Task<string> ParseAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken, Action<TToken> onToken) =>
-        await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), cancellationToken, onToken);
+        await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), new Queue<char>(), cancellationToken, onToken);
 
     /// <summary>
     /// Parses the input stream and invokes the onToken action for each token found.
@@ -135,13 +135,15 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// </summary>
     /// <param name="reader">The text reader to parse.</param>
     /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
+    /// <param name="lookaheadBuffer">Look ahead buffer</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
-    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Action<TToken> onToken)
+    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Queue<char> lookaheadBuffer, Action<TToken> onToken)
     {
         _reader = reader;
         _onToken = onToken;
         _stringBuilder = stringBuilder;
+        _lookaheadBuffer = lookaheadBuffer;
 
         await ParseAsync(CancellationToken.None);
 
@@ -153,14 +155,16 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     /// </summary>
     /// <param name="reader">The text reader to parse.</param>
     /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
+    /// <param name="lookaheadBuffer">Look ahead buffer</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <param name="onToken">The action to invoke for each token found.</param>
     /// <returns>The input stream as string</returns>
-    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, CancellationToken cancellationToken, Action<TToken> onToken)
+    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Queue<char> lookaheadBuffer, CancellationToken cancellationToken, Action<TToken> onToken)
     {
         _reader = reader;
         _onToken = onToken;
         _stringBuilder = stringBuilder;
+        _lookaheadBuffer = lookaheadBuffer;
 
         await ParseAsync(cancellationToken);
 
@@ -177,29 +181,52 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     {
         if (_lookaheadBuffer.Count > 0)
             return _lookaheadBuffer.Peek();
-        return _reader.Peek();
+
+        try
+        {
+            return _reader.Peek();
+        }
+        catch
+        {
+            return -1;
+        }
     }
 
     internal virtual int Read()
     {
         if (_lookaheadBuffer.Count > 0)
             return _lookaheadBuffer.Dequeue();
-        var c = _reader.Read();
-        if (c != -1)
+
+        try
         {
-            _stringBuilder.Append((char)c);
+            var c = _reader.Read();
+            if (c != -1)
+            {
+                _stringBuilder.Append((char)c);
+            }
+            return c;
         }
-        return c;
+        catch
+        {
+            return -1;
+        }
     }
 
     internal char PeekAhead(int offset)
     {
-        while (_lookaheadBuffer.Count <= offset)
+         while (_lookaheadBuffer.Count <= offset)
         {
-            int next = _reader.Read();
-            if (next == -1) return '\0';
-            _lookaheadBuffer.Enqueue((char)next);
-            _stringBuilder.Append((char)next);
+            try
+            {
+                int next = _reader.Read();
+                if (next == -1) return '\0';
+                _lookaheadBuffer.Enqueue((char)next);
+                _stringBuilder.Append((char)next);
+            }
+            catch
+            {
+                return '\0'; // Stream is closed or has other I/O issues, return null character
+            }
         }
         return _lookaheadBuffer.ElementAt(offset);
     }

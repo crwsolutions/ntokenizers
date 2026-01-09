@@ -9,8 +9,8 @@
 
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
-		<VersionSuffix Condition="'$(VersionSuffix)' == ''">local.1</VersionSuffix>
-		<Version>3.0</Version>
+		<VersionSuffix Condition="'$(VersionSuffix)' == ''">local.6</VersionSuffix>
+		<Version>4.0-$(VersionSuffix)</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>

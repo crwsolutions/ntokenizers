@@ -1,5 +1,4 @@
 using NTokenizers.Core;
-using NTokenizers.Markdown.Metadata;
 using System.Diagnostics;
 
 namespace NTokenizers.Markdown;
@@ -14,7 +13,7 @@ namespace NTokenizers.Markdown;
 public sealed class MarkdownToken(
     MarkdownTokenType TokenType,
     string Value,
-    MarkdownMetadata? Metadata = null
+    Core.Metadata? Metadata = null
 ) : IToken<MarkdownTokenType>
 {
     /// <summary>
@@ -28,5 +27,5 @@ public sealed class MarkdownToken(
     /// <summary>
     /// Gets the optional metadata associated with the token.
     /// </summary>
-    public MarkdownMetadata? Metadata { get; } = Metadata;
+    public Core.Metadata? Metadata { get; } = Metadata;
 }

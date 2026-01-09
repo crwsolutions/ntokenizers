@@ -1,4 +1,6 @@
+using NTokenizers.Css;
 using NTokenizers.Html;
+using NTokenizers.Typescript;
 using System.Text;
 
 namespace Html;
@@ -196,7 +198,7 @@ public class HtmlTokenizerTests
         
         // Should have opening style tag, CSS content, and closing style tag
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "style");
-        Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.Text && t.Value.Contains("color"));
+        Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.StyleElement && t.Value == string.Empty);
     }
 
     [Fact]
@@ -207,7 +209,7 @@ public class HtmlTokenizerTests
         
         // Should have opening script tag, JS content, and closing script tag
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "script");
-        Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.Text && t.Value.Contains("console"));
+        Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ScriptElement && t.Value == string.Empty);
     }
 
     [Fact]
@@ -233,7 +235,9 @@ public class HtmlTokenizerTests
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.DocumentTypeDeclaration);
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "html");
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "style");
+        Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.StyleElement && t.Value == string.Empty);
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "script");
+        Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ScriptElement && t.Value == string.Empty);
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "h1");
     }
 
@@ -272,7 +276,19 @@ public class HtmlTokenizerTests
     {
         var tokens = new List<HtmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(html));
-        HtmlTokenizer.Create().Parse(stream, token => tokens.Add(token));
+        HtmlTokenizer.Create().Parse(stream, token =>
+        {
+            tokens.Add(token);
+
+            if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
+            {
+                tsMetadata.RegisterInlineTokenHandler(innerToken => { /* Handle inline TypeScript tokens if needed */ });
+            }
+            else if (token.Metadata is CssCodeBlockMetadata cssMetadata)
+            {
+                cssMetadata.RegisterInlineTokenHandler(innerToken => { /* Handle inline CSS tokens if needed */ });
+            }
+        });
         return tokens;
     }
 }
