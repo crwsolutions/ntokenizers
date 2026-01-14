@@ -1,0 +1,21 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="src/NTokenizers/NTokenizers.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.CSharp/NTokenizers.ShowCase.CSharp.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Css/NTokenizers.ShowCase.Css.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Html/NTokenizers.ShowCase.Html.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Json/NTokenizers.ShowCase.Json.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Markdown/NTokenizers.ShowCase.Markdown.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Sql/NTokenizers.ShowCase.Sql.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Typescript/NTokenizers.ShowCase.Typescript.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Xml/NTokenizers.ShowCase.Xml.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Yaml/NTokenizers.ShowCase.Yaml.csproj" />
+  <Project Path="tests/NTokenizers.Tests/NTokenizers.Tests.csproj" />
+</Solution>
