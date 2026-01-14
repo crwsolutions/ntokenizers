@@ -1,7 +1,6 @@
 ﻿using NTokenizers.Core;
-using NTokenizers.Yaml;
 
-namespace NTokenizers.Markdown.Metadata;
+namespace NTokenizers.Yaml;
 
 /// <summary>
 /// Metadata for YAML code block tokens with syntax highlighting support.

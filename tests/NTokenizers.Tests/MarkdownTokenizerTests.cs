@@ -1,5 +1,13 @@
+using NTokenizers.CSharp;
+using NTokenizers.Css;
+using NTokenizers.Generic;
+using NTokenizers.Html;
+using NTokenizers.Json;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Sql;
+using NTokenizers.Typescript;
+using NTokenizers.Xml;
 using System.Text;
 
 namespace Markdown;
@@ -46,6 +54,21 @@ public class MarkdownTokenizerTests
             {
                 // For XML code blocks, we receive XmlToken objects
                 xmlMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is HtmlCodeBlockMetadata htmlMeta)
+            {
+                // For XML code blocks, we receive XmlToken objects
+                htmlMeta.RegisterInlineTokenHandler(token => 
+                {
+                    if (token.Metadata is CssCodeBlockMetadata cssMetadata)
+                    {
+                        cssMetadata.RegisterInlineTokenHandler(token => { });
+                    }
+                    else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
+                    {
+                        tsMetadata.RegisterInlineTokenHandler(token => { });
+                    }
+                });
             }
             else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
             {
@@ -210,10 +233,7 @@ public class MarkdownTokenizerTests
         Assert.Equal(string.Empty, codeBlock.Value); // Code blocks have empty value
         Assert.NotNull(codeBlock.Metadata);
 
-        // For non-specialized languages like "javascript", metadata is CodeBlockMetadata<MarkdownToken>
-        var codeMeta = codeBlock.Metadata as dynamic;
-        Assert.NotNull(codeMeta);
-        Assert.Equal("javascript", codeMeta.Language);
+        Assert.NotNull(codeBlock.Metadata);
         Assert.Equal(markdown, text);
     }
 
@@ -854,5 +874,36 @@ Visit [Google](https://google.com) for more.";
 
         // Should have stopped early
         Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
+    }
+
+    [Fact]
+    public void TestHtmlCodeBlockWithStyleAndScript()
+    {
+        var markdown = @"# Test
+
+```html
+<html>
+<head>
+    <style>
+        body { color: red; }
+    </style>
+</head>
+<body>
+    <script>
+        console.log('Hi');
+    </script>
+</body>
+</html>
+```";
+        
+        var (tokens, text) = Tokenize(markdown);
+        
+        // Should have heading and code block tokens
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+        
+        // The HTML content should be tokenized
+        var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+        Assert.NotEmpty(codeBlockTokens);
     }
 }

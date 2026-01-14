@@ -1,7 +1,6 @@
 ﻿using NTokenizers.Core;
-using NTokenizers.CSharp;
 
-namespace NTokenizers.Markdown.Metadata;
+namespace NTokenizers.CSharp;
 
 /// <summary>
 /// Metadata for C# code block tokens with syntax highlighting support.

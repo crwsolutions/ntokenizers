@@ -1,4 +1,6 @@
-﻿using NTokenizers.Css;
+﻿using NTokenizers.Core;
+using NTokenizers.Css;
+using NTokenizers.Html;
 using NTokenizers.Json;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
@@ -38,6 +40,28 @@ class Program
         </user>
         ```
 
+        ## HTML example
+        ```html
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; background-color: #f0f8ff; }
+                .header { color: #4682b4; text-align: center; }
+                .content { margin: 20px; padding: 15px; background-color: white; border-radius: 5px; }
+            </style>
+        </head>
+        <body>
+            <p>Hello world!</p>
+            <script>
+                console.log("Hello from the sample script!");
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log("DOM is fully loaded");
+                });
+            </script>
+        </body>
+        </html>
+        ```
+
         ## JSON example
         ```json
         {
@@ -65,6 +89,13 @@ class Program
         // Parse markup
         await MarkdownTokenizer.Create().ParseAsync(reader, onToken: async token =>
         {
+            if (token.Metadata is ICodeBlockMetadata codeBlock)
+            {
+                AnsiConsole.WriteLine();
+                AnsiConsole.Write(new Markup($"[bold lime]{codeBlock.Language}:[/]"));
+                AnsiConsole.WriteLine();
+            }
+
             if (token.Metadata is ListItemMetadata listMetadata)
             {
                 AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
@@ -136,42 +167,46 @@ class Program
                     AnsiConsole.Write(colored);
                 });
             }
-            else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
+            else if (token.Metadata is HtmlCodeBlockMetadata htmlMetadata)
             {
-                await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await htmlMetadata.RegisterInlineTokenHandler(async inlineToken =>
                 {
+                    if (inlineToken.Metadata is TypeScriptCodeBlockMetadata tsMeta)
+                    {
+                        await HandleScript(tsMeta);
+                    }
+                    else if (inlineToken.Metadata is CssCodeBlockMetadata cssMeta)
+                    {
+                        await HandleCss(cssMeta);
+                    }
+                    else
+                    {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
                     {
-                        TypescriptTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
-                        TypescriptTokenType.Keyword => new Markup($"[blue]{value}[/]"),
-                        TypescriptTokenType.StringValue => new Markup($"[green]{value}[/]"),
-                        TypescriptTokenType.Number => new Markup($"[magenta]{value}[/]"),
-                        TypescriptTokenType.Operator => new Markup($"[yellow]{value}[/]"),
-                        TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
-                        TypescriptTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        HtmlTokenType.OpeningAngleBracket => new Markup($"[yellow]{value}[/]"),
+                        HtmlTokenType.ClosingAngleBracket => new Markup($"[yellow]{value}[/]"),
+                        HtmlTokenType.SelfClosingSlash => new Markup($"[yellow]{value}[/]"),
+                        HtmlTokenType.AttributeName => new Markup($"[cyan]{value}[/]"),
+                        HtmlTokenType.AttributeEquals => new Markup($"[yellow]{value}[/]"),
+                        HtmlTokenType.AttributeQuote => new Markup($"[grey]{value}[/]"),
+                        HtmlTokenType.AttributeValue => new Markup($"[green]{value}[/]"),
+                        HtmlTokenType.Text => new Markup($"[white]{value}[/]"),
+                        HtmlTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        HtmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);
+                    }
                 });
+            }
+            else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
+            {
+                await HandleScript(tsMetadata);
             }
             else if (token.Metadata is CssCodeBlockMetadata cssMetadata)
             {
-                await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
-                {
-                    var value = Markup.Escape(inlineToken.Value);
-                    var colored = inlineToken.TokenType switch
-                    {
-                        CssTokenType.Identifier => new Markup($"[white]{value}[/]"),
-                        CssTokenType.Number => new Markup($"[magenta]{value}[/]"),
-                        CssTokenType.Operator => new Markup($"[yellow]{value}[/]"),
-                        CssTokenType.Selector => new Markup($"[yellow]{value}[/]"),
-                        CssTokenType.Comment => new Markup($"[green]{value}[/]"),
-                        CssTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
-                        _ => new Markup(value)
-                    };
-                    AnsiConsole.Write(colored);
-                });
+                await HandleCss(cssMetadata);
             }
             else
             {
@@ -188,7 +223,7 @@ class Program
                 AnsiConsole.Write(colored);
             }
 
-            if (token.Metadata is InlineMarkdownMetadata)
+            if (token.Metadata is InlineMetadata)
             {
                 AnsiConsole.WriteLine();
             }
@@ -200,6 +235,45 @@ class Program
         Console.WriteLine("Done.");
     }
 
+    private static async Task HandleScript(TypeScriptCodeBlockMetadata tsMetadata)
+    {
+        await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
+        {
+            var value = Markup.Escape(inlineToken.Value);
+            var colored = inlineToken.TokenType switch
+            {
+                TypescriptTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                TypescriptTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                TypescriptTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                TypescriptTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                TypescriptTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                TypescriptTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                TypescriptTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                _ => new Markup(value)
+            };
+            AnsiConsole.Write(colored);
+        });
+    }
+
+    private static async Task HandleCss(CssCodeBlockMetadata cssMetadata)
+    {
+        await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
+        {
+            var value = Markup.Escape(inlineToken.Value);
+            var colored = inlineToken.TokenType switch
+            {
+                CssTokenType.Identifier => new Markup($"[white]{value}[/]"),
+                CssTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                CssTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                CssTokenType.Selector => new Markup($"[yellow]{value}[/]"),
+                CssTokenType.Comment => new Markup($"[green]{value}[/]"),
+                CssTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                _ => new Markup(value)
+            };
+            AnsiConsole.Write(colored);
+        });
+    }
+
     static async Task EmitSlowlyAsync(string markdown, Stream output)
     {
         var rng = new Random();
@@ -209,7 +283,7 @@ class Program
         {
             await output.WriteAsync(new[] { b }.AsMemory(0, 1));
             await output.FlushAsync();
-            await Task.Delay(rng.Next(2, 8));
+            await Task.Delay(rng.Next(0, 2));
         }
 
         output.Close(); // EOF

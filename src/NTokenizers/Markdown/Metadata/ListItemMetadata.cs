@@ -1,4 +1,4 @@
-﻿using NTokenizers.Markdown;
+﻿using NTokenizers.Core;
 
 namespace NTokenizers.Markdown.Metadata;
 
@@ -6,7 +6,7 @@ namespace NTokenizers.Markdown.Metadata;
 /// Metadata for unordered list item tokens
 /// </summary>
 /// <param name="Marker">The marker of the lists.</param>
-public sealed class ListItemMetadata(char Marker) : InlineMarkdownMetadata<MarkdownToken>
+public sealed class ListItemMetadata(char Marker) : InlineMetadata<MarkdownToken>
 {
     /// <summary>
     /// Gets the marker of the list.

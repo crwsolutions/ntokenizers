@@ -21,6 +21,8 @@ sidebar:
       url: "css"
     - title: "Xml"
       url: "xml"
+    - title: "Html"
+      url: "html"
     - title: "Yaml"
       url: "yaml"
     - title: "Encoding"

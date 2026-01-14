@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.1.11312.151 d18.0
+VisualStudioVersion = 18.1.11312.151
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NTokenizers.Tests", "tests\NTokenizers.Tests\NTokenizers.Tests.csproj", "{6F939D11-A6EB-E490-AFCF-37CFEA2DAB5D}"
 EndProject
@@ -27,6 +27,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NTokenizers.ShowCase.Markdown", "tests\NTokenizers.ShowCase.Markdown\NTokenizers.ShowCase.Markdown.csproj", "{43034206-D4CE-9267-32A6-D824A53F94E6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NTokenizers.ShowCase.Css", "tests\NTokenizers.ShowCase.Css\NTokenizers.ShowCase.Css.csproj", "{B38D1D9B-1805-BD4D-91F6-890276FF5368}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NTokenizers.ShowCase.Html", "tests\NTokenizers.ShowCase.Html\NTokenizers.ShowCase.Html.csproj", "{61882FA7-6EF1-3632-7A2C-695AE9D9095F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -158,6 +160,18 @@ Global
 		{B38D1D9B-1805-BD4D-91F6-890276FF5368}.Release|x64.Build.0 = Release|Any CPU
 		{B38D1D9B-1805-BD4D-91F6-890276FF5368}.Release|x86.ActiveCfg = Release|Any CPU
 		{B38D1D9B-1805-BD4D-91F6-890276FF5368}.Release|x86.Build.0 = Release|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Debug|x64.Build.0 = Debug|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Debug|x86.Build.0 = Debug|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Release|x64.ActiveCfg = Release|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Release|x64.Build.0 = Release|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Release|x86.ActiveCfg = Release|Any CPU
+		{61882FA7-6EF1-3632-7A2C-695AE9D9095F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

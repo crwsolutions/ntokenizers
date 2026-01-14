@@ -1,4 +1,4 @@
-﻿using NTokenizers.Markdown;
+﻿using NTokenizers.Core;
 
 namespace NTokenizers.Markdown.Metadata;
 
@@ -6,7 +6,7 @@ namespace NTokenizers.Markdown.Metadata;
 /// Metadata for list item tokens, containing the item number for ordered lists.
 /// </summary>
 /// <param name="Number">The item number for ordered lists.</param>
-public sealed class OrderedListItemMetadata(int Number) : InlineMarkdownMetadata<MarkdownToken>
+public sealed class OrderedListItemMetadata(int Number) : InlineMetadata<MarkdownToken>
 {
     /// <summary>
     /// Gets the current number value within the list.

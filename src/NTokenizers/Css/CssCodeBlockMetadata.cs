@@ -1,7 +1,6 @@
 ﻿using NTokenizers.Core;
-using NTokenizers.Css;
 
-namespace NTokenizers.Markdown.Metadata;
+namespace NTokenizers.Css;
 
 /// <summary>
 /// Metadata for CSS code block tokens with syntax highlighting support.
