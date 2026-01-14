@@ -123,7 +123,24 @@ string htmlCode = """
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(htmlCode));
 await HtmlTokenizer.Create().ParseAsync(stream, onToken: token =>
 {
-    Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
+    if (inlineToken.Metadata is TypeScriptCodeBlockMetadata tsMeta)
+    {
+        await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
+        {
+            Console.WriteLine($"Token: {inlineToken.TokenType} = '{inlineToken.Value}'");
+        }
+    }
+    else if (inlineToken.Metadata is CssCodeBlockMetadata cssMeta)
+    {
+        await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
+        {
+            Console.WriteLine($"Token: {inlineToken.TokenType} = '{inlineToken.Value}'");
+        }
+    }
+    else
+    {
+        Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
+    }
 });
 ```
 
