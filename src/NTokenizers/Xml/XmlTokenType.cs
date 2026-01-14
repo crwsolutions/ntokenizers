@@ -38,10 +38,6 @@ public enum XmlTokenType
     /// </summary>
     Whitespace,     // Represents whitespace
     /// <summary>
-    /// Represents the end of an XML element (e.g. &lt;element/&gt; ).
-    /// </summary>
-    EndElement,     // Represents the end of an XML element (e.g. <element/> )
-    /// <summary>
     /// Represents an opening angle bracket (&lt;).
     /// </summary>
     OpeningAngleBracket, // <

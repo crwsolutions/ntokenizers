@@ -15,7 +15,6 @@ await XmlTokenizer.Create().ParseAsync(stream, onToken: token =>
     var colored = token.TokenType switch
     {
         XmlTokenType.ElementName => new Markup($"[blue]{value}[/]"),
-        XmlTokenType.EndElement => new Markup($"[blue]{value}[/]"),
         XmlTokenType.OpeningAngleBracket => new Markup($"[yellow]{value}[/]"),
         XmlTokenType.ClosingAngleBracket => new Markup($"[yellow]{value}[/]"),
         XmlTokenType.SelfClosingSlash => new Markup($"[yellow]{value}[/]"),
