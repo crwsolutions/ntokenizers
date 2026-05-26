@@ -17,5 +17,6 @@
   <Project Path="tests/NTokenizers.ShowCase.Typescript/NTokenizers.ShowCase.Typescript.csproj" />
   <Project Path="tests/NTokenizers.ShowCase.Xml/NTokenizers.ShowCase.Xml.csproj" />
   <Project Path="tests/NTokenizers.ShowCase.Yaml/NTokenizers.ShowCase.Yaml.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.Toml/NTokenizers.ShowCase.Toml.csproj" />
   <Project Path="tests/NTokenizers.Tests/NTokenizers.Tests.csproj" />
 </Solution>
