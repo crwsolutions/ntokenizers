@@ -1,9 +1,10 @@
-﻿using NTokenizers.Core;
+using NTokenizers.Core;
 using NTokenizers.Css;
 using NTokenizers.Html;
 using NTokenizers.Json;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using Spectre.Console;
@@ -76,6 +77,13 @@ class Program
             name: "Laura Smith",
             active: true
         };
+        ```
+
+        ## TOML example
+        ```toml
+        title = "My App"
+        active = true
+        count = 42
         ```
         """;
 
@@ -206,6 +214,31 @@ class Program
             else if (token.Metadata is CssCodeBlockMetadata cssMetadata)
             {
                 await HandleCss(cssMetadata);
+            }
+            else if (token.Metadata is TomlCodeBlockMetadata tomlMetadata)
+            {
+                await tomlMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        TomlTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        TomlTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        TomlTokenType.StringQuote => new Markup($"[green]{value}[/]"),
+                        TomlTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        TomlTokenType.Boolean => new Markup($"[orange1]{value}[/]"),
+                        TomlTokenType.DateTime => new Markup($"[blue]{value}[/]"),
+                        TomlTokenType.Comment => new Markup($"[dim]{value}[/]"),
+                        TomlTokenType.OpenBracket or TomlTokenType.CloseBracket => new Markup($"[yellow]{value}[/]"),
+                        TomlTokenType.OpenBrace or TomlTokenType.CloseBrace => new Markup($"[yellow]{value}[/]"),
+                        TomlTokenType.Equal => new Markup($"[grey]{value}[/]"),
+                        TomlTokenType.Comma => new Markup($"[grey]{value}[/]"),
+                        TomlTokenType.Dot => new Markup($"[grey]{value}[/]"),
+                        TomlTokenType.Whitespace => new Markup($"[dim]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
             }
             else
             {

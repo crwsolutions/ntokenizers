@@ -6,6 +6,7 @@ using NTokenizers.Html;
 using NTokenizers.Json;
 using NTokenizers.Markdown.Metadata;
 using NTokenizers.Sql;
+using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using NTokenizers.Yaml;
@@ -314,6 +315,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
         "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
         "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language)),
+        "toml" => await ParseCodeInlines(new TomlCodeBlockMetadata(language)),
         _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
     };
 
