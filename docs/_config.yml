@@ -25,6 +25,8 @@ sidebar:
       url: "html"
     - title: "Yaml"
       url: "yaml"
+    - title: "Toml"
+      url: "toml"
     - title: "Encoding"
       url: "encoding"
 

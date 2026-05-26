@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -14,15 +14,15 @@
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</Description>
-		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</PackageDescription>
-		<PackageTags>tokenizer;xml;json;yaml;md;markdown;typescript;javascript;css;c#;csharp;sql;stream;streaming;parse;parsing;dotnet</PackageTags>
+		<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</Description>
+		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C# and SQL processing. See README for usage and details.</PackageDescription>
+		<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;stream;streaming;parse;parsing;dotnet</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>Added HTML Tokenizer with embedded css and typescript tokenizers</PackageReleaseNotes>
+		<PackageReleaseNotes>Added TOML tokenizer</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 

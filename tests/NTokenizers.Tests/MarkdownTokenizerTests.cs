@@ -6,6 +6,7 @@ using NTokenizers.Json;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
 using NTokenizers.Sql;
+using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using System.Text;
@@ -79,6 +80,11 @@ public class MarkdownTokenizerTests
             {
                 // For TypeScript code blocks, we receive TypescriptToken objects
                 tsMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is TomlCodeBlockMetadata tomlMeta)
+            {
+                // For TOML code blocks, we receive TomlToken objects
+                tomlMeta.RegisterInlineTokenHandler(token => { });
             }
             else if (token.Metadata is TableMetadata tableMeta)
             {
@@ -905,5 +911,29 @@ Visit [Google](https://google.com) for more.";
         // The HTML content should be tokenized
         var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
         Assert.NotEmpty(codeBlockTokens);
+    }
+
+    [Fact]
+    public void TestTomlCodeBlock()
+    {
+        var markdown = """
+## TOML Example
+```toml
+title = "My App"
+active = true
+count = 42
+```
+""";
+
+        var (tokens, text) = Tokenize(markdown);
+
+        // Should have heading and code block tokens
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+
+        // Verify the code block has TOML metadata
+        var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+        Assert.NotEmpty(codeBlockTokens);
+        Assert.IsType<TomlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
     }
 }
