@@ -313,27 +313,27 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     }
 
     private async Task<bool> ParseCodeInlines(string language) => language.Trim().ToLowerInvariant() switch
-         {
-             "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language)),
-             "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language)),
-             "xml" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
-             "html" => await ParseCodeInlines(new HtmlCodeBlockMetadata(language)),
-             "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language)),
-             "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
-             "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
-             "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language)),
-             "toml" => await ParseCodeInlines(new TomlCodeBlockMetadata(language)),
-             "java" => await ParseCodeInlines(new JavaCodeBlockMetadata(language)),
-             "c" => await ParseCodeInlines(new CCodeBlockMetadata(language)),
-"cpp" or "c++" => await ParseCodeInlines(new CppCodeBlockMetadata(language)),
-"rust" or "rs" => await ParseCodeInlines(new RustCodeBlockMetadata(language)),
-"kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language)),
-"go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language)),
-"swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language)),
-             _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
-         };
+    {
+        "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language)),
+        "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language)),
+        "xml" or "xaml" or "svg" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
+        "html" => await ParseCodeInlines(new HtmlCodeBlockMetadata(language)),
+        "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language)),
+        "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
+        "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
+        "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language)),
+        "toml" => await ParseCodeInlines(new TomlCodeBlockMetadata(language)),
+        "java" => await ParseCodeInlines(new JavaCodeBlockMetadata(language)),
+        "c" => await ParseCodeInlines(new CCodeBlockMetadata(language)),
+        "cpp" or "c++" => await ParseCodeInlines(new CppCodeBlockMetadata(language)),
+        "rust" or "rs" => await ParseCodeInlines(new RustCodeBlockMetadata(language)),
+        "kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language)),
+        "go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language)),
+        "swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language)),
+        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
+    };
 
-       private bool TryParseCustomContainer()
+    private bool TryParseCustomContainer()
     {
         if (PeekAhead(0) != ':' || PeekAhead(1) != ':' || PeekAhead(2) != ':')
             return false;
