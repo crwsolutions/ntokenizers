@@ -16,6 +16,7 @@ NTokenizers is a .NET library that provides **stream-capable** tokenizers for sy
 - [ ] Update `NTokenizers.csproj` with description and tags
 - [ ] Update `NTokenizers.slnx` with showcase project
 - [ ] Update `docs/_config.yml` with sidebar navigation
+- [ ] Update `README.md` with language and code example
 - [ ] Add XML documentation to all enums and classes
 - [ ] Add code block to Markdown showcase
 - [ ] Add unit tests for all token types
@@ -144,7 +145,14 @@ Update `src/NTokenizers/NTokenizers.csproj`:
 Update `NTokenizers.slnx`:
 - Add showcase project to the solution file
 
-### 7. Add to Markdown Showcase
+### 7. Update README.md
+
+Update `README.md`:
+- Add language to first paragraph (list of supported formats)
+- Add code example in the kickoff section
+- Add language to the Overview section
+
+### 8. Add to Markdown Showcase
 
 Update `tests/NTokenizers.ShowCase.Markdown/Program.cs`:
 - Add code block with 3-6 lines of example code
