@@ -175,6 +175,55 @@ public class CppTokenizerTests
         Assert.Contains(tokens, t => t.TokenType == CppTokenType.Keyword);
     }
 
+    [Fact]
+    public void Parse_PreprocessorPreservesNewlines()
+    {
+        var code = "#include <iostream>\n#include <vector>\nint main() { return 0; }\n";
+        var tokens = Tokenize(code);
+        // Check that newlines after preprocessor directives are preserved as whitespace
+        var keywordTokens = tokens.Where(t => t.TokenType == CppTokenType.Keyword).ToList();
+        Assert.Contains(keywordTokens, t => t.Value.Contains("#include"));
+        // Check that whitespace tokens exist after preprocessor directives
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Whitespace && t.Value.Contains('\n'));
+        // Check that the code after preprocessor directives is still tokenized correctly
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Keyword && t.Value == "int");
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Identifier && t.Value == "main");
+    }
+
+    [Fact]
+    public void Parse_PreprocessorWithCarriageReturn()
+    {
+        var code = "#include <iostream>\r\nint main() { return 0; }\r\n";
+        var tokens = Tokenize(code);
+        // Check that carriage returns after preprocessor directives are preserved as whitespace
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Keyword);
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Whitespace && t.Value.Contains('\r'));
+        // Check that the code after preprocessor directives is still tokenized correctly
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Keyword && t.Value == "int");
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Identifier && t.Value == "main");
+    }
+
+    [Fact]
+    public void Parse_PreprocessorMultipleLines()
+    {
+        var code = "#ifndef HEADER_H\n#define HEADER_H\n#endif\n";
+        var tokens = Tokenize(code);
+        var keywordTokens = tokens.Where(t => t.TokenType == CppTokenType.Keyword).ToList();
+        Assert.Equal(3, keywordTokens.Count);
+        // Check that whitespace tokens exist between preprocessor directives
+        Assert.Contains(tokens, t => t.TokenType == CppTokenType.Whitespace && t.Value.Contains('\n'));
+    }
+
+    [Fact]
+    public void Parse_PreprocessorOutputMatchesInput()
+    {
+        var code = "#include <iostream>\n#include <vector>\nint main() { return 0; }\n";
+        var tokens = Tokenize(code);
+        // Concatenate all token values - should match original code
+        var output = string.Concat(tokens.Select(t => t.Value));
+        Assert.Equal(code, output);
+    }
+
     // === Operators - individual tests ===
 
     [Fact]

@@ -94,6 +94,55 @@ public class CTokenizerTests
     }
 
     [Fact]
+    public void TestPreprocessorPreservesNewlines()
+    {
+        var code = "#include <stdio.h>\n#include <stdlib.h>\nint main(void) { return 0; }\n";
+        var tokens = Tokenize(code);
+        // Check that newlines after preprocessor directives are preserved as whitespace
+        var preprocessorTokens = tokens.Where(t => t.TokenType == CTokenType.Preprocessor).ToList();
+        Assert.Equal(2, preprocessorTokens.Count);
+        // Check that whitespace tokens exist after preprocessor directives
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Whitespace && t.Value.Contains('\n'));
+        // Check that the code after preprocessor directives is still tokenized correctly
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Keyword && t.Value == "int");
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Identifier && t.Value == "main");
+    }
+
+    [Fact]
+    public void TestPreprocessorWithCarriageReturn()
+    {
+        var code = "#include <stdio.h>\r\nint main(void) { return 0; }\r\n";
+        var tokens = Tokenize(code);
+        // Check that carriage returns after preprocessor directives are preserved as whitespace
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Preprocessor);
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Whitespace && t.Value.Contains('\r'));
+        // Check that the code after preprocessor directives is still tokenized correctly
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Keyword && t.Value == "int");
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Identifier && t.Value == "main");
+    }
+
+    [Fact]
+    public void TestPreprocessorMultipleLines()
+    {
+        var code = "#ifndef HEADER_H\n#define HEADER_H\n#endif\n";
+        var tokens = Tokenize(code);
+        var preprocessorTokens = tokens.Where(t => t.TokenType == CTokenType.Preprocessor).ToList();
+        Assert.Equal(3, preprocessorTokens.Count);
+        // Check that whitespace tokens exist between preprocessor directives
+        Assert.Contains(tokens, t => t.TokenType == CTokenType.Whitespace && t.Value.Contains('\n'));
+    }
+
+    [Fact]
+    public void TestPreprocessorOutputMatchesInput()
+    {
+        var code = "#include <stdio.h>\n#include <stdlib.h>\nint main(void) { return 0; }\n";
+        var tokens = Tokenize(code);
+        // Concatenate all token values - should match original code
+        var output = string.Concat(tokens.Select(t => t.Value));
+        Assert.Equal(code, output);
+    }
+
+    [Fact]
     public void TestOperators()
     {
         var tokens = Tokenize("a + b == c && d != e || f < g >= h");
