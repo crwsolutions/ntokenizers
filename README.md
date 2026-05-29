@@ -75,7 +75,7 @@ await RustTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle ru
 // kickoff swift tokenizer
 await SwiftTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle swift-tokens here */ });
 
-// kickoff typescript tokenizer
+// kickoff typescript/ javascript tokenizer
 await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ });
 
 // kickoff sql tokenizer
