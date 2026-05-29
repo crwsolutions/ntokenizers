@@ -14,9 +14,9 @@
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-								<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go and Swift processing. See README for usage and details.</Description>
-										<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go and Swift processing. See README for usage and details.</PackageDescription>
-										<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;java;c;c++;cpp;rust;kotlin;go;swift;stream;streaming;parse;parsing;dotnet</PackageTags>
+		<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go and Swift processing. See README for usage and details.</Description>
+		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go and Swift processing. See README for usage and details.</PackageDescription>
+		<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;java;c;c++;cpp;rust;kotlin;go;swift;stream;streaming;parse;parsing;dotnet</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
