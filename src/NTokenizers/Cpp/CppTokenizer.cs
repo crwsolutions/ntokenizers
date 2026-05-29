@@ -7,6 +7,10 @@ namespace NTokenizers.Cpp;
 /// </summary>
 public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="CppTokenizer"/> class.
+    /// </summary>
+    /// <returns>A new C++ tokenizer instance.</returns>
     public static CppTokenizer Create() => new();
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
@@ -47,6 +51,7 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
         public bool InPreprocessor;
     }
 
+    /// <inheritdoc/>
     internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = new State();

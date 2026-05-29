@@ -2,8 +2,15 @@ using NTokenizers.Core;
 
 namespace NTokenizers.Rust;
 
+/// <summary>
+/// Provides functionality for tokenizing Rust source code text.
+/// </summary>
 public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="RustTokenizer"/> class.
+    /// </summary>
+    /// <returns>A new Rust tokenizer instance.</returns>
     public static RustTokenizer Create() => new();
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
@@ -32,6 +39,7 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
         public bool InRawString;
     }
 
+    /// <inheritdoc/>
     internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = new State();

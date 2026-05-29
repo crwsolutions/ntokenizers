@@ -2,8 +2,15 @@ using NTokenizers.Core;
 
 namespace NTokenizers.Kotlin;
 
+/// <summary>
+/// Provides functionality for tokenizing Kotlin source code text.
+/// </summary>
 public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="KotlinTokenizer"/> class.
+    /// </summary>
+    /// <returns>A new Kotlin tokenizer instance.</returns>
     public static KotlinTokenizer Create() => new();
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
@@ -32,6 +39,7 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
         public bool InOperator;
     }
 
+    /// <inheritdoc/>
     internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = new State();

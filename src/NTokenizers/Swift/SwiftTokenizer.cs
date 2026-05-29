@@ -2,8 +2,15 @@ using NTokenizers.Core;
 
 namespace NTokenizers.Swift;
 
+/// <summary>
+/// Provides functionality for tokenizing Swift source code text.
+/// </summary>
 public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="SwiftTokenizer"/> class.
+    /// </summary>
+    /// <returns>A new Swift tokenizer instance.</returns>
     public static SwiftTokenizer Create() => new();
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
@@ -29,6 +36,7 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
         public bool InOperator;
     }
 
+    /// <inheritdoc/>
     internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = new State();

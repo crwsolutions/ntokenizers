@@ -7,6 +7,10 @@ namespace NTokenizers.Go;
 /// </summary>
 public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="GoTokenizer"/> class.
+    /// </summary>
+    /// <returns>A new Go tokenizer instance.</returns>
     public static GoTokenizer Create() => new();
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
@@ -39,6 +43,7 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
         public bool InOperator;
     }
 
+    /// <inheritdoc/>
     internal protected override Task ParseAsync(CancellationToken ct)
     {
         var state = new State();

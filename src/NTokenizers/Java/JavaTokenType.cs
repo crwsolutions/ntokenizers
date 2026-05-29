@@ -66,6 +66,16 @@ public enum JavaTokenType
     Colon,
 
     /// <summary>
+    /// Represents a double colon :: (method reference).
+    /// </summary>
+    DoubleColon,
+
+    /// <summary>
+    /// Represents a question mark ? (ternary operator).
+    /// </summary>
+    QuestionMark,
+
+    /// <summary>
     /// Represents a string value enclosed in double quotes.
     /// </summary>
     StringValue,
@@ -81,12 +91,12 @@ public enum JavaTokenType
     Number,
 
     /// <summary>
-    /// Represents a boolean literal (true, false).
+    /// Represents a boolean value (true, false).
     /// </summary>
     Boolean,
 
     /// <summary>
-    /// Represents the null literal.
+    /// Represents a null value.
     /// </summary>
     Null,
 

@@ -10,6 +10,7 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
     /// <summary>
     /// Creates a new instance of the <see cref="JavaTokenizer"/> class.
     /// </summary>
+    /// <returns>A new Java tokenizer instance.</returns>
     public static JavaTokenizer Create() => new();
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
