@@ -1,0 +1,31 @@
+namespace NTokenizers.Swift;
+
+public enum SwiftTokenType
+{
+    NotDefined,
+    Operator,
+    OpenParenthesis,
+    CloseParenthesis,
+    OpenBrace,
+    CloseBrace,
+    OpenBracket,
+    CloseBracket,
+    Comma,
+    Dot,
+    Arrow,
+    SequenceTerminator,
+    Colon,
+    DoubleColon,
+    At,
+    Pound,
+    QuestionMark,
+    StringValue,
+    CharValue,
+    Number,
+    Boolean,
+    Null,
+    Identifier,
+    Keyword,
+    Comment,
+    Whitespace,
+}

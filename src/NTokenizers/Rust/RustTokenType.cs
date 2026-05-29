@@ -1,0 +1,33 @@
+namespace NTokenizers.Rust;
+
+public enum RustTokenType
+{
+    NotDefined,
+    Operator,
+    OpenParenthesis,
+    CloseParenthesis,
+    OpenBrace,
+    CloseBrace,
+    OpenBracket,
+    CloseBracket,
+    Comma,
+    Dot,
+    Arrow,
+    FatArrow,
+    SequenceTerminator,
+    Colon,
+    DoubleColon,
+    At,
+    Pound,
+    QuestionMark,
+    StringValue,
+    CharValue,
+    Number,
+    Boolean,
+    Identifier,
+    Keyword,
+    Macro,
+    Lifetime,
+    Comment,
+    Whitespace,
+}
