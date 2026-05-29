@@ -48,6 +48,21 @@ class Program
         </user>
         ```
 
+        ## XAML example
+        ```xaml
+        <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                Title="My App" Height="450" Width="800">
+            <Button Content="Click me" />
+        </Window>
+        ```
+        
+        ## SVG example
+        ```svg
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="red" />
+        </svg>
+        ```
+
         ## HTML example
         ```html
         <html>

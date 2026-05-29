@@ -88,7 +88,7 @@ public class MarkdownTokenizerTests
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
             {
-                // For XML code blocks, we receive XmlToken objects
+                // For XML, XAML, and SVG code blocks, we receive XmlToken objects
                 xmlMeta.RegisterInlineTokenHandler(token => { });
             }
             else if (token.Metadata is HtmlCodeBlockMetadata htmlMeta)
@@ -1096,5 +1096,46 @@ Visit [Google](https://google.com) for more.";
             var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
             Assert.NotEmpty(codeBlockTokens);
             Assert.IsType<CCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestXamlCodeBlock()
+        {
+            var markdown = """
+    ## XAML Example
+    ```xaml
+    <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            Title="My App" Height="450" Width="800">
+        <Button Content="Click me" />
+    </Window>
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<XmlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestSvgCodeBlock()
+        {
+            var markdown = """
+    ## SVG Example
+    ```svg
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="red" />
+    </svg>
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<XmlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
         }
     }
