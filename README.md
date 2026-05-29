@@ -18,8 +18,6 @@ Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfec
 
 ## How to: kickoff token processing
 
-Check out the [docs](https://crwsolutions.github.io/ntokenizers) for more information.
-
 ### Composite tokenizers
 
 #### Markup languages
