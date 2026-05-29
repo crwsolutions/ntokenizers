@@ -337,7 +337,8 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
             EmitToken(CTokenType.Preprocessor);
             _buffer.Clear();
             ClearState(state);
-            // Don't append newline to buffer - it's consumed
+            state.InWhitespace = true;
+            _buffer.Append(c);
         }
         else
         {

@@ -388,11 +388,13 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
     private void ProcessInPreprocessor(char c, State state)
     {
         if (c == '\n' || c == '\r')
-             {
-                 EmitToken(CppTokenType.Keyword);
-                 _buffer.Clear();
-                 ClearState(state);
-             }
+        {
+            EmitToken(CppTokenType.Keyword);
+            _buffer.Clear();
+            ClearState(state);
+            state.InWhitespace = true;
+            _buffer.Append(c);
+        }
         else
         {
             _buffer.Append(c);

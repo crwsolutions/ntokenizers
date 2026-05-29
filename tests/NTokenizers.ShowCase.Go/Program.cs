@@ -1,26 +1,61 @@
 using NTokenizers.Go;
-using System;
+using Spectre.Console;
 
-class Program
-{
-    static void Main(string[] args)
-    {
-        var goCode = """
-            func fibonacci(n int) []int {
-                fibs := make([]int, n)
-                for i := 2; i < n; i++ {
-                    fibs[i] = fibs[i-1] + fibs[i-2]
-                }
-                return fibs
-            }
-            """;
+var goCode = """
+    package main
 
-        var tokenizer = GoTokenizer.Create();
-        var tokens = tokenizer.Parse(goCode);
+    import (
+        "fmt"
+        "sort"
+    )
 
-        foreach (var token in tokens)
-        {
-            Console.WriteLine($"[{token.TokenType,-20}] {token.Value.Replace("\n", "\\n")}");
+    type Person struct {
+        Name string
+        Age  int
+    }
+
+    func sortByAge(people []Person) {
+        sort.Slice(people, func(i, j int) bool {
+            return people[i].Age < people[j].Age
+        })
+    }
+
+    func main() {
+        people := []Person{
+            {"Alice", 30},
+            {"Bob", 25},
+            {"Charlie", 35},
+        }
+
+        sortByAge(people)
+
+        for _, p := range people {
+            fmt.Printf("%s is %d years old\n", p.Name, p.Age)
         }
     }
+    """;
+
+var tokenizer = GoTokenizer.Create();
+var tokens = tokenizer.Parse(goCode).ToList();
+
+foreach (var token in tokens)
+{
+    var value = Markup.Escape(token.Value);
+    var colored = token.TokenType switch
+    {
+        GoTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+        GoTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+        GoTokenType.StringValue => new Markup($"[green]{value}[/]"),
+        GoTokenType.Number => new Markup($"[magenta]{value}[/]"),
+        GoTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+        GoTokenType.Comment => new Markup($"[grey]{value}[/]"),
+        GoTokenType.Boolean => new Markup($"[magenta]{value}[/]"),
+        GoTokenType.Null => new Markup($"[magenta]{value}[/]"),
+        GoTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+        _ => new Markup(value)
+    };
+    AnsiConsole.Write(colored);
 }
+
+Console.WriteLine();
+Console.WriteLine("Done.");
