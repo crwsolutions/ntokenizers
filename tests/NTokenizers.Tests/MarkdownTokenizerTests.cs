@@ -1,11 +1,18 @@
+using NTokenizers.C;
+using NTokenizers.Cpp;
 using NTokenizers.CSharp;
 using NTokenizers.Css;
 using NTokenizers.Generic;
+using NTokenizers.Go;
 using NTokenizers.Html;
+using NTokenizers.Java;
 using NTokenizers.Json;
+using NTokenizers.Kotlin;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Rust;
 using NTokenizers.Sql;
+using NTokenizers.Swift;
 using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
@@ -42,11 +49,39 @@ public class MarkdownTokenizerTests
                 orderedListMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
-            {
-                // For C# code blocks, we receive CSharpToken objects
-                csharpMeta.RegisterInlineTokenHandler(token => { /* Capture C# tokens if needed */ });
-            }
-            else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
+             {
+                 // For C# code blocks, we receive CSharpToken objects
+                 csharpMeta.RegisterInlineTokenHandler(token => { /* Capture C# tokens if needed */ });
+             }
+             else if (token.Metadata is JavaCodeBlockMetadata javaMeta)
+             {
+                 javaMeta.RegisterInlineTokenHandler(token => { });
+             }
+             else if (token.Metadata is CCodeBlockMetadata cMeta)
+             {
+                 cMeta.RegisterInlineTokenHandler(token => { });
+             }
+             else if (token.Metadata is CppCodeBlockMetadata cppMeta)
+             {
+                 cppMeta.RegisterInlineTokenHandler(token => { });
+             }
+             else if (token.Metadata is RustCodeBlockMetadata rustMeta)
+             {
+                 rustMeta.RegisterInlineTokenHandler(token => { });
+             }
+             else if (token.Metadata is KotlinCodeBlockMetadata kotlinMeta)
+             {
+                 kotlinMeta.RegisterInlineTokenHandler(token => { });
+             }
+             else if (token.Metadata is GoCodeBlockMetadata goMeta)
+             {
+                 goMeta.RegisterInlineTokenHandler(token => { });
+             }
+             else if (token.Metadata is SwiftCodeBlockMetadata swiftMeta)
+             {
+                 swiftMeta.RegisterInlineTokenHandler(token => { });
+             }
+             else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
             {
                 // For JSON code blocks, we receive JsonToken objects
                 jsonMeta.RegisterInlineTokenHandler(token => { });
@@ -914,26 +949,152 @@ Visit [Google](https://google.com) for more.";
     }
 
     [Fact]
-    public void TestTomlCodeBlock()
-    {
-        var markdown = """
-## TOML Example
-```toml
-title = "My App"
-active = true
-count = 42
-```
-""";
+        public void TestTomlCodeBlock()
+        {
+            var markdown = """
+    ## TOML Example
+    ```toml
+    title = "My App"
+    active = true
+    count = 42
+    ```
+    """;
 
-        var (tokens, text) = Tokenize(markdown);
+            var (tokens, text) = Tokenize(markdown);
 
-        // Should have heading and code block tokens
-        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            // Should have heading and code block tokens
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
 
-        // Verify the code block has TOML metadata
-        var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-        Assert.NotEmpty(codeBlockTokens);
-        Assert.IsType<TomlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+            // Verify the code block has TOML metadata
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<TomlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestCppCodeBlock()
+        {
+            var markdown = """
+    ## C++ Example
+    ```cpp
+    int x = 42;
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<CppCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestRustCodeBlock()
+        {
+            var markdown = """
+    ## Rust Example
+    ```rust
+    let x = 42;
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<RustCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestKotlinCodeBlock()
+        {
+            var markdown = """
+    ## Kotlin Example
+    ```kotlin
+    val x = 42
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<KotlinCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestGoCodeBlock()
+        {
+            var markdown = """
+    ## Go Example
+    ```go
+    x := 42
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<GoCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestSwiftCodeBlock()
+        {
+            var markdown = """
+    ## Swift Example
+    ```swift
+    let x = 42
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<SwiftCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestJavaCodeBlock()
+        {
+            var markdown = """
+    ## Java Example
+    ```java
+    int x = 42;
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<JavaCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
+
+        [Fact]
+        public void TestCCodeBlock()
+        {
+            var markdown = """
+    ## C Example
+    ```c
+    int x = 42;
+    ```
+    """;
+
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
+            Assert.NotEmpty(codeBlockTokens);
+            Assert.IsType<CCodeBlockMetadata>(codeBlockTokens[0].Metadata);
+        }
     }
-}

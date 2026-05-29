@@ -1,45 +1,93 @@
 # NTokenizers
-Collection of **stream-capable** tokenizers for Markdown, JSON, XML, HTML, YAML, TOML, SQL, Typescript, CSS and CSharp processing.
 
-### Kickoff token processing
+Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect building block for **chat applications**, and **AI response rendering** . Tokenize streaming AI responses in real-time for beautiful syntax-highlighted output.
+
+| Markup languages | Data formats | Programming languages |
+|------------------|--------------|----------------------|
+| Markdown | JSON | CSharp |
+| HTML | YAML | C |
+| | TOML | C++ |
+| | XML | Go |
+| | | Java |
+| | | Kotlin |
+| | | Rust |
+| | | Swift |
+| | | TypeScript |
+| | | SQL |
+| | | CSS |
+
+## How to: kickoff token processing
+
+### Composite tokenizers
+
+#### Markup languages
 
 ```csharp
 // kickoff markdown tokenizer
 await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markdown-tokens here */ });
 
-// kickoff csharp tokenizer
-await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ });
+// kickoff html tokenizer
+await HtmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle html-tokens here */ });
+```
 
+### Individual tokenizers
+
+#### Data formats
+
+```csharp
 // kickoff json tokenizer
 await JsonTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle json-tokens here */ });
-
-// kickoff sql tokenizer
-await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql-tokens here */ });
-
-// kickoff typescript tokenizer
-await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ });
-
-// kickoff css tokenizer
-await CssTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle css-tokens here */ });
-
-// kickoff xml tokenizer
-await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ });
-
-// kickoff html tokenizer*
-await HtmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle html-tokens here */ });
 
 // kickoff yaml tokenizer
 await YamlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle yaml-tokens here */ });
 
 // kickoff toml tokenizer
 await TomlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle toml-tokens here */ });
+
+// kickoff xml tokenizer
+await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ });
 ```
 
-* You also have to handle the script and style Tokenizers. Check out the [docs](https://crwsolutions.github.io/ntokenizers/html) for more information.
+#### Programming languages
+
+```csharp
+// kickoff csharp tokenizer
+await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ });
+
+// kickoff c tokenizer
+await CTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle c-tokens here */ });
+
+// kickoff cpp tokenizer
+await CppTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle cpp-tokens here */ });
+
+// kickoff go tokenizer
+await GoTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle go-tokens here */ });
+
+// kickoff java tokenizer
+await JavaTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle java-tokens here */ });
+
+// kickoff kotlin tokenizer
+await KotlinTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle kotlin-tokens here */ });
+
+// kickoff rust tokenizer
+await RustTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle rust-tokens here */ });
+
+// kickoff swift tokenizer
+await SwiftTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle swift-tokens here */ });
+
+// kickoff typescript/ javascript tokenizer
+await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ });
+
+// kickoff sql tokenizer
+await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql-tokens here */ });
+
+// kickoff css tokenizer
+await CssTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle css-tokens here */ });
+```
 
 ## Overview
 
-NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, HTML, YAML, TOML, SQL, Typescript, CSS and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, HTML, YAML, TOML, SQL, Typescript, CSS, CSharp, C, C++, Go, Java, Kotlin, Rust and Swift. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
 > [!WARNING] 
 >

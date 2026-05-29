@@ -1,9 +1,16 @@
+using NTokenizers.C;
+using NTokenizers.Cpp;
 using NTokenizers.Core;
 using NTokenizers.Css;
+using NTokenizers.Go;
 using NTokenizers.Html;
+using NTokenizers.Java;
 using NTokenizers.Json;
+using NTokenizers.Kotlin;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Rust;
+using NTokenizers.Swift;
 using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
@@ -25,7 +32,7 @@ class Program
         Here is some larger text: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
         # NTokenizers Showcase
-        
+
         ## Css example
         ```css
         .user {
@@ -84,6 +91,57 @@ class Program
         title = "My App"
         active = true
         count = 42
+        ```
+
+        ## C example
+        ```c
+        int main(void) {
+            printf("Hello, World!\n");
+            return 0;
+        }
+        ```
+
+        ## C++ example
+        ```cpp
+        std::vector<int> numbers = {1, 2, 3};
+        for (const auto& n : numbers)
+            std::cout << n << std::endl;
+        ```
+
+        ## Rust example
+        ```rust
+        let numbers = vec![1, 2, 3];
+        for n in &numbers {
+            println!("{}", n);
+        }
+        ```
+
+        ## Kotlin example
+        ```kotlin
+        val numbers = listOf(1, 2, 3)
+        numbers.forEach { println(it) }
+        ```
+
+        ## Go example
+        ```go
+        numbers := []int{1, 2, 3}
+        for _, n := range numbers {
+            fmt.Println(n)
+        }
+        ```
+
+        ## Swift example
+        ```swift
+        let numbers = [1, 2, 3]
+        for n in numbers {
+            print(n)
+        }
+        ```
+
+        ## Java example
+        ```java
+        List<Integer> numbers = List.of(1, 2, 3);
+        numbers.forEach(System.out::println);
         ```
         """;
 
@@ -235,6 +293,139 @@ class Program
                         TomlTokenType.Comma => new Markup($"[grey]{value}[/]"),
                         TomlTokenType.Dot => new Markup($"[grey]{value}[/]"),
                         TomlTokenType.Whitespace => new Markup($"[dim]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is CCodeBlockMetadata cMetadata)
+            {
+                await cMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        CTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        CTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        CTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        CTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        CTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        CTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        CTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is CppCodeBlockMetadata cppMetadata)
+            {
+                await cppMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        CppTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        CppTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        CppTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        CppTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        CppTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        CppTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        CppTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is RustCodeBlockMetadata rustMetadata)
+            {
+                await rustMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        RustTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        RustTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        RustTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        RustTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        RustTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        RustTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        RustTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is KotlinCodeBlockMetadata kotlinMetadata)
+            {
+                await kotlinMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        KotlinTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        KotlinTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        KotlinTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        KotlinTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        KotlinTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        KotlinTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        KotlinTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is GoCodeBlockMetadata goMetadata)
+            {
+                await goMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        GoTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        GoTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        GoTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        GoTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        GoTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        GoTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        GoTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is SwiftCodeBlockMetadata swiftMetadata)
+            {
+                await swiftMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        SwiftTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        SwiftTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        SwiftTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        SwiftTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        SwiftTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        SwiftTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        SwiftTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is JavaCodeBlockMetadata javaMetadata)
+            {
+                await javaMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        JavaTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        JavaTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        JavaTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        JavaTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        JavaTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        JavaTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        JavaTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);

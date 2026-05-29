@@ -8,15 +8,22 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="src/NTokenizers/NTokenizers.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.CSharp/NTokenizers.ShowCase.CSharp.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Css/NTokenizers.ShowCase.Css.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Html/NTokenizers.ShowCase.Html.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Json/NTokenizers.ShowCase.Json.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Markdown/NTokenizers.ShowCase.Markdown.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Sql/NTokenizers.ShowCase.Sql.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Typescript/NTokenizers.ShowCase.Typescript.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Xml/NTokenizers.ShowCase.Xml.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Yaml/NTokenizers.ShowCase.Yaml.csproj" />
-  <Project Path="tests/NTokenizers.ShowCase.Toml/NTokenizers.ShowCase.Toml.csproj" />
+  <Project Path="tests/NTokenizers.ShowCase.C/NTokenizers.ShowCase.C.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.CSharp/NTokenizers.ShowCase.CSharp.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Cpp/NTokenizers.ShowCase.Cpp.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Css/NTokenizers.ShowCase.Css.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Go/NTokenizers.ShowCase.Go.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Html/NTokenizers.ShowCase.Html.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Java/NTokenizers.ShowCase.Java.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Json/NTokenizers.ShowCase.Json.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Kotlin/NTokenizers.ShowCase.Kotlin.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Markdown/NTokenizers.ShowCase.Markdown.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Rust/NTokenizers.ShowCase.Rust.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Sql/NTokenizers.ShowCase.Sql.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Swift/NTokenizers.ShowCase.Swift.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Typescript/NTokenizers.ShowCase.Typescript.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Xml/NTokenizers.ShowCase.Xml.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Yaml/NTokenizers.ShowCase.Yaml.csproj" />
+   <Project Path="tests/NTokenizers.ShowCase.Toml/NTokenizers.ShowCase.Toml.csproj" />
   <Project Path="tests/NTokenizers.Tests/NTokenizers.Tests.csproj" />
 </Solution>
