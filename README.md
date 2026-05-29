@@ -26,7 +26,7 @@ Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfec
 // kickoff markdown tokenizer
 await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markdown-tokens here */ });
 
-// kickoff html tokenizer*
+// kickoff html tokenizer
 await HtmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle html-tokens here */ });
 ```
 
