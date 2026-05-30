@@ -9,6 +9,7 @@ using NTokenizers.Json;
 using NTokenizers.Kotlin;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Python;
 using NTokenizers.Rust;
 using NTokenizers.Swift;
 using NTokenizers.Toml;
@@ -157,6 +158,15 @@ class Program
         ```java
         List<Integer> numbers = List.of(1, 2, 3);
         numbers.forEach(System.out::println);
+        ```
+
+        ## Python example
+        ```python
+        def greet(name: str) -> str:
+            return f"Hello, {name}!"
+
+        # Usage
+        message = greet("World")
         ```
         """;
 
@@ -441,6 +451,25 @@ class Program
                         JavaTokenType.Operator => new Markup($"[yellow]{value}[/]"),
                         JavaTokenType.Comment => new Markup($"[grey]{value}[/]"),
                         JavaTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
+                        _ => new Markup(value)
+                    };
+                    AnsiConsole.Write(colored);
+                });
+            }
+            else if (token.Metadata is PythonCodeBlockMetadata pythonMetadata)
+            {
+                await pythonMetadata.RegisterInlineTokenHandler(inlineToken =>
+                {
+                    var value = Markup.Escape(inlineToken.Value);
+                    var colored = inlineToken.TokenType switch
+                    {
+                        PythonTokenType.Keyword => new Markup($"[blue]{value}[/]"),
+                        PythonTokenType.Identifier => new Markup($"[cyan]{value}[/]"),
+                        PythonTokenType.StringValue => new Markup($"[green]{value}[/]"),
+                        PythonTokenType.Number => new Markup($"[magenta]{value}[/]"),
+                        PythonTokenType.Operator => new Markup($"[yellow]{value}[/]"),
+                        PythonTokenType.Comment => new Markup($"[grey]{value}[/]"),
+                        PythonTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
                     AnsiConsole.Write(colored);

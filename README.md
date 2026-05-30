@@ -15,6 +15,7 @@ Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfec
 | | | TypeScript |
 | | | SQL |
 | | | CSS |
+| | | Python |
 
 ## How to: kickoff token processing
 
@@ -83,11 +84,14 @@ await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql
 
 // kickoff css tokenizer
 await CssTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle css-tokens here */ });
+
+// kickoff python tokenizer
+await PythonTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle python-tokens here */ });
 ```
 
 ## Overview
 
-NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, HTML, YAML, TOML, SQL, Typescript, CSS, CSharp, C, C++, Go, Java, Kotlin, Rust and Swift. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, HTML, YAML, TOML, SQL, Typescript, CSS, CSharp, C, C++, Go, Java, Kotlin, Rust, Swift and Python. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
 > [!WARNING] 
 >

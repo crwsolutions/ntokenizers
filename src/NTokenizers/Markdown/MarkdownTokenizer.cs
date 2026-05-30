@@ -10,6 +10,7 @@ using NTokenizers.Java;
 using NTokenizers.Json;
 using NTokenizers.Kotlin;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Python;
 using NTokenizers.Rust;
 using NTokenizers.Sql;
 using NTokenizers.Swift;
@@ -330,7 +331,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         "kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language)),
         "go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language)),
         "swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language)),
-        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
+         "python" or "py" => await ParseCodeInlines(new PythonCodeBlockMetadata(language)),
+         _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
     };
 
     private bool TryParseCustomContainer()
