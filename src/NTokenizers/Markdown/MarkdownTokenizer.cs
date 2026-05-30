@@ -1,11 +1,19 @@
 using NTokenizers.Core;
+using NTokenizers.C;
+using NTokenizers.Cpp;
 using NTokenizers.CSharp;
 using NTokenizers.Css;
 using NTokenizers.Generic;
+using NTokenizers.Go;
 using NTokenizers.Html;
+using NTokenizers.Java;
 using NTokenizers.Json;
+using NTokenizers.Kotlin;
 using NTokenizers.Markdown.Metadata;
+using NTokenizers.Python;
+using NTokenizers.Rust;
 using NTokenizers.Sql;
+using NTokenizers.Swift;
 using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
@@ -309,14 +317,22 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     {
         "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language)),
         "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language)),
-        "xml" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
+        "xml" or "xaml" or "svg" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
         "html" => await ParseCodeInlines(new HtmlCodeBlockMetadata(language)),
         "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language)),
         "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
         "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
         "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language)),
         "toml" => await ParseCodeInlines(new TomlCodeBlockMetadata(language)),
-        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
+        "java" => await ParseCodeInlines(new JavaCodeBlockMetadata(language)),
+        "c" => await ParseCodeInlines(new CCodeBlockMetadata(language)),
+        "cpp" or "c++" => await ParseCodeInlines(new CppCodeBlockMetadata(language)),
+        "rust" or "rs" => await ParseCodeInlines(new RustCodeBlockMetadata(language)),
+        "kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language)),
+        "go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language)),
+        "swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language)),
+         "python" or "py" => await ParseCodeInlines(new PythonCodeBlockMetadata(language)),
+         _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
     };
 
     private bool TryParseCustomContainer()

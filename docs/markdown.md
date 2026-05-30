@@ -40,7 +40,7 @@ Handling this metadata correctly is essential to render the markdown accurately.
 
 #### Code block metadata
 - `CSharpCodeBlockMetadata`
-- `XmlCodeBlockMetadata`
+- `XmlCodeBlockMetadata` (also used for XAML and SVG code blocks)
 - `TypeScriptCodeBlockMetadata`
 - `JsonCodeBlockMetadata`
 - `SqlCodeBlockMetadata`
@@ -278,6 +278,10 @@ The Markdown Tokenizer produces tokens of type `MarkdownTokenType` with the foll
 - `HtmlTag` - Represents an HTML tag (value contains complete tag including `< >` markers)
 
 More info: [MarkdownTokenType.cs](https://github.com/crwsolutions/ntokenizers/blob/main/src/NTokenizers/Markdown/MarkdownTokenType.cs)
+
+## Supported Code Block Languages
+
+The Markdown Tokenizer supports code blocks for many languages. Code blocks using `xml`, `xaml`, or `svg` language identifiers all use the same XML tokenizer, since XAML and SVG are XML-based formats.
 
 ## See Also
 
