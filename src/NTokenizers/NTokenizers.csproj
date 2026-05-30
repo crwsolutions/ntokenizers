@@ -10,19 +10,19 @@
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
 		<VersionSuffix Condition="'$(VersionSuffix)' == ''">local.1</VersionSuffix>
-			<Version>5.0.2-local</Version>
+		<Version>6.0.0</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing. See README for usage and details.</Description>
-			<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing. See README for usage and details.</PackageDescription>
-			<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;java;c;c++;cpp;rust;kotlin;go;swift;python;stream;streaming;parse;parsing;dotnet</PackageTags>
+		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing. See README for usage and details.</PackageDescription>
+		<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;java;c;c++;cpp;rust;kotlin;go;swift;python;stream;streaming;parse;parsing;dotnet</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>Added TOML tokenizer</PackageReleaseNotes>
+		<PackageReleaseNotes>Added Java, C, C++, Rust, Kotlin, Go, Swift and Python tokenizer. And xaml and svg as xml tokenizer</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
