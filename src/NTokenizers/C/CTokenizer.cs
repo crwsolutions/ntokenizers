@@ -305,6 +305,8 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
         if (c == '\n' || c == '\r')
         {
             EmitToken(CTokenType.Comment);
+            _buffer.Clear();
+            ClearState(state);
             state.InWhitespace = true;
             _buffer.Append(c);
         }

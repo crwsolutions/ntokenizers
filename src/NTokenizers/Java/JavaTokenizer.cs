@@ -294,6 +294,8 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
         if (c == '\n' || c == '\r')
         {
             EmitToken(JavaTokenType.Comment);
+            _buffer.Clear();
+            ClearState(state);
             state.InWhitespace = true;
             _buffer.Append(c);
         }

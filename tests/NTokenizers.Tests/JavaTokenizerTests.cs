@@ -102,6 +102,26 @@ public class JavaTokenizerTests
     }
 
     [Fact]
+    public void TestNewlinesInComments_ReturnsWhitespaceTokens()
+    {
+        var code = "// comment\nint x = 42;\n";
+        var tokens = Tokenize(code);
+
+        // The comment should be followed by whitespace (the newline), then the code
+        var commentToken = tokens.First(t => t.TokenType == JavaTokenType.Comment);
+        Assert.Equal("// comment", commentToken.Value);
+
+        // The newline after the comment should be a whitespace token
+        var whitespaceAfterComment = tokens.First(t => t.TokenType == JavaTokenType.Whitespace);
+        Assert.Contains('\n', whitespaceAfterComment.Value);
+
+        // The code after the comment should be tokenized correctly
+        Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Keyword && t.Value == "int");
+        Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Identifier && t.Value == "x");
+        Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Number && t.Value == "42");
+    }
+
+    [Fact]
     public void TestBlockComment()
     {
         var tokens = Tokenize("/* block comment */");
