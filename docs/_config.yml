@@ -41,6 +41,8 @@ sidebar:
       url: "rust"
     - title: "Swift"
       url: "swift"
+    - title: "Python"
+      url: "python"
     - title: "Encoding"
       url: "encoding"
 
