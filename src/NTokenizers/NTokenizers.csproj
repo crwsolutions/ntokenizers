@@ -10,7 +10,7 @@
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
 		<VersionSuffix Condition="'$(VersionSuffix)' == ''">local.1</VersionSuffix>
-		<Version>6.0.0</Version>
+		<Version>6.0.1</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -22,7 +22,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>Added Java, C, C++, Rust, Kotlin, Go, Swift and Python tokenizer. And xaml and svg as xml tokenizer</PackageReleaseNotes>
+		<PackageReleaseNotes>Fix in link logic</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
