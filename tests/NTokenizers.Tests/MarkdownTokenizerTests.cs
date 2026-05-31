@@ -289,12 +289,29 @@ public class MarkdownTokenizerTests
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<LinkMetadata>(tokens[0].Metadata);
         Assert.Equal("http://example.com", ((LinkMetadata)tokens[0].Metadata!).Url);
-        Assert.Equal("link text", ((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal("link text", ((LinkMetadata)tokens[0].Metadata!).Text);
+        Assert.Null(((LinkMetadata)tokens[0].Metadata!).Title);
         Assert.Equal(markdown, text);
     }
 
     [Fact]
-    public void TestLinkWithEmptyTitle()
+    public void TestLinkWithTitle()
+    {
+        var markdown = "[link text](http://example.com \"This is the title\")";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Single(tokens);
+        Assert.Equal(MarkdownTokenType.Link, tokens[0].TokenType);
+        Assert.Equal("[link text](http://example.com \"This is the title\")", tokens[0].Value);
+        Assert.NotNull(tokens[0].Metadata);
+        Assert.IsType<LinkMetadata>(tokens[0].Metadata);
+        Assert.Equal("http://example.com", ((LinkMetadata)tokens[0].Metadata!).Url);
+        Assert.Equal("link text", ((LinkMetadata)tokens[0].Metadata!).Text);
+        Assert.Equal("This is the title", ((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestLinkWithEmptyText()
     {
         var markdown = "[](http://example.com)";
         var (tokens, text) = Tokenize(markdown);
@@ -303,6 +320,7 @@ public class MarkdownTokenizerTests
         Assert.Equal("[](http://example.com)", tokens[0].Value);
         var metadata = (LinkMetadata)tokens[0].Metadata!;
         Assert.Equal("http://example.com", metadata.Url);
+        Assert.Null(metadata.Text);
         Assert.Null(metadata.Title);
         Assert.Equal(markdown, text);
     }
@@ -318,12 +336,29 @@ public class MarkdownTokenizerTests
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<LinkMetadata>(tokens[0].Metadata);
         Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata!).Url);
-        Assert.Equal("alt text", ((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal("alt text", ((LinkMetadata)tokens[0].Metadata!).Text);
+        Assert.Null(((LinkMetadata)tokens[0].Metadata!).Title);
         Assert.Equal(markdown, text);
     }
 
     [Fact]
-    public void TestImageWithEmptyTitle()
+    public void TestImageWithTitle()
+    {
+        var markdown = "![alt text](http://example.com/image.png \"Image title\")";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Single(tokens);
+        Assert.Equal(MarkdownTokenType.Image, tokens[0].TokenType);
+        Assert.Equal("![alt text](http://example.com/image.png \"Image title\")", tokens[0].Value);
+        Assert.NotNull(tokens[0].Metadata);
+        Assert.IsType<LinkMetadata>(tokens[0].Metadata);
+        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata!).Url);
+        Assert.Equal("alt text", ((LinkMetadata)tokens[0].Metadata!).Text);
+        Assert.Equal("Image title", ((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestImageWithEmptyText()
     {
         var markdown = "![](http://example.com/image.png)";
         var (tokens, text) = Tokenize(markdown);
@@ -333,6 +368,7 @@ public class MarkdownTokenizerTests
         Assert.NotNull(tokens[0].Metadata);
         Assert.IsType<LinkMetadata>(tokens[0].Metadata);
         Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata!).Url);
+        Assert.Null(((LinkMetadata)tokens[0].Metadata!).Text);
         Assert.Null(((LinkMetadata)tokens[0].Metadata!).Title);
         Assert.Equal(markdown, text);
     }

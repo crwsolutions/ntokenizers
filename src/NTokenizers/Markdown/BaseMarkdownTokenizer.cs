@@ -158,20 +158,45 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() != '(') return false;
         Read(); // Consume (
 
-        // Read URL until )
+        // Read URL until ) or "
         var url = new StringBuilder();
-        while (Peek() != -1 && Peek() != ')')
+        while (Peek() != -1 && Peek() != ')' && Peek() != '"')
         {
             url.Append((char)Read());
+        }
+
+        var urlStr = url.ToString().Trim();
+        string? title = null;
+
+        // Check for optional title
+        if (Peek() == '"')
+        {
+            Read(); // Consume "
+            var titleBuilder = new StringBuilder();
+            while (Peek() != -1 && Peek() != '"')
+            {
+                titleBuilder.Append((char)Read());
+            }
+            if (Peek() == '"')
+                Read(); // Consume closing "
+            title = titleBuilder.ToString().Trim();
+            
+            // Skip optional space after title
+            if (Peek() == ' ')
+                Read();
         }
 
         if (Peek() == ')')
             Read(); // Consume )
 
+        var value = string.IsNullOrEmpty(title) 
+            ? $"[{linkText}]({urlStr})" 
+            : $"[{linkText}]({urlStr} \"{title}\")";
+
         _onToken(new MarkdownToken(
             MarkdownTokenType.Link,
-            $"[{linkText.ToString()}]({url.ToString().Trim()})",
-            new LinkMetadata(url.ToString().Trim(), linkText.Length > 0 ? linkText.ToString().Trim() : null)
+            value,
+            new LinkMetadata(urlStr, linkText.Length > 0 ? linkText.ToString().Trim() : null, title)
         ));
 
         return true;
@@ -199,20 +224,45 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() != '(') return false;
         Read(); // Consume (
 
-        // Read URL until )
+        // Read URL until ) or "
         var url = new StringBuilder();
-        while (Peek() != -1 && Peek() != ')')
+        while (Peek() != -1 && Peek() != ')' && Peek() != '"')
         {
             url.Append((char)Read());
+        }
+
+        var urlStr = url.ToString().Trim();
+        string? title = null;
+
+        // Check for optional title
+        if (Peek() == '"')
+        {
+            Read(); // Consume "
+            var titleBuilder = new StringBuilder();
+            while (Peek() != -1 && Peek() != '"')
+            {
+                titleBuilder.Append((char)Read());
+            }
+            if (Peek() == '"')
+                Read(); // Consume closing "
+            title = titleBuilder.ToString().Trim();
+            
+            // Skip optional space after title
+            if (Peek() == ' ')
+                Read();
         }
 
         if (Peek() == ')')
             Read(); // Consume )
 
+        var value = string.IsNullOrEmpty(title) 
+            ? $"![{altText}]({urlStr})" 
+            : $"![{altText}]({urlStr} \"{title}\")";
+
         _onToken(new MarkdownToken(
             MarkdownTokenType.Image,
-            $"![{altText.ToString()}]({url.ToString().Trim()})",
-            new LinkMetadata(url.ToString().Trim(), altText.Length > 0 ? altText.ToString().Trim() : null)
+            value,
+            new LinkMetadata(urlStr, altText.Length > 0 ? altText.ToString().Trim() : null, title)
         ));
 
         return true;
