@@ -97,10 +97,6 @@ NTokenizers is a .NET library written in C# that provides tokenizers for process
 >
 > These tokenizers are **not validation-based** and are primarily intended for **prettifying**, **formatting**, or **visualizing** structured text. They do not perform strict validation of the input format, so they may produce unexpected results when processing malformed or invalid XML, JSON, or HTML. Use them with caution when dealing with untrusted or poorly formatted input.
 
-> [!WARNING] 
->
-> MarkupTokenizer was renamed to MarkdownTokenizer in v2.
-
 
 ## Used by
 
