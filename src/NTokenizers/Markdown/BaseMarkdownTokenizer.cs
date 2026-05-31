@@ -158,37 +158,11 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() != '(') return false;
         Read(); // Consume (
 
-        // Read URL
+        // Read URL until )
         var url = new StringBuilder();
-        string? title = null;
-        bool inQuote = false;
-        var titleBuilder = new StringBuilder();
-
         while (Peek() != -1 && Peek() != ')')
         {
-            char c = (char)Read();
-
-            if (c == '"' && !inQuote)
-            {
-                inQuote = true;
-            }
-            else if (c == '"' && inQuote)
-            {
-                title = titleBuilder.ToString();
-                inQuote = false;
-            }
-            else if (inQuote)
-            {
-                titleBuilder.Append(c);
-            }
-            else if (c == ' ' && url.Length > 0 && Peek() == '"')
-            {
-                // Space before title
-            }
-            else
-            {
-                url.Append(c);
-            }
+            url.Append((char)Read());
         }
 
         if (Peek() == ')')
@@ -196,8 +170,8 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
 
         _onToken(new MarkdownToken(
             MarkdownTokenType.Link,
-            linkText.ToString(),
-            new LinkMetadata(url.ToString().Trim(), title)
+            $"[{linkText.ToString()}]({url.ToString().Trim()})",
+            new LinkMetadata(url.ToString().Trim(), linkText.Length > 0 ? linkText.ToString().Trim() : null)
         ));
 
         return true;
@@ -225,37 +199,11 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() != '(') return false;
         Read(); // Consume (
 
-        // Read URL
+        // Read URL until )
         var url = new StringBuilder();
-        string? title = null;
-        bool inQuote = false;
-        var titleBuilder = new StringBuilder();
-
         while (Peek() != -1 && Peek() != ')')
         {
-            char c = (char)Read();
-
-            if (c == '"' && !inQuote)
-            {
-                inQuote = true;
-            }
-            else if (c == '"' && inQuote)
-            {
-                title = titleBuilder.ToString();
-                inQuote = false;
-            }
-            else if (inQuote)
-            {
-                titleBuilder.Append(c);
-            }
-            else if (c == ' ' && url.Length > 0 && Peek() == '"')
-            {
-                // Space before title
-            }
-            else
-            {
-                url.Append(c);
-            }
+            url.Append((char)Read());
         }
 
         if (Peek() == ')')
@@ -263,8 +211,8 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
 
         _onToken(new MarkdownToken(
             MarkdownTokenType.Image,
-            altText.ToString(),
-            new LinkMetadata(url.ToString().Trim(), title)
+            $"![{altText.ToString()}]({url.ToString().Trim()})",
+            new LinkMetadata(url.ToString().Trim(), altText.Length > 0 ? altText.ToString().Trim() : null)
         ));
 
         return true;
