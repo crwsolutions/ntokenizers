@@ -39,12 +39,45 @@ await listMetadata.RegisterInlineTokenHandler(async inlineToken => { /* Handle i
 Handling this metadata correctly is essential to render the markdown accurately. Below is a breakdown of the different metadata types, separated into **code block types** and **other markdown types**:
 
 #### Code block metadata
-- `CSharpCodeBlockMetadata`
-- `XmlCodeBlockMetadata` (also used for XAML and SVG code blocks)
-- `TypeScriptCodeBlockMetadata`
-- `JsonCodeBlockMetadata`
-- `SqlCodeBlockMetadata`
-- `GenericCodeBlockMetadata`
+
+The Markdown tokenizer delegates code blocks to language-specific sub-tokenizers. Each code block produces metadata that you can use to register an inline token handler:
+
+```csharp
+if (token.Metadata is ICodeBlockMetadata codeBlock)
+{
+    await codeBlock.RegisterInlineTokenHandler(inlineToken =>
+    {
+        // inlineToken.TokenType is the language-specific token type
+        // inlineToken.Value is the token content
+    });
+}
+```
+
+**Markup languages:**
+- `HtmlCodeBlockMetadata` — ```html ... ```
+- `CssCodeBlockMetadata` — ```css ... ```
+
+**Data formats:**
+- `JsonCodeBlockMetadata` — ```json ... ```
+- `YamlCodeBlockMetadata` — ```yaml ... ```
+- `TomlCodeBlockMetadata` — ```toml ... ```
+- `XmlCodeBlockMetadata` — ```xml ... ``` (also used for XAML and SVG code blocks)
+
+**Programming languages:**
+- `CSharpCodeBlockMetadata` — ```csharp ... ```
+- `CCodeBlockMetadata` — ```c ... ```
+- `CppCodeBlockMetadata` — ```cpp ... ```
+- `GoCodeBlockMetadata` — ```go ... ```
+- `JavaCodeBlockMetadata` — ```java ... ```
+- `KotlinCodeBlockMetadata` — ```kotlin ... ```
+- `PythonCodeBlockMetadata` — ```python ... ```
+- `RustCodeBlockMetadata` — ```rust ... ```
+- `SqlCodeBlockMetadata` — ```sql ... ```
+- `SwiftCodeBlockMetadata` — ```swift ... ```
+- `TypeScriptCodeBlockMetadata` — ```typescript ... ```
+
+**Fallback:**
+- `GenericCodeBlockMetadata` — used for any unrecognized language tag
 
 #### Other markdown metadata
 - `HeadingMetadata`
@@ -55,6 +88,50 @@ Handling this metadata correctly is essential to render the markdown accurately.
 - `LinkMetadata`
 - `FootnoteMetadata`
 - `EmojiMetadata`
+
+# Architecture
+
+Most **tokenizers**, such as json, xml, or etc..., can be used individually, depending on the specific format you want to parse.
+
+The `MarkdownTokenizer` however is a special case. Instead of working on a single format, it acts as a **composite tokenizer**, using the other tokenizers as **subtokenizers**. When parsing a stream, MarkdownTokenizer delegates portions of the input to the appropriate subtokenizer, allowing it to handle multiple formats seamlessly in one pass.
+
+The same principle applies to inline tokenizers such as Heading, Blockquote, ListItem, and others. However, they cannot be used individually and produce the same token types as the `MarkdownTokenizer`.
+
+### Diagram
+
+```
+         ┌─────────┐
+         │ stream  │
+         └─────────┘
+              │  ParseAsync()
+              ▼
+   ┌─────────────────────┐
+   │  MarkdownTokenizer  │ ───────────► fire markdown tokens
+   └─────────────────────┘
+              │
+              ▼       ┌─────────┐
+              ├──────►│   json  │ ───► fire json tokens
+              │       └─────────┘
+              │
+              │       ┌─────────┐
+              ├──────►│ Heading │ ───► fire markdown tokens
+              │       └─────────┘
+              │
+              │       ┌─────────┐
+              ├──────►│   html  │ ───► fire html tokens
+              │       └─────────┘
+              │            │
+              │            ▼       ┌─────────┐
+              │            ├──────►│   css   │ ───► fire css tokens
+              │            │       └─────────┘
+              │            │
+              │            │       ┌─────────┐
+              │            └──────►│ script  │ ───► fire typescript tokens
+              │                    └─────────┘
+              │       ┌─────────┐
+              └──────►│  etc..  │ ───► etc
+                      └─────────┘
+```
 
 ##### Example: Handling Inline Tokens
 

@@ -3,136 +3,118 @@ layout: default
 title: "Home"
 ---
 
-# NTokenizers Documentation
+# NTokenizers
 
-Welcome to the documentation for the `NTokenizers` library. This library provides a collection of **stream-capable** tokenizers for XML, JSON, Markdown, TypeScript, C# and SQL processing.
+Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect building block for **chat applications**, and **AI response rendering**. Tokenize streaming AI responses in real-time for beautiful syntax-highlighted output.
 
-### Kickoff token processing
+NTokenizers sits in the middle of a tokenization pipeline — it takes raw source code or markup as a stream and emits a sequence of typed tokens that a downstream renderer can consume:
 
-```csharp
-// kickoff markdown tokenizer
-await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle markdown-tokens here */ });
-
-// kickoff csharp tokenizer
-await CSharpTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle csharp-tokens here */ });
-
-// kickoff json tokenizer
-await JsonTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle json-tokens here */ });
-
-// kickoff sql tokenizer
-await SqlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle sql-tokens here */ });
-
-// kickoff typescript tokenizer
-await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle typescript-tokens here */ });
-
-// kickoff css tokenizer
-await CssTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle css-tokens here */ });
-
-// kickoff xml tokenizer
-await XmlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle xml-tokens here */ });
-
-// kickoff yaml tokenizer
-await YamlTokenizer.Create().ParseAsync(stream, onToken: token => { /* handle yaml-tokens here */ });
+```
+ ┌────────┐    stream     ┌──────────────┐   tokens    ┌────────────┐
+ │ source │ ────────────► │ NTokenizers  │ ──────────► │  Renderer  │ ──► styled output
+ └────────┘               └──────────────┘             └────────────┘
 ```
 
-> **NTokenizers.Extensions.Spectre.Console**
->
-> **Heads up:** Want to see your tokenized text with syntax-style highlighting in the console? Check out our companion project [NTokenizers.Extensions.Spectre.Console](https://crwsolutions.github.io/NTokenizers.Extensions.Spectre.Console/) that brings your text streams to life with rich, color-aware output with the help of this library.
+This separation of concerns means NTokenizers stays format-focused while rendering is delegated to the consumer — whether that is a console UI, a web component, or a custom formatter. The stream-first design ensures low memory usage and real-time compatibility with AI chat outputs, CI logs, or any scenario where data arrives incrementally.
 
-## Overview
+## Supported Formats
 
-NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, SQL, Typescript and CSharp. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** - it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+NTokenizers provides a collection of stream-capable tokenizers for processing structured text. Each tokenizer breaks down input into meaningful tokens as data arrives in real-time—ideal for large files or streaming data without loading everything into memory.
 
-<blockquote class="warning">
- <b>Warning</b><br/><br/>
- These tokenizers are <b>not validation-based</b> and are primarily intended for <b>prettifying</b>, <b>formatting</b>, or <b>visualizing</b> structured text. They do not perform strict validation of the input format, so they may produce unexpected results when processing malformed or invalid XML, JSON, or HTML. Use them with caution when dealing with untrusted or poorly formatted input.
-</blockquote>
+The library supports the following formats:
 
-## Markdown Example
+- **Markup languages:** Markdown, HTML
+- **Data formats:** JSON, YAML, TOML, XML
+- **Programming languages:** C#, C, C++, Go, Java, Kotlin, Python, Rust, SQL, Swift, TypeScript, CSS
 
-Here's a simple example showing how to use the `MarkdownTokenizer` with a `stream` containing some markdown text and json inline code blocks:
+The `MarkdownTokenizer` acts as a **composite tokenizer**, delegating code blocks to the appropriate sub-tokenizer based on the language tag. This allows seamless parsing of documents that mix multiple formats in a single pass.
+
+## Quick Start
+
+Initialize any tokenizer and start parsing a stream:
+
+```csharp
+// Use any tokenizer — replace [Language] with the target format
+await [Language]Tokenizer.Create().ParseAsync(stream, onToken: async token =>
+{
+    // Handle tokens as they arrive
+});
+```
+
+Example with the JSON tokenizer:
+
+```csharp
+await JsonTokenizer.Create().ParseAsync(stream, onToken: async token =>
+{
+    var value = Markup.Escape(token.Value);
+    var colored = token.TokenType switch
+    {
+        JsonTokenType.PropertyName => new Markup($"[cyan]{value}[/]"),
+        JsonTokenType.StringValue => new Markup($"[green]{value}[/]"),
+        JsonTokenType.Number => new Markup($"[magenta]{value}[/]"),
+        _ => new Markup(value)
+    };
+    AnsiConsole.Write(colored);
+});
+```
+
+The `MarkdownTokenizer` delegates code blocks to sub-tokenizers automatically:
 
 ```csharp
 await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
-    if (token.Metadata is HeadingMetadata headingMetadata)
+    if (token.Metadata is ICodeBlockMetadata codeBlock)
     {
-        await headingMetadata.RegisterInlineTokenHandler( inlineToken =>
+        await codeBlock.RegisterInlineTokenHandler(inlineToken =>
         {
-            var value = Markup.Escape(inlineToken.Value);
-            var colored = headingMetadata.Level != 1 ?
-                new Markup($"[bold GreenYellow]{value}[/]") :
-                new Markup($"[bold yellow]** {value} **[/]");
-            AnsiConsole.Write(colored);
+            // Handle code block tokens with syntax highlighting
         });
-        Debug.WriteLine("Written Heading inlines");
     }
-    else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
-    {
-        Console.WriteLine($"code: {jsonMetadata.Language}");
-        await jsonMetadata.RegisterInlineTokenHandler( inlineToken =>
-        {
-            var value = Markup.Escape(inlineToken.Value);
-            var colored = inlineToken.TokenType switch
-            {
-                JsonTokenType.StartObject => new Markup($"[yellow]{value}[/]"),
-                JsonTokenType.EndObject => new Markup($"[yellow]{value}[/]"),
-                JsonTokenType.StartArray => new Markup($"[yellow]{value}[/]"),
-                JsonTokenType.EndArray => new Markup($"[yellow]{value}[/]"),
-                JsonTokenType.PropertyName => new Markup($"[cyan]{value}[/]"),
-                JsonTokenType.StringValue => new Markup($"[green]{value}[/]"),
-                JsonTokenType.Number => new Markup($"[magenta]{value}[/]"),
-                JsonTokenType.True => new Markup($"[orange1]{value}[/]"),
-                JsonTokenType.False => new Markup($"[orange1]{value}[/]"),
-                JsonTokenType.Null => new Markup($"[grey]{value}[/]"),
-                JsonTokenType.Colon => new Markup($"[yellow]{value}[/]"),
-                JsonTokenType.Comma => new Markup($"[yellow]{value}[/]"),
-                JsonTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
-                _ => new Markup(value)
-            };
-            AnsiConsole.Write(colored);
-        });
-        AnsiConsole.WriteLine();
-    }
-    else
-    {
-        // Handle regular markdown tokens
-        var value = Markup.Escape(token.Value);
-        var colored = token.TokenType switch
-        {
-            MarkupTokenType.Text => new Markup($"{value}"),
-            MarkupTokenType.Bold => new Markup($"[bold]{value}[/]"),
-            MarkupTokenType.Italic => new Markup($"[italic]{value}[/]"),
-            _ => new Markup(value)
-        };
-
-        AnsiConsole.Write(colored);
-    }
+    // Handle regular markdown tokens
 });
 ```
 
-This gives the following output:
+## Overview
 
-![markdownexample](assets\markdown_example.png)
+NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, HTML, YAML, TOML, SQL, TypeScript, CSS, C#, C, C++, Go, Java, Kotlin, Rust, Swift and Python. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** — it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+
+<blockquote class="warning">
+  <b>Warning</b><br/><br/>
+  These tokenizers are <b>not validation-based</b> and are primarily intended for <b>prettifying</b>, <b>formatting</b>, or <b>visualizing</b> structured text. They do not perform strict validation of the input format, so they may produce unexpected results when processing malformed or invalid XML, JSON, or HTML. Use them with caution when dealing with untrusted or poorly formatted input.
+</blockquote>
 
 ## String output
 
 ```csharp
-var result = await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ }
+var result = await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token => { /* handle tokens here */ });
 ```
 
 In addition to streaming tokens, the original input is returned for convenience.
 
 ## Code specific Tokenizers
 
-The Code specific tokenizers are also available see:
+Individual tokenizers are available for each supported format:
 
-|**language**|**page**|
-|C#|[CSharp Tokenizer](/ntokenizers/csharp)|
-|Json|[Json Tokenizer](/ntokenizers/json)|
-|Sql|[Sql Tokenizer](/ntokenizers/sql)|
-|typescript/javascript|[TypeScript Tokenizer](/ntokenizers/typescript)|
-|xml|[Xml Tokenizer](/ntokenizers/xml)|
+| **Language** | **Page** |
+|---|---|
+| Markdown | [Markdown Tokenizer](/ntokenizers/markdown) |
+| HTML | [HTML Tokenizer](/ntokenizers/html) |
+| JSON | [JSON Tokenizer](/ntokenizers/json) |
+| YAML | [YAML Tokenizer](/ntokenizers/yaml) |
+| TOML | [TOML Tokenizer](/ntokenizers/toml) |
+| XML | [XML Tokenizer](/ntokenizers/xml) |
+| C# | [CSharp Tokenizer](/ntokenizers/csharp) |
+| C | [C Tokenizer](/ntokenizers/c) |
+| C++ | [C++ Tokenizer](/ntokenizers/cpp) |
+| Go | [Go Tokenizer](/ntokenizers/go) |
+| Java | [Java Tokenizer](/ntokenizers/java) |
+| Kotlin | [Kotlin Tokenizer](/ntokenizers/kotlin) |
+| Python | [Python Tokenizer](/ntokenizers/python) |
+| Rust | [Rust Tokenizer](/ntokenizers/rust) |
+| SQL | [SQL Tokenizer](/ntokenizers/sql) |
+| Swift | [Swift Tokenizer](/ntokenizers/swift) |
+| TypeScript | [TypeScript Tokenizer](/ntokenizers/typescript) |
+| CSS | [CSS Tokenizer](/ntokenizers/css) |
 
 ## Features
 
