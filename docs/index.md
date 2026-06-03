@@ -17,6 +17,10 @@ NTokenizers sits in the middle of a tokenization pipeline — it takes raw sourc
 
 This separation of concerns means NTokenizers stays format-focused while rendering is delegated to the consumer — whether that is a console UI, a web component, or a custom formatter. The stream-first design ensures low memory usage and real-time compatibility with AI chat outputs, CI logs, or any scenario where data arrives incrementally.
 
+### Used by
+
+- [NTokenizers.Extensions.Spectre.Console](https://www.nuget.org/packages/NTokenizers.Extensions.Spectre.Console/) Spectre.Console rendering extensions for NTokenizers, Style-rich console syntax highlighting.
+
 ## Supported Formats
 
 NTokenizers provides a collection of stream-capable tokenizers for processing structured text. Each tokenizer breaks down input into meaningful tokens as data arrives in real-time—ideal for large files or streaming data without loading everything into memory.
