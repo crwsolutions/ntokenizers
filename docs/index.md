@@ -5,7 +5,7 @@ title: "Home"
 
 # NTokenizers
 
-Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect building block for **chat applications**, and **AI response rendering**. Tokenize streaming AI responses in real-time for beautiful syntax-highlighted output.
+Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect **building block** for render logic and handling **AI responses**.
 
 NTokenizers sits in the middle of a tokenization pipeline — it takes raw source code or markup as a stream and emits a sequence of typed tokens that a downstream renderer can consume:
 
