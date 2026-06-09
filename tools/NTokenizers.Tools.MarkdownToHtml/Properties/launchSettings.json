@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NTokenizers.Tools.MarkdownToHtml": {
+      "commandName": "Project",
+      "commandLineArgs": "e:\\temp\\example.md"
+    }
+  }
+}

@@ -27,4 +27,5 @@
    <Project Path="tests/NTokenizers.ShowCase.Yaml/NTokenizers.ShowCase.Yaml.csproj" />
    <Project Path="tests/NTokenizers.ShowCase.Toml/NTokenizers.ShowCase.Toml.csproj" />
   <Project Path="tests/NTokenizers.Tests/NTokenizers.Tests.csproj" />
+  <Project Path="tools/NTokenizers.Tools.MarkdownToHtml/NTokenizers.Tools.MarkdownToHtml.csproj" />
 </Solution>
