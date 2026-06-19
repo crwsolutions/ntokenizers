@@ -428,10 +428,38 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
     }
 
     /// <summary>
+    /// CommonMark ASCII punctuation characters that may be backslash-escaped.
+    /// </summary>
+    private static readonly HashSet<char> AsciiPunctuation = new()
+    {
+        '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+        ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~'
+    };
+
+    /// <summary>
+    /// Handles backslash-escaped ASCII punctuation. Consumes the backslash and the punctuation character,
+    /// emitting only the punctuation character as plain text.
+    /// </summary>
+    private bool TryParseBackslashEscape()
+    {
+        int next = PeekAhead(1);
+        if (next == -1) return false;
+
+        char nextCh = (char)next;
+        if (!AsciiPunctuation.Contains(nextCh)) return false;
+
+        Read(); // Consume backslash
+        Read(); // Consume punctuation
+        _buffer.Append(nextCh);
+        return true;
+    }
+
+    /// <summary>
     /// Parses inline constructs such as bold, italic
     /// </summary>
     internal protected bool TryParseInlineConstruct(char ch) => ch switch
     {
+        '\\' when TryParseBackslashEscape() => true,
         '*' when TryParseBoldOrItalic() => true,
         '_' when TryParseBoldOrItalic() => true,
         '`' when TryParseInlineCode() => true,
