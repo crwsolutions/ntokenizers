@@ -1226,4 +1226,123 @@ Visit [Google](https://google.com) for more.";
             Assert.NotEmpty(codeBlockTokens);
             Assert.IsType<XmlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
         }
+
+        [Fact]
+        public void TestBackslashEscapeAsterisk()
+        {
+            var markdown = "\\*italic\\*";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Single(tokens);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("*italic*", tokens[0].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeUnderscore()
+        {
+            var markdown = "\\_em\\_";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Single(tokens);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("_em_", tokens[0].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeBacktick()
+        {
+            var markdown = "\\`code\\`";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Single(tokens);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("`code`", tokens[0].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeBrackets()
+        {
+            var markdown = "\\[not a link\\]";
+            var (tokens, text) = Tokenize(markdown);
+            // Spaces trigger text emission, so we get multiple Text tokens
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("[not ", tokens[0].Value);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("a ", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+            Assert.Equal("link]", tokens[2].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeDoubleBackslash()
+        {
+            var markdown = "\\\\";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Single(tokens);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("\\", tokens[0].Value);
+        }
+
+        [Fact]
+        public void TestBackslashNonPunctuation()
+        {
+            var markdown = "\\a";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Single(tokens);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("\\a", tokens[0].Value);
+        }
+
+        [Fact]
+        public void TestBackslashAtEndOfInput()
+        {
+            var markdown = "text\\";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Single(tokens);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("text\\", tokens[0].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeAllPunctuation()
+        {
+            // All 32 CommonMark ASCII punctuation characters, each backslash-escaped
+            var markdown = "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Single(tokens);
+            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
+            Assert.Equal("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", tokens[0].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeInHeading()
+        {
+            var markdown = "# \\*not italic\\* heading";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Equal(2, tokens.Count);
+            Assert.Equal(MarkdownTokenType.Heading, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("*not italic* heading", tokens[1].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeInBlockquote()
+        {
+            var markdown = "> \\*not italic\\* quote";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Equal(2, tokens.Count);
+            Assert.Equal(MarkdownTokenType.Blockquote, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("*not italic* quote", tokens[1].Value);
+        }
+
+        [Fact]
+        public void TestBackslashEscapeInListItem()
+        {
+            var markdown = "- \\*not italic\\* item";
+            var (tokens, text) = Tokenize(markdown);
+            Assert.Equal(2, tokens.Count);
+            Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("*not italic* item", tokens[1].Value);
+        }
     }
