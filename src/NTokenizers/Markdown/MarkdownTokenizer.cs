@@ -143,11 +143,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         return await ParseInlines(MarkdownTokenType.Heading, new HeadingMetadata(level), InlineMarkdownTokenizer.Create());
     }
 
-    private async Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync) where TToken : IToken
+    private async Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync, string? value = null) where TToken : IToken
     {
-        // Emit heading token with empty value (client can set OnInlineToken to parse inline content)
+        // Emit token with value (client can set OnInlineToken to parse inline content)
         var emitTask = Task.Run(() =>
-            _onToken(new MarkdownToken(tokenType, string.Empty, metadata)));
+            _onToken(new MarkdownToken(tokenType, value ?? string.Empty, metadata)));
 
         // Await the client registering the handler
         var handlerTask = metadata.GetInlineTokenHandlerAsync();
@@ -179,8 +179,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         return true;
     }
 
-    private Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer) where TToken : IToken =>
-        ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, _lookaheadBuffer, handler));
+    private Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer, string? value = null) where TToken : IToken =>
+        ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, _lookaheadBuffer, handler), value);
 
     private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken =>
         ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(Reader, Bob, "```", handler));
@@ -246,11 +246,14 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
             var marker = c;
 
-            EmitText();
+            // Extract indentation from buffer (leading whitespace before marker)
+            var indentation = _buffer.ToString();
+            _buffer.Clear();
+
             Read(); // Consume marker
             Read(); // Consume space
 
-            await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(marker), InlineMarkdownTokenizer.Create());
+            await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(marker), InlineMarkdownTokenizer.Create(), indentation);
 
             return true;
         }
@@ -268,14 +271,16 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
             if (PeekAhead(pos) == '.' && PeekAhead(pos + 1) == ' ')
             {
-                EmitText();
+                // Extract indentation from buffer (leading whitespace before marker)
+                var indentation = _buffer.ToString();
+                _buffer.Clear();
 
                 // Consume number and dot
                 for (int i = 0; i <= pos; i++)
                     Read();
                 Read(); // Consume space
 
-                await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(number), InlineMarkdownTokenizer.Create());
+                await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(number), InlineMarkdownTokenizer.Create(), indentation);
 
                 return true;
             }

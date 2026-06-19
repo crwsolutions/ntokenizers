@@ -413,13 +413,48 @@ public class MarkdownTokenizerTests
     {
         var markdown = "     * item 1";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(3, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("     ", tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-        Assert.Equal("item 1", tokens[2].Value);
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[0].TokenType);
+        Assert.Equal("     ", tokens[0].Value); // Indentation is in the Value
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("item 1", tokens[1].Value);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestOrderedListWithLeadingSpaces()
+    {
+        var markdown = "  1. item 1";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(MarkdownTokenType.OrderedListItem, tokens[0].TokenType);
+        Assert.Equal("  ", tokens[0].Value); // Indentation is in the Value
+        Assert.NotNull(tokens[0].Metadata);
+        Assert.IsType<OrderedListItemMetadata>(tokens[0].Metadata);
+        Assert.Equal(1, ((OrderedListItemMetadata)tokens[0].Metadata!).Number);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("item 1", tokens[1].Value);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestNestedUnorderedListItems()
+    {
+        var markdown = "- top\n  - nested\n    - deeper";
+        var (tokens, text) = Tokenize(markdown);
+
+        // top-level: no indentation
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+
+        // nested: 2 spaces indentation
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[2].TokenType);
+        Assert.Equal("  ", tokens[2].Value);
+
+        // deeper: 4 spaces indentation
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[4].TokenType);
+        Assert.Equal("    ", tokens[4].Value);
+
         Assert.Equal(markdown, text);
     }
 

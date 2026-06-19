@@ -25,8 +25,9 @@ class Program
     static async Task Main()
     {
         string markdown = """
-        - aaa
-        - bbb
+        - Item 1
+          * Nested item
+        - Item 2
 
         Here is some **bold** text and some *italic* text.
 
@@ -189,7 +190,7 @@ class Program
 
             if (token.Metadata is ListItemMetadata listMetadata)
             {
-                AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
+                AnsiConsole.Write(new Markup($"{token.Value}[bold lime]{listMetadata.Marker} [/]"));
                 await listMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
