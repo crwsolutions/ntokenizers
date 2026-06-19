@@ -179,7 +179,7 @@ await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     if (token.Metadata is ListItemMetadata listMetadata)
     {
-        AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
+        AnsiConsole.Write(new Markup($"{token.Value}[bold lime]{listMetadata.Marker} [/]"));
         await listMetadata.RegisterInlineTokenHandler(inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
@@ -331,8 +331,8 @@ The Markdown Tokenizer produces tokens of type `MarkdownTokenType` with the foll
 - `TypographicReplacement` - Represents a typographic replacement (`(c)`, `(r)`, `(tm)`, `+-`)
 - `Emphasis` - Represents a generic emphasis marker
 - `Blockquote` - Represents a blockquote (value contains text without `>` marker)
-- `UnorderedListItem` - Represents an unordered list item (value contains text without `+`, `-`, `*` markers)
-- `OrderedListItem` - Represents an ordered list item (value contains text without number prefix)
+- `UnorderedListItem` - Represents an unordered list item (value contains leading whitespace/indentation; inline content is tokenized separately)
+- `OrderedListItem` - Represents an ordered list item (value contains leading whitespace/indentation; inline content is tokenized separately)
 - `CodeInline` - Represents inline code (value contains code without `` ` `` markers)
 - `CodeBlock` - Represents a code block (value contains code without ``` markers, language in Metadata)
 - `Table` - Represents a table (value is empty, structure in Metadata)
