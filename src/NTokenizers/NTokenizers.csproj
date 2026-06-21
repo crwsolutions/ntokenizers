@@ -9,7 +9,7 @@
 
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
-		<Version>6.2-local.2</Version>
+		<Version>6.3-local.1</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -23,7 +23,8 @@
 		<Title>NTokenizers</Title>
 		<PackageReleaseNotes>list item tokens now include leading indentation in their Value
 
-- MarkdownTokenizer: backslash-escaped ASCII punctuation (e.g. \*, \_, \`) is now treated as plain text, emitting the punctuation character without the backslash</PackageReleaseNotes>
+- MarkdownTokenizer: backslash-escaped ASCII punctuation (e.g. \*, \_, \`) is now treated as plain text, emitting the punctuation character without the backslash
+- InlineMetadata: RegisterInlineTokenHandler now accepts an optional onInlinesCompleted callback that fires after inline parsing completes, before the parser continues</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>

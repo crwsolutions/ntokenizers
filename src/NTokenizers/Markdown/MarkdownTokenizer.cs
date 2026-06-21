@@ -174,7 +174,6 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // Run the tokenizer
         await parseAsync(handlerTask.Result);
 
-
         metadata.CompleteProcessing();
         return true;
     }

@@ -1345,4 +1345,59 @@ Visit [Google](https://google.com) for more.";
             Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
             Assert.Equal("*not italic* item", tokens[1].Value);
         }
+
+        [Fact]
+        public void TestOnInlinesCompletedCallbackIsInvoked()
+        {
+            var callbackInvoked = false;
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\n"));
+
+            MarkdownTokenizer.Create().ParseAsync(stream, token =>
+            {
+                if (token.Metadata is HeadingMetadata headingMeta)
+                {
+                    headingMeta.RegisterInlineTokenHandler(
+                        _ => { /* inline handler */ },
+                        () => { callbackInvoked = true; }
+                    );
+                }
+            }).GetAwaiter().GetResult();
+
+            Assert.True(callbackInvoked, "The onInlinesCompleted callback should have been invoked");
+        }
+
+        [Fact]
+        public void TestOnInlinesCompletedCallbackRunsBeforeParseCompletes()
+        {
+            var tokens = new List<MarkdownToken>();
+            var callbackInvoked = false;
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\nText after"));
+
+            MarkdownTokenizer.Create().ParseAsync(stream, token =>
+            {
+                tokens.Add(token);
+
+                if (token.Metadata is HeadingMetadata headingMeta)
+                {
+                    headingMeta.RegisterInlineTokenHandler(
+                        _ => { /* inline handler */ },
+                        () =>
+                        {
+                            callbackInvoked = true;
+                            // The callback runs before CompleteProcessing, so the parser
+                            // has not yet continued to emit subsequent tokens.
+                            // At this point, only the heading token and its inline content
+                            // should have been collected so far.
+                        }
+                    );
+                }
+            }).GetAwaiter().GetResult();
+
+            Assert.True(callbackInvoked, "Callback should have been invoked");
+
+            // Verify the full token stream was produced after the callback
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value.StartsWith("Text"));
+        }
     }
