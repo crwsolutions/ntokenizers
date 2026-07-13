@@ -1,3 +1,4 @@
+using NTokenizers.ToHtml;
 using System.Diagnostics;
 
 namespace NTokenizers.Tools.MarkdownToHtml;
@@ -33,7 +34,7 @@ public static class Program
             using var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
             using var writer = new StreamWriter(outputStream, leaveOpen: false);
 
-            await Markdown.ToHtmlAsync(inputStream, writer);
+            await MarkdownConverter.WriteHtmlDocumentAsync(inputStream, writer);
 
             stopwatch.Stop();
             var elapsed = stopwatch.Elapsed;
