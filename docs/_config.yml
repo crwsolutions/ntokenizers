@@ -45,6 +45,8 @@ sidebar:
       url: "python"
     - title: "Encoding"
       url: "encoding"
+    - title: "ToHtml"
+      url: "tohtml"
 
 # Breadcrumb
 breadcrumb_home_label : "Home"
