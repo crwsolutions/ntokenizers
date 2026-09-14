@@ -1,5 +1,7 @@
+using NTokenizers.Core;
 using NTokenizers.Markdown;
 using NTokenizers.ToHtml.Writers;
+using System.Collections.Generic;
 using System.Text;
 
 namespace NTokenizers.ToHtml;
@@ -45,8 +47,21 @@ public sealed class MarkdownConverter
     /// </summary>
     public static async Task WriteHtmlAsync(Stream inputStream, TextWriter writer)
     {
+        using var reader = new StreamReader(inputStream);
+        await WriteHtmlAsync(reader, writer);
+    }
+
+    /// <summary>
+    /// Converts a Markdown text reader to an HTML fragment and writes it directly to the provided writer.
+    /// </summary>
+    public static async Task WriteHtmlAsync(TextReader reader, TextWriter writer)
+    {
         var markdownWriter = new MarkdownHtmlWriter();
-        await MarkdownTokenizer.Create().ParseAsync(inputStream, onToken: async token =>
+        var stringBuilder = new StringBuilder();
+        var lookaheadBuffer = new Queue<char>();
+        using var cts = new CancellationTokenSource();
+
+        await MarkdownTokenizer.Create().ParseAsync(reader, stringBuilder, lookaheadBuffer, cts.Token, async token =>
         {
             await markdownWriter.WriteTokenAsync(token, writer);
         });
@@ -75,6 +90,15 @@ public sealed class MarkdownConverter
     /// Converts a Markdown stream to a complete HTML document and writes it directly to the provided writer.
     /// </summary>
     public static async Task WriteHtmlDocumentAsync(Stream inputStream, TextWriter writer)
+    {
+        using var reader = new StreamReader(inputStream);
+        await WriteHtmlDocumentAsync(reader, writer);
+    }
+
+    /// <summary>
+    /// Converts a Markdown text reader to a complete HTML document and writes it directly to the provided writer.
+    /// </summary>
+    public static async Task WriteHtmlDocumentAsync(TextReader reader, TextWriter writer)
     {
         var css = GetCss();
 
@@ -107,7 +131,7 @@ public sealed class MarkdownConverter
         await writer.WriteLineAsync("<body>");
 
         // Process markdown through the fragment writer
-        await WriteHtmlAsync(inputStream, writer);
+        await WriteHtmlAsync(reader, writer);
 
         // Close HTML skeleton
         await writer.WriteLineAsync("</body>");

@@ -1,5 +1,6 @@
 using NTokenizers.ToHtml;
 using System.Diagnostics;
+using System.Text;
 
 namespace NTokenizers.Tools.MarkdownToHtml;
 
@@ -10,19 +11,23 @@ public static class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        if (args.Length == 0)
+        CommandLineOptions options;
+
+        try
         {
-            Console.Error.WriteLine("Usage: NTokenizers.Tools.MarkdownToHtml <input.md> [output.html]");
-            Console.Error.WriteLine("  If output is not specified, it defaults to the same name with .html extension.");
+            options = CommandLineOptions.Parse(args);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine();
+            CommandLineOptions.PrintUsage(Console.Error);
             return 1;
         }
 
-        string inputPath = args[0];
-        string outputPath = args.Length > 1 ? args[1] : Path.ChangeExtension(inputPath, ".html");
-
-        if (!File.Exists(inputPath))
+        if (!File.Exists(options.InputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {options.InputPath}");
             return 1;
         }
 
@@ -30,18 +35,23 @@ public static class Program
         {
             var stopwatch = Stopwatch.StartNew();
 
-            using var inputStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
-            using var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
-            using var writer = new StreamWriter(outputStream, leaveOpen: false);
+            using var inputStream = new FileStream(options.InputPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+            using var outputStream = new FileStream(options.EffectiveOutputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
 
-            await MarkdownConverter.WriteHtmlDocumentAsync(inputStream, writer);
+            var resolved = EncodingResolver.Resolve(options, inputStream);
+            Encoding inputEncoding = resolved.Encoding;
+            using var reader = new StreamReader(inputStream, inputEncoding, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
+            using var writer = new StreamWriter(outputStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), leaveOpen: false);
+
+            await MarkdownConverter.WriteHtmlDocumentAsync(reader, writer);
 
             stopwatch.Stop();
             var elapsed = stopwatch.Elapsed;
 
             Console.WriteLine();
             Console.WriteLine(new string('─', 60));
-            Console.WriteLine($"Converted: {inputPath} -> {outputPath}");
+            Console.WriteLine($"Converted: {options.InputPath} -> {options.EffectiveOutputPath}");
+            Console.WriteLine($"Input encoding: {inputEncoding.WebName} ({resolved.Source})");
             Console.Write("Elapsed time: ");
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($"{elapsed:mm\\:ss\\.fff}");
