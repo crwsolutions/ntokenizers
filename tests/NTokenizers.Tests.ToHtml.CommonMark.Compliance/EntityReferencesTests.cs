@@ -1,6 +1,6 @@
 using NTokenizers.ToHtml;
 
-namespace NTokenizers.CommonMark.Compliance.Tests;
+namespace NTokenizers.Tests.ToHtml.CommonMark.Compliance;
 
 /// <summary>
 /// CommonMark spec 0.31.2 compliance tests for Entity and numeric character references.
