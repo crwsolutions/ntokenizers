@@ -8,7 +8,7 @@ NTokenizers is a .NET library that provides **stream-capable** tokenizers for sy
 
 ## Quick Checklist for New Language
 
-- [ ] Create 4 source files in `src/NTokenizers/[Language]/`
+- [ ] Create 4 source files in `src/NTokenizers/Languages/[Language]/`
 - [ ] Create 1 test file in `tests/NTokenizers.Tests/`
 - [ ] Create 1 showcase project in `tests/NTokenizers.ShowCase.[Language]/`
 - [ ] Create 1 doc file in `docs/`
@@ -88,7 +88,7 @@ private sealed class State
 
 ### 1. Create Source Files
 
-Create these 4 files in `src/NTokenizers/[Language]/`:
+Create these 4 files in `src/NTokenizers/Languages/[Language]/`:
 
 1. `[Language]TokenType.cs` - Enum with token types
 2. `[Language]Token.cs` - Token class
@@ -128,7 +128,7 @@ Update `docs/_config.yml`:
 
 ### 5. Update MarkdownTokenizer
 
-Update `ParseCodeInlines(string language)` in `src/NTokenizers/Markdown/MarkdownTokenizer.cs`:
+Update `ParseCodeInlines(string language)` in `src/NTokenizers/Languages/Markdown/MarkdownTokenizer.cs`:
 
 ```csharp
 "[language]" => await ParseCodeInlines(new [Language]CodeBlockMetadata(language)),
@@ -175,7 +175,7 @@ Add `/// <summary>` comments to:
 
 ## Reference Files
 
-- Best existing tokenizer: `CSharpTokenizer` in `src/NTokenizers/CSharp/`
+- Best existing tokenizer: `CSharpTokenizer` in `src/NTokenizers/Languages/CSharp/`
 - Base class: `BaseSubTokenizer<TToken>` in `src/NTokenizers/Core/`
 - Pattern: state machine + `TokenizeCharacters()` + `EmitPending()`
 - Showcase example: `tests/NTokenizers.ShowCase.CSharp/`
