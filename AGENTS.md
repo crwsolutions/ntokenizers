@@ -180,6 +180,14 @@ Add `/// <summary>` comments to:
 - Pattern: state machine + `TokenizeCharacters()` + `EmitPending()`
 - Showcase example: `tests/NTokenizers.ShowCase.CSharp/`
 
+## Test Projects
+
+The repository has three distinct test projects with different purposes and rules:
+
+- **`tests/NTokenizers.Tests`** — Core tokenization. Verifies the token stream each tokenizer produces (token types, values, metadata, order). Update these when tokenizer behavior changes.
+- **`tests/NTokenizers.Tests.ToHtml`** — Desired HTML output. Verifies `MarkdownConverter.ToHtml()` against the *intended* output. These tests define the expected behavior and are updated as that behavior changes (for example, when new tokens are introduced).
+- **`tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance`** — CommonMark spec 0.31.2 compliance monitor. **Read-only: must never be modified.** It tracks how far the converter is from full CommonMark conformance; failing tests here are expected until the corresponding feature is implemented.
+
 ## Testing
 
 Run all tests with:

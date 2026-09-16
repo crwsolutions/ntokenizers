@@ -58,36 +58,15 @@ These tests verify that `MarkdownConverter.ToHtml()` conforms to the [CommonMark
 
 ## How to use
 
-Tests start with `Skip = "CommonMark example N"`. To enable a test, remove the `Skip` attribute:
-
-```csharp
-// Before:
-[Fact(Skip = "CommonMark example 43")]
-
-// After:
-[Fact]
-```
-
 Run all tests:
 ```bash
-dotnet test NTokenizers.CommonMark.Compliance.Tests
+dotnet test tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance
 ```
 
 Run a specific section:
 ```bash
-dotnet test NTokenizers.CommonMark.Compliance.Tests --filter "FullyQualifiedName~ThematicBreaksTests"
+dotnet test tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance --filter "FullyQualifiedName~ThematicBreaksTests"
 ```
-
-## First 10% (recommended starting point)
-
-For initial compliance (~72 tests), enable these files:
-- ThematicBreaksTests.cs (19)
-- AtxHeadingsTests.cs (18)
-- CodeSpansTests.cs (22)
-- ParagraphsTests.cs (8)
-- SoftLineBreaksTests.cs (2)
-- TextualContentTests.cs (2)
-- PrecedenceTests.cs (1)
 
 ## Notes
 
