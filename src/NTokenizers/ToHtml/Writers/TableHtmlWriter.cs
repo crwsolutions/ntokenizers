@@ -5,24 +5,19 @@ using System.Text;
 namespace NTokenizers.ToHtml.Writers;
 
 /// <summary>
-/// Writer for Markdown table tokens. Delegates all inline content (including TableCell tokens)
-/// to the MarkdownHtmlWriter for consistent rendering.
+/// Writer for Markdown table tokens. Delegates all inline cell content
+/// to an InlineMarkdownTokenWriter for consistent rendering.
 /// 
 /// Only handles structural tokens: TableRow, TableCell, TableAlignments.
-/// All other tokens are passed through to MarkdownHtmlWriter.WriteTokenAsync().
+/// All other tokens are passed through to InlineMarkdownTokenWriter.WriteToken().
 /// 
 /// Tokens from the first (header) row are queued until TableAlignments or the second
 /// TableRow arrives, at which point the queue is flushed and processed with alignment info.
 /// </summary>
 internal sealed class TableHtmlWriter : IAdditionalCssWriter
 {
-    private readonly MarkdownHtmlWriter _markdownWriter;
+    private readonly InlineMarkdownTokenWriter _inlineWriter = new();
     private readonly TableState _state = new();
-
-    internal TableHtmlWriter(MarkdownHtmlWriter markdownWriter)
-    {
-        _markdownWriter = markdownWriter;
-    }
 
     void IAdditionalCssWriter.WriteAdditionalCss(StringBuilder css) => WriteAdditionalCss(css);
 
@@ -69,6 +64,13 @@ internal sealed class TableHtmlWriter : IAdditionalCssWriter
                 // Close previous row if open
                 if (_state.IsRowOpen)
                 {
+                    // Close the last open cell of the previous row before closing the row,
+                    // otherwise the cell is left unclosed and the next row starts with a stray </td>.
+                    if (_state.IsCellOpen)
+                    {
+                        CloseBodyCell(writer);
+                    }
+
                     writer.Write("</tr>\n");
                     _state.IsRowOpen = false;
 
@@ -103,8 +105,10 @@ internal sealed class TableHtmlWriter : IAdditionalCssWriter
                 break;
 
             default:
-                // Inline content (Text, Bold, Link, CodeInline, etc.)
-                await _markdownWriter.WriteTokenAsync(token, writer);
+                // Inline content (Text, Bold, Link, CodeInline, etc.).
+                // Rendered via the inline writer (not the top-level MarkdownHtmlWriter) so that
+                // table cell text is not affected by the top-level paragraph/whitespace handling.
+                _inlineWriter.WriteToken(token, writer);
                 break;
         }
     }

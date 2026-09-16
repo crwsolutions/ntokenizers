@@ -35,6 +35,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     public static MarkdownTokenizer Create() => new();
 
     private bool _atLineStart = true;
+    private bool _inParagraph;
+    private bool _pendingSoftBreak;
 
     /// <summary>
     /// Parses the input stream and emits markdown tokens via the OnToken callback.
@@ -53,6 +55,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             {
                 if (await TryParseLineStartConstructAsync())
                 {
+                    // A line-start block construct (heading, list, fence, ...) terminates an open paragraph.
+                    CloseParagraph();
+                    _pendingSoftBreak = false;
+
                     //Eat newline after line-start construct
                     if (Peek() == '\r')
                     {
@@ -68,6 +74,28 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 }
             }
 
+            // First non-whitespace character of a non-block line: opens a paragraph, or
+            // continues an open one (flushing a held soft line break).
+            if (_atLineStart && !char.IsWhiteSpace(c))
+            {
+                _atLineStart = false;
+
+                if (_inParagraph)
+                {
+                    if (_pendingSoftBreak)
+                    {
+                        _pendingSoftBreak = false;
+                        _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
+                    }
+                }
+                else
+                {
+                    _pendingSoftBreak = false;
+                    _inParagraph = true;
+                    _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockStart, string.Empty));
+                }
+            }
+
             // Try inline constructs
             if (TryParseInlineConstruct(c))
             {
@@ -80,12 +108,37 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
             if (c == '\n')
             {
-                EmitText();
+                if (_inParagraph)
+                {
+                    // Strip the trailing line break (and any preceding \r) from the line content.
+                    _buffer.Length--;
+                    if (_buffer.Length > 0 && _buffer[_buffer.Length - 1] == '\r')
+                    {
+                        _buffer.Length--;
+                    }
+
+                    var lineIsBlank = _atLineStart && AllWhiteSpace(_buffer.ToString());
+                    if (lineIsBlank)
+                    {
+                        // A blank line ends the paragraph; its own content is dropped.
+                        _pendingSoftBreak = false;
+                        CloseParagraph();
+                        _buffer.Clear();
+                    }
+                    else
+                    {
+                        // A non-blank line within the paragraph; its break is a pending soft break.
+                        _pendingSoftBreak = true;
+                        EmitText();
+                    }
+                }
+                else
+                {
+                    // Not in a paragraph: keep the line break as plain text (baseline behavior).
+                    _pendingSoftBreak = false;
+                    EmitText();
+                }
                 _atLineStart = true;
-            }
-            else if (_atLineStart && !char.IsWhiteSpace(c))
-            {
-                _atLineStart = false;
             }
 
             if (!_atLineStart && c == ' ' && _buffer.Length > 1)
@@ -94,8 +147,34 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             }
         }
 
-        // Emit any remaining text
+        // Emit any remaining text; a paragraph still open at EOF ends with the last line.
         EmitText();
+        CloseParagraph();
+    }
+
+    /// <summary>
+    /// Ends the open paragraph (if any) by emitting a ParagraphBlockEnd token.
+    /// Called when a blank line, a line-start construct, or end of stream terminates the paragraph.
+    /// </summary>
+    private void CloseParagraph()
+    {
+        if (_inParagraph)
+        {
+            _inParagraph = false;
+            _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockEnd, string.Empty));
+        }
+    }
+
+    private static bool AllWhiteSpace(string s)
+    {
+        foreach (var ch in s)
+        {
+            if (!char.IsWhiteSpace(ch))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private async Task<bool> TryParseLineStartConstructAsync()

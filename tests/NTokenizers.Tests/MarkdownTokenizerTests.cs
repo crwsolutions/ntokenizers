@@ -138,11 +138,70 @@ public class MarkdownTokenizerTests
     {
         var markdown = "Hello world";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(2, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("Hello ", tokens[0].Value);
+        // A plain line is a paragraph: PStart, text..., PEnd.
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
         Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-        Assert.Equal("world", tokens[1].Value);
+        Assert.Equal("Hello ", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+        Assert.Equal("world", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[3].TokenType);
+        Assert.Equal(string.Empty, tokens[3].Value);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestParagraphSingleLine()
+    {
+        var markdown = "justtext";
+        var (tokens, text) = Tokenize(markdown);
+        // A single non-blank line is a paragraph block: PStart, text, PEnd.
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value);
+        Assert.Null(tokens[0].Metadata);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("justtext", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(string.Empty, tokens[2].Value);
+        Assert.Null(tokens[2].Metadata);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestParagraphMultiLineSoftBreak()
+    {
+        var markdown = "foo\nbar";
+        var (tokens, text) = Tokenize(markdown);
+        // A multi-line paragraph is a single block: PStart, foo, soft break, bar, PEnd.
+        Assert.Equal(5, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("foo", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+        Assert.Equal("\n", tokens[2].Value); // soft line break
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("bar", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestTwoParagraphsSeparatedByBlankLine()
+    {
+        var markdown = "one\n\ntwo";
+        var (tokens, text) = Tokenize(markdown);
+        // Two paragraphs, each wrapped in its own PStart/PEnd (the blank line ends the first).
+        Assert.Equal(6, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("one", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("two", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -201,9 +260,12 @@ public class MarkdownTokenizerTests
     {
         var markdown = "**bold text**";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Bold, tokens[0].TokenType);
-        Assert.Equal("bold text", tokens[0].Value);
+        // A line that starts with an inline construct is still a paragraph.
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Bold, tokens[1].TokenType);
+        Assert.Equal("bold text", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -212,9 +274,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "__bold text__";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Bold, tokens[0].TokenType);
-        Assert.Equal("bold text", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Bold, tokens[1].TokenType);
+        Assert.Equal("bold text", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -223,9 +287,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "*italic text*";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Italic, tokens[0].TokenType);
-        Assert.Equal("italic text", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Italic, tokens[1].TokenType);
+        Assert.Equal("italic text", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -234,9 +300,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "_italic text_";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Italic, tokens[0].TokenType);
-        Assert.Equal("italic text", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Italic, tokens[1].TokenType);
+        Assert.Equal("italic text", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -245,9 +313,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "`code`";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.CodeInline, tokens[0].TokenType);
-        Assert.Equal("code", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.CodeInline, tokens[1].TokenType);
+        Assert.Equal("code", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -283,14 +353,16 @@ public class MarkdownTokenizerTests
     {
         var markdown = "[link text](http://example.com)";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Link, tokens[0].TokenType);
-        Assert.Equal("[link text](http://example.com)", tokens[0].Value);
-        Assert.NotNull(tokens[0].Metadata);
-        Assert.IsType<LinkMetadata>(tokens[0].Metadata);
-        Assert.Equal("http://example.com", ((LinkMetadata)tokens[0].Metadata!).Url);
-        Assert.Equal("link text", ((LinkMetadata)tokens[0].Metadata!).Text);
-        Assert.Null(((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Link, tokens[1].TokenType);
+        Assert.Equal("[link text](http://example.com)", tokens[1].Value);
+        Assert.NotNull(tokens[1].Metadata);
+        Assert.IsType<LinkMetadata>(tokens[1].Metadata);
+        Assert.Equal("http://example.com", ((LinkMetadata)tokens[1].Metadata!).Url);
+        Assert.Equal("link text", ((LinkMetadata)tokens[1].Metadata!).Text);
+        Assert.Null(((LinkMetadata)tokens[1].Metadata!).Title);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -299,14 +371,16 @@ public class MarkdownTokenizerTests
     {
         var markdown = "[link text](http://example.com \"This is the title\")";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Link, tokens[0].TokenType);
-        Assert.Equal("[link text](http://example.com \"This is the title\")", tokens[0].Value);
-        Assert.NotNull(tokens[0].Metadata);
-        Assert.IsType<LinkMetadata>(tokens[0].Metadata);
-        Assert.Equal("http://example.com", ((LinkMetadata)tokens[0].Metadata!).Url);
-        Assert.Equal("link text", ((LinkMetadata)tokens[0].Metadata!).Text);
-        Assert.Equal("This is the title", ((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Link, tokens[1].TokenType);
+        Assert.Equal("[link text](http://example.com \"This is the title\")", tokens[1].Value);
+        Assert.NotNull(tokens[1].Metadata);
+        Assert.IsType<LinkMetadata>(tokens[1].Metadata);
+        Assert.Equal("http://example.com", ((LinkMetadata)tokens[1].Metadata!).Url);
+        Assert.Equal("link text", ((LinkMetadata)tokens[1].Metadata!).Text);
+        Assert.Equal("This is the title", ((LinkMetadata)tokens[1].Metadata!).Title);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -315,13 +389,15 @@ public class MarkdownTokenizerTests
     {
         var markdown = "[](http://example.com)";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Link, tokens[0].TokenType);
-        Assert.Equal("[](http://example.com)", tokens[0].Value);
-        var metadata = (LinkMetadata)tokens[0].Metadata!;
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Link, tokens[1].TokenType);
+        Assert.Equal("[](http://example.com)", tokens[1].Value);
+        var metadata = (LinkMetadata)tokens[1].Metadata!;
         Assert.Equal("http://example.com", metadata.Url);
         Assert.Null(metadata.Text);
         Assert.Null(metadata.Title);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -330,14 +406,16 @@ public class MarkdownTokenizerTests
     {
         var markdown = "![alt text](http://example.com/image.png)";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Image, tokens[0].TokenType);
-        Assert.Equal("![alt text](http://example.com/image.png)", tokens[0].Value);
-        Assert.NotNull(tokens[0].Metadata);
-        Assert.IsType<LinkMetadata>(tokens[0].Metadata);
-        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata!).Url);
-        Assert.Equal("alt text", ((LinkMetadata)tokens[0].Metadata!).Text);
-        Assert.Null(((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Image, tokens[1].TokenType);
+        Assert.Equal("![alt text](http://example.com/image.png)", tokens[1].Value);
+        Assert.NotNull(tokens[1].Metadata);
+        Assert.IsType<LinkMetadata>(tokens[1].Metadata);
+        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[1].Metadata!).Url);
+        Assert.Equal("alt text", ((LinkMetadata)tokens[1].Metadata!).Text);
+        Assert.Null(((LinkMetadata)tokens[1].Metadata!).Title);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -346,14 +424,16 @@ public class MarkdownTokenizerTests
     {
         var markdown = "![alt text](http://example.com/image.png \"Image title\")";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Image, tokens[0].TokenType);
-        Assert.Equal("![alt text](http://example.com/image.png \"Image title\")", tokens[0].Value);
-        Assert.NotNull(tokens[0].Metadata);
-        Assert.IsType<LinkMetadata>(tokens[0].Metadata);
-        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata!).Url);
-        Assert.Equal("alt text", ((LinkMetadata)tokens[0].Metadata!).Text);
-        Assert.Equal("Image title", ((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Image, tokens[1].TokenType);
+        Assert.Equal("![alt text](http://example.com/image.png \"Image title\")", tokens[1].Value);
+        Assert.NotNull(tokens[1].Metadata);
+        Assert.IsType<LinkMetadata>(tokens[1].Metadata);
+        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[1].Metadata!).Url);
+        Assert.Equal("alt text", ((LinkMetadata)tokens[1].Metadata!).Text);
+        Assert.Equal("Image title", ((LinkMetadata)tokens[1].Metadata!).Title);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -362,14 +442,16 @@ public class MarkdownTokenizerTests
     {
         var markdown = "![](http://example.com/image.png)";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Image, tokens[0].TokenType);
-        Assert.Equal("![](http://example.com/image.png)", tokens[0].Value);
-        Assert.NotNull(tokens[0].Metadata);
-        Assert.IsType<LinkMetadata>(tokens[0].Metadata);
-        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[0].Metadata!).Url);
-        Assert.Null(((LinkMetadata)tokens[0].Metadata!).Text);
-        Assert.Null(((LinkMetadata)tokens[0].Metadata!).Title);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Image, tokens[1].TokenType);
+        Assert.Equal("![](http://example.com/image.png)", tokens[1].Value);
+        Assert.NotNull(tokens[1].Metadata);
+        Assert.IsType<LinkMetadata>(tokens[1].Metadata);
+        Assert.Equal("http://example.com/image.png", ((LinkMetadata)tokens[1].Metadata!).Url);
+        Assert.Null(((LinkMetadata)tokens[1].Metadata!).Text);
+        Assert.Null(((LinkMetadata)tokens[1].Metadata!).Title);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -578,12 +660,14 @@ public class MarkdownTokenizerTests
     {
         var markdown = ":smile:";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Emoji, tokens[0].TokenType);
-        Assert.Equal("smile", tokens[0].Value);
-        Assert.NotNull(tokens[0].Metadata);
-        Assert.IsType<EmojiMetadata>(tokens[0].Metadata);
-        Assert.Equal("smile", ((EmojiMetadata)tokens[0].Metadata!).Name);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Emoji, tokens[1].TokenType);
+        Assert.Equal("smile", tokens[1].Value);
+        Assert.NotNull(tokens[1].Metadata);
+        Assert.IsType<EmojiMetadata>(tokens[1].Metadata);
+        Assert.Equal("smile", ((EmojiMetadata)tokens[1].Metadata!).Name);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -592,9 +676,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "^sub^";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Subscript, tokens[0].TokenType);
-        Assert.Equal("sub", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Subscript, tokens[1].TokenType);
+        Assert.Equal("sub", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -603,9 +689,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "~sup~";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Superscript, tokens[0].TokenType);
-        Assert.Equal("sup", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Superscript, tokens[1].TokenType);
+        Assert.Equal("sup", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -614,9 +702,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "++inserted++";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.InsertedText, tokens[0].TokenType);
-        Assert.Equal("inserted", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.InsertedText, tokens[1].TokenType);
+        Assert.Equal("inserted", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -625,9 +715,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "==marked==";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.MarkedText, tokens[0].TokenType);
-        Assert.Equal("marked", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.MarkedText, tokens[1].TokenType);
+        Assert.Equal("marked", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -636,9 +728,12 @@ public class MarkdownTokenizerTests
     {
         var markdown = "<div>";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.HtmlTag, tokens[0].TokenType);
-        Assert.Equal("<div>", tokens[0].Value);
+        // A line that starts with an inline HTML tag is a paragraph.
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.HtmlTag, tokens[1].TokenType);
+        Assert.Equal("<div>", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -647,9 +742,11 @@ public class MarkdownTokenizerTests
     {
         var markdown = "</div>";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.HtmlTag, tokens[0].TokenType);
-        Assert.Equal("</div>", tokens[0].Value);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.HtmlTag, tokens[1].TokenType);
+        Assert.Equal("</div>", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -785,9 +882,12 @@ public class MarkdownTokenizerTests
     {
         var markdown = "|||";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("|||", tokens[0].Value);
+        // A plain line is a paragraph: PStart, text, PEnd.
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("|||", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -807,11 +907,14 @@ public class MarkdownTokenizerTests
     {
         var markdown = "Hello **world**";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(2, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("Hello ", tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.Bold, tokens[1].TokenType);
-        Assert.Equal("world", tokens[1].Value);
+        // A plain line is a paragraph: PStart, text, bold, PEnd.
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("Hello ", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Bold, tokens[2].TokenType);
+        Assert.Equal("world", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[3].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -820,21 +923,24 @@ public class MarkdownTokenizerTests
     {
         var markdown = "Text with **bold** and *italic* and `code`";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(7, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-        Assert.Equal("Text ", tokens[0].Value);
+        // A plain line is a paragraph: PStart, inline content, PEnd.
+        Assert.Equal(9, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-        Assert.Equal("with ", tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.Bold, tokens[2].TokenType);
-        Assert.Equal("bold", tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-        Assert.Equal(" and ", tokens[3].Value);
-        Assert.Equal(MarkdownTokenType.Italic, tokens[4].TokenType);
-        Assert.Equal("italic", tokens[4].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[5].TokenType);
-        Assert.Equal(" and ", tokens[5].Value);
-        Assert.Equal(MarkdownTokenType.CodeInline, tokens[6].TokenType);
-        Assert.Equal("code", tokens[6].Value);
+        Assert.Equal("Text ", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+        Assert.Equal("with ", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.Bold, tokens[3].TokenType);
+        Assert.Equal("bold", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal(" and ", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.Italic, tokens[5].TokenType);
+        Assert.Equal("italic", tokens[5].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[6].TokenType);
+        Assert.Equal(" and ", tokens[6].Value);
+        Assert.Equal(MarkdownTokenType.CodeInline, tokens[7].TokenType);
+        Assert.Equal("code", tokens[7].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[8].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -938,10 +1044,16 @@ Visit [Google](https://google.com) for more.";
     {
         var markdown = "Start **bold** end";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(3, tokens.Count);
-        Assert.Equal("Start ", tokens[0].Value);
-        Assert.Equal("bold", tokens[1].Value);
-        Assert.Equal(" end", tokens[2].Value);
+        // A plain line is a paragraph: PStart, text, bold, text, PEnd.
+        Assert.Equal(5, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("Start ", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Bold, tokens[2].TokenType);
+        Assert.Equal("bold", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(" end", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -950,11 +1062,14 @@ Visit [Google](https://google.com) for more.";
     {
         var markdown = "[link](url) text";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(2, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Link, tokens[0].TokenType);
-        Assert.Equal("[link](url)", tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-        Assert.Equal(" text", tokens[1].Value);
+        // A plain line is a paragraph: PStart, link, text, PEnd.
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Link, tokens[1].TokenType);
+        Assert.Equal("[link](url)", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+        Assert.Equal(" text", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[3].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -963,13 +1078,16 @@ Visit [Google](https://google.com) for more.";
     {
         var markdown = ":smile: and :wink:";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(3, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Emoji, tokens[0].TokenType);
-        Assert.Equal("smile", tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-        Assert.Equal(" and ", tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.Emoji, tokens[2].TokenType);
-        Assert.Equal("wink", tokens[2].Value);
+        // A plain line is a paragraph: PStart, emoji, text, emoji, PEnd.
+        Assert.Equal(5, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Emoji, tokens[1].TokenType);
+        Assert.Equal("smile", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+        Assert.Equal(" and ", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.Emoji, tokens[3].TokenType);
+        Assert.Equal("wink", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -1232,9 +1350,12 @@ Visit [Google](https://google.com) for more.";
         {
             var markdown = "\\*italic\\*";
             var (tokens, text) = Tokenize(markdown);
-            Assert.Single(tokens);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("*italic*", tokens[0].Value);
+            // A plain line is a paragraph: PStart, text, PEnd.
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("*italic*", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         }
 
         [Fact]
@@ -1242,9 +1363,12 @@ Visit [Google](https://google.com) for more.";
         {
             var markdown = "\\_em\\_";
             var (tokens, text) = Tokenize(markdown);
-            Assert.Single(tokens);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("_em_", tokens[0].Value);
+            // A plain line is a paragraph: PStart, text, PEnd.
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("_em_", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         }
 
         [Fact]
@@ -1252,9 +1376,12 @@ Visit [Google](https://google.com) for more.";
         {
             var markdown = "\\`code\\`";
             var (tokens, text) = Tokenize(markdown);
-            Assert.Single(tokens);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("`code`", tokens[0].Value);
+            // A plain line is a paragraph: PStart, text, PEnd.
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("`code`", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         }
 
         [Fact]
@@ -1262,14 +1389,16 @@ Visit [Google](https://google.com) for more.";
         {
             var markdown = "\\[not a link\\]";
             var (tokens, text) = Tokenize(markdown);
-            // Spaces trigger text emission, so we get multiple Text tokens
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("[not ", tokens[0].Value);
+            // Spaces trigger text emission, so we get multiple Text tokens; wrapped in a paragraph.
+            Assert.Equal(5, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
             Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("a ", tokens[1].Value);
+            Assert.Equal("[not ", tokens[1].Value);
             Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-            Assert.Equal("link]", tokens[2].Value);
+            Assert.Equal("a ", tokens[2].Value);
+            Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+            Assert.Equal("link]", tokens[3].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
         }
 
         [Fact]
@@ -1277,9 +1406,12 @@ Visit [Google](https://google.com) for more.";
         {
             var markdown = "\\\\";
             var (tokens, text) = Tokenize(markdown);
-            Assert.Single(tokens);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("\\", tokens[0].Value);
+            // A line that starts with an escaped character is still a paragraph.
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("\\", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         }
 
         [Fact]
@@ -1287,9 +1419,12 @@ Visit [Google](https://google.com) for more.";
         {
             var markdown = "\\a";
             var (tokens, text) = Tokenize(markdown);
-            Assert.Single(tokens);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("\\a", tokens[0].Value);
+            // A plain line is a paragraph: PStart, text, PEnd.
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("\\a", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         }
 
         [Fact]
@@ -1297,9 +1432,12 @@ Visit [Google](https://google.com) for more.";
         {
             var markdown = "text\\";
             var (tokens, text) = Tokenize(markdown);
-            Assert.Single(tokens);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("text\\", tokens[0].Value);
+            // A plain line is a paragraph: PStart, text, PEnd.
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("text\\", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         }
 
         [Fact]
@@ -1308,9 +1446,11 @@ Visit [Google](https://google.com) for more.";
             // All 32 CommonMark ASCII punctuation characters, each backslash-escaped
             var markdown = "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~";
             var (tokens, text) = Tokenize(markdown);
-            Assert.Single(tokens);
-            Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
-            Assert.Equal("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", tokens[0].Value);
+            Assert.Equal(3, tokens.Count);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+            Assert.Equal("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", tokens[1].Value);
+            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
         }
 
         [Fact]

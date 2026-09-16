@@ -154,5 +154,17 @@ public enum MarkdownTokenType
     /// <summary>
     /// Represents an HTML tag. Value contains the complete tag including &lt; &gt; markers as they are part of HTML syntax.
     /// </summary>
-    HtmlTag
+    HtmlTag,
+    
+    /// <summary>
+    /// Represents the start of a paragraph block. Value is empty. Metadata is null.
+    /// A paragraph is a sequence of non-blank lines that is not another block-level construct.
+    /// </summary>
+    ParagraphBlockStart,
+    
+    /// <summary>
+    /// Represents the end of a paragraph block. Value is empty. Metadata is null.
+    /// Follows the last line of the paragraph.
+    /// </summary>
+    ParagraphBlockEnd
 }

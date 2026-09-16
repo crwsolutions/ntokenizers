@@ -13,6 +13,14 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
 {
     private readonly InlineMarkdownTokenWriter _inlineWriter = new();
 
+    // A paragraph ends with </p>. When another block follows, it is separated from the
+    // paragraph by a line break; at end of stream no trailing line break is emitted.
+    private bool _pendingBlockBreak;
+
+    // Whether the writer is currently inside an open <p>...</p> region, so newline text
+    // is rendered as a soft line break (<br/>) rather than dropped.
+    private bool _inParagraph;
+
     public void WriteAdditionalCss(StringBuilder bob)
     {
         var codeBlockWriter = new CodeblockHtmlWriter();
@@ -21,9 +29,22 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
 
     internal async Task WriteTokenAsync(MarkdownToken token, TextWriter writer)
     {
+        // Write the block break that follows a closed paragraph, before the next block token.
+        // It is intentionally omitted when the paragraph is the last block (end of stream).
+        if (_pendingBlockBreak)
+        {
+            _pendingBlockBreak = false;
+            writer.Write('\n');
+        }
+
         switch (token.TokenType)
         {
             case MarkdownTokenType.Text:
+                if (!_inParagraph)
+                {
+                    // Newline/whitespace text outside a paragraph is block separation, not content.
+                    break;
+                }
                 WriteValue(writer, token.Value, null);
                 break;
 
@@ -92,7 +113,7 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
                 // then sends TableRow/TableCell/TableAlignments tokens through the inline handler.
                 if (token.Metadata is TableMetadata tableMeta)
                 {
-                    var tableWriter = new TableHtmlWriter(this);
+                    var tableWriter = new TableHtmlWriter();
                     await tableWriter.WriteContentAsync(tableMeta, writer);
                 }
                 break;
@@ -139,6 +160,19 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
             case MarkdownTokenType.HtmlTag:
                 // Pass through raw HTML tags
                 writer.Write(token.Value);
+                break;
+
+            case MarkdownTokenType.ParagraphBlockStart:
+                writer.Write("<p>");
+                _inParagraph = true;
+                break;
+
+            case MarkdownTokenType.ParagraphBlockEnd:
+                writer.Write("</p>");
+                _inParagraph = false;
+                // A following block is separated from the paragraph by a line break; the
+                // break is written before that block (and omitted at end of stream).
+                _pendingBlockBreak = true;
                 break;
 
             default:
