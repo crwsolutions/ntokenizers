@@ -6,6 +6,14 @@ This file contains all the information needed to add a new language tokenizer to
 
 NTokenizers is a .NET library that provides **stream-capable** tokenizers for syntax highlighting. These tokenizers are **not validation-based** and are primarily intended for **prettifying, formatting, or visualizing** structured text.
 
+## Deviations from the CommonMark Standard
+
+The NTokenizers and ToHtml libraries intentionally deviate from the CommonMark standard. The behavior is not identical to CommonMark: ToHtml is not the only handler of the token stream, and the processing is streaming.
+
+- **Streaming with bounded lookahead.** Tokenizers process input character-by-character and must keep emitting tokens as a stream while input arrives. Lookahead (`PeekAhead`) is therefore limited to what the stream can buffer: in practice tokenizers look ahead 1-4 characters, at most ~20. This is not a fixed limit, but a tokenizer must never require unbounded future input to decide on a token.
+- **Whitespace is preserved.** CommonMark removes or normalizes some whitespace and newlines, but this library must keep whitespace in the token stream (almost always). Dropping whitespace breaks the layout, because the token stream is also used to generate console output.
+- **Paragraph tokens are not mandatory.** Emitting paragraph tokens is not a requirement of the tokenizer. For example, paragraph tokens are not emitted inside lists.
+
 ## Quick Checklist for New Language
 
 - [ ] Create 4 source files in `src/NTokenizers/Languages/[Language]/`
