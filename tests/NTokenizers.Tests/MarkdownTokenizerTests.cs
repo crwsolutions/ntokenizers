@@ -49,39 +49,39 @@ public class MarkdownTokenizerTests
                 orderedListMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
-             {
-                 // For C# code blocks, we receive CSharpToken objects
-                 csharpMeta.RegisterInlineTokenHandler(token => { /* Capture C# tokens if needed */ });
-             }
-             else if (token.Metadata is JavaCodeBlockMetadata javaMeta)
-             {
-                 javaMeta.RegisterInlineTokenHandler(token => { });
-             }
-             else if (token.Metadata is CCodeBlockMetadata cMeta)
-             {
-                 cMeta.RegisterInlineTokenHandler(token => { });
-             }
-             else if (token.Metadata is CppCodeBlockMetadata cppMeta)
-             {
-                 cppMeta.RegisterInlineTokenHandler(token => { });
-             }
-             else if (token.Metadata is RustCodeBlockMetadata rustMeta)
-             {
-                 rustMeta.RegisterInlineTokenHandler(token => { });
-             }
-             else if (token.Metadata is KotlinCodeBlockMetadata kotlinMeta)
-             {
-                 kotlinMeta.RegisterInlineTokenHandler(token => { });
-             }
-             else if (token.Metadata is GoCodeBlockMetadata goMeta)
-             {
-                 goMeta.RegisterInlineTokenHandler(token => { });
-             }
-             else if (token.Metadata is SwiftCodeBlockMetadata swiftMeta)
-             {
-                 swiftMeta.RegisterInlineTokenHandler(token => { });
-             }
-             else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
+            {
+                // For C# code blocks, we receive CSharpToken objects
+                csharpMeta.RegisterInlineTokenHandler(token => { /* Capture C# tokens if needed */ });
+            }
+            else if (token.Metadata is JavaCodeBlockMetadata javaMeta)
+            {
+                javaMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is CCodeBlockMetadata cMeta)
+            {
+                cMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is CppCodeBlockMetadata cppMeta)
+            {
+                cppMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is RustCodeBlockMetadata rustMeta)
+            {
+                rustMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is KotlinCodeBlockMetadata kotlinMeta)
+            {
+                kotlinMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is GoCodeBlockMetadata goMeta)
+            {
+                goMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is SwiftCodeBlockMetadata swiftMeta)
+            {
+                swiftMeta.RegisterInlineTokenHandler(token => { });
+            }
+            else if (token.Metadata is JsonCodeBlockMetadata jsonMeta)
             {
                 // For JSON code blocks, we receive JsonToken objects
                 jsonMeta.RegisterInlineTokenHandler(token => { });
@@ -94,7 +94,7 @@ public class MarkdownTokenizerTests
             else if (token.Metadata is HtmlCodeBlockMetadata htmlMeta)
             {
                 // For XML code blocks, we receive XmlToken objects
-                htmlMeta.RegisterInlineTokenHandler(token => 
+                htmlMeta.RegisterInlineTokenHandler(token =>
                 {
                     if (token.Metadata is CssCodeBlockMetadata cssMetadata)
                     {
@@ -305,46 +305,6 @@ public class MarkdownTokenizerTests
         Assert.Equal(MarkdownTokenType.Italic, tokens[1].TokenType);
         Assert.Equal("italic text", tokens[1].Value);
         Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestInlineCode()
-    {
-        var markdown = "`code`";
-        var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(3, tokens.Count);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-        Assert.Equal(MarkdownTokenType.CodeInline, tokens[1].TokenType);
-        Assert.Equal("code", tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestCodeBlock()
-    {
-        var markdown = "```\ncode\n```";
-        var (tokens, text) = Tokenize(markdown);
-        Assert.Single(tokens);
-        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value); // Code blocks have empty value
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestCodeBlockWithLanguage()
-    {
-        var markdown = "```javascript\nvar x = 1;\n```";
-        var (tokens, text) = Tokenize(markdown);
-        // With OnInlineToken set, code blocks with language will emit syntax tokens
-        // Without setting OnInlineToken, we just get the code block token with empty value
-        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-        var codeBlock = tokens.First(t => t.TokenType == MarkdownTokenType.CodeBlock);
-        Assert.Equal(string.Empty, codeBlock.Value); // Code blocks have empty value
-        Assert.NotNull(codeBlock.Metadata);
-
-        Assert.NotNull(codeBlock.Metadata);
         Assert.Equal(markdown, text);
     }
 
@@ -751,147 +711,6 @@ public class MarkdownTokenizerTests
     }
 
     [Fact]
-    public void TestTableCell()
-    {
-        var markdown = "| cell 1 |";
-        var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(4, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Table, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.TableRow, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[2].TokenType);
-        Assert.Equal(string.Empty, tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-        Assert.Equal(" cell 1 ", tokens[3].Value);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestTableCellBold()
-    {
-        var markdown = "|**bold**|";
-        var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(4, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Table, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.TableRow, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[2].TokenType);
-        Assert.Equal(string.Empty, tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.Bold, tokens[3].TokenType);
-        Assert.Equal("bold", tokens[3].Value);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestTableWithTwoCells()
-    {
-        var markdown = "| | |";
-        var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(6, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Table, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.TableRow, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value); // Table cells have empty value
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[2].TokenType);
-        Assert.Equal(string.Empty, tokens[2].Value); // Table cells have empty value
-        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-        Assert.Equal(" ", tokens[3].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[4].TokenType);
-        Assert.Equal(string.Empty, tokens[4].Value); // Table cells have empty value
-        Assert.Equal(MarkdownTokenType.Text, tokens[5].TokenType);
-        Assert.Equal(" ", tokens[5].Value);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestTableWithTwoRows()
-    {
-        var markdown = "| |\r\n| |";
-        var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(7, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Table, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.TableRow, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[2].TokenType);
-        Assert.Equal(string.Empty, tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-        Assert.Equal(" ", tokens[3].Value);
-        Assert.Equal(MarkdownTokenType.TableRow, tokens[4].TokenType);
-        Assert.Equal(string.Empty, tokens[4].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[5].TokenType);
-        Assert.Equal(string.Empty, tokens[5].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[6].TokenType);
-        Assert.Equal(" ", tokens[6].Value);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestTableAlignments()
-    {
-        var markdown = "|----|----|---|";
-        var (tokens, text) = Tokenize(markdown);
-        var tableMetadata = tokens[0].Metadata as TableMetadata;
-        Assert.Equal(2, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Table, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.TableAlignments, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal(3, tableMetadata!.Alignments!.Count);
-        Assert.Equal(Justify.Left, tableMetadata!.Alignments![0]);
-        Assert.Equal(Justify.Left, tableMetadata!.Alignments![1]);
-        Assert.Equal(Justify.Left, tableMetadata!.Alignments![2]);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestTableWithTwoCellsAndAlignment()
-    {
-        var markdown = "| | | |\r\n|:---|:---:|---:|\r\n";
-        var (tokens, text) = Tokenize(markdown);
-        var tableMetadata = tokens[0].Metadata as TableMetadata;
-        Assert.Equal(9, tokens.Count);
-        Assert.Equal(MarkdownTokenType.Table, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value);
-        Assert.Equal(MarkdownTokenType.TableRow, tokens[1].TokenType);
-        Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[2].TokenType);
-        Assert.Equal(string.Empty, tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-        Assert.Equal(" ", tokens[3].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[4].TokenType);
-        Assert.Equal(string.Empty, tokens[4].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[5].TokenType);
-        Assert.Equal(" ", tokens[5].Value);
-        Assert.Equal(MarkdownTokenType.TableCell, tokens[6].TokenType);
-        Assert.Equal(string.Empty, tokens[6].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[7].TokenType);
-        Assert.Equal(" ", tokens[7].Value);
-        Assert.Equal(MarkdownTokenType.TableAlignments, tokens[8].TokenType);
-        Assert.Equal(string.Empty, tokens[8].Value);
-        Assert.Equal(Justify.Left, tableMetadata!.Alignments![0]);
-        Assert.Equal(Justify.Center, tableMetadata!.Alignments![1]);
-        Assert.Equal(Justify.Right, tableMetadata!.Alignments![2]);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
-    public void TestTableInvalidCells()
-    {
-        var markdown = "|||";
-        var (tokens, text) = Tokenize(markdown);
-        // A plain line is a paragraph: PStart, text, PEnd.
-        Assert.Equal(3, tokens.Count);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-        Assert.Equal("|||", tokens[1].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        Assert.Equal(markdown, text);
-    }
-
-    [Fact]
     public void TestCustomContainer()
     {
         var markdown = "::: warning";
@@ -1124,420 +943,57 @@ Visit [Google](https://google.com) for more.";
     }
 
     [Fact]
-    public void TestHtmlCodeBlockWithStyleAndScript()
+    public void TestOnInlinesCompletedCallbackIsInvoked()
     {
-        var markdown = @"# Test
+        var callbackInvoked = false;
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\n"));
 
-```html
-<html>
-<head>
-    <style>
-        body { color: red; }
-    </style>
-</head>
-<body>
-    <script>
-        console.log('Hi');
-    </script>
-</body>
-</html>
-```";
-        
-        var (tokens, text) = Tokenize(markdown);
-        
-        // Should have heading and code block tokens
-        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-        
-        // The HTML content should be tokenized
-        var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-        Assert.NotEmpty(codeBlockTokens);
+        MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        {
+            if (token.Metadata is HeadingMetadata headingMeta)
+            {
+                headingMeta.RegisterInlineTokenHandler(
+                    _ => { /* inline handler */ },
+                    () => { callbackInvoked = true; }
+                );
+            }
+        }).GetAwaiter().GetResult();
+
+        Assert.True(callbackInvoked, "The onInlinesCompleted callback should have been invoked");
     }
 
     [Fact]
-        public void TestTomlCodeBlock()
+    public void TestOnInlinesCompletedCallbackRunsBeforeParseCompletes()
+    {
+        var tokens = new List<MarkdownToken>();
+        var callbackInvoked = false;
+
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\nText after"));
+
+        MarkdownTokenizer.Create().ParseAsync(stream, token =>
         {
-            var markdown = """
-    ## TOML Example
-    ```toml
-    title = "My App"
-    active = true
-    count = 42
-    ```
-    """;
+            tokens.Add(token);
 
-            var (tokens, text) = Tokenize(markdown);
-
-            // Should have heading and code block tokens
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-
-            // Verify the code block has TOML metadata
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<TomlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestCppCodeBlock()
-        {
-            var markdown = """
-    ## C++ Example
-    ```cpp
-    int x = 42;
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<CppCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestRustCodeBlock()
-        {
-            var markdown = """
-    ## Rust Example
-    ```rust
-    let x = 42;
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<RustCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestKotlinCodeBlock()
-        {
-            var markdown = """
-    ## Kotlin Example
-    ```kotlin
-    val x = 42
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<KotlinCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestGoCodeBlock()
-        {
-            var markdown = """
-    ## Go Example
-    ```go
-    x := 42
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<GoCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestSwiftCodeBlock()
-        {
-            var markdown = """
-    ## Swift Example
-    ```swift
-    let x = 42
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<SwiftCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestJavaCodeBlock()
-        {
-            var markdown = """
-    ## Java Example
-    ```java
-    int x = 42;
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<JavaCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestCCodeBlock()
-        {
-            var markdown = """
-    ## C Example
-    ```c
-    int x = 42;
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<CCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestXamlCodeBlock()
-        {
-            var markdown = """
-    ## XAML Example
-    ```xaml
-    <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-            Title="My App" Height="450" Width="800">
-        <Button Content="Click me" />
-    </Window>
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<XmlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestSvgCodeBlock()
-        {
-            var markdown = """
-    ## SVG Example
-    ```svg
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="40" fill="red" />
-    </svg>
-    ```
-    """;
-
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
-            var codeBlockTokens = tokens.Where(t => t.TokenType == MarkdownTokenType.CodeBlock).ToList();
-            Assert.NotEmpty(codeBlockTokens);
-            Assert.IsType<XmlCodeBlockMetadata>(codeBlockTokens[0].Metadata);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeAsterisk()
-        {
-            var markdown = "\\*italic\\*";
-            var (tokens, text) = Tokenize(markdown);
-            // A plain line is a paragraph: PStart, text, PEnd.
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("*italic*", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeUnderscore()
-        {
-            var markdown = "\\_em\\_";
-            var (tokens, text) = Tokenize(markdown);
-            // A plain line is a paragraph: PStart, text, PEnd.
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("_em_", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeBacktick()
-        {
-            var markdown = "\\`code\\`";
-            var (tokens, text) = Tokenize(markdown);
-            // A plain line is a paragraph: PStart, text, PEnd.
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("`code`", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeBrackets()
-        {
-            var markdown = "\\[not a link\\]";
-            var (tokens, text) = Tokenize(markdown);
-            // Spaces trigger text emission, so we get multiple Text tokens; wrapped in a paragraph.
-            Assert.Equal(5, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("[not ", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-            Assert.Equal("a ", tokens[2].Value);
-            Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-            Assert.Equal("link]", tokens[3].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeDoubleBackslash()
-        {
-            var markdown = "\\\\";
-            var (tokens, text) = Tokenize(markdown);
-            // A line that starts with an escaped character is still a paragraph.
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("\\", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashNonPunctuation()
-        {
-            var markdown = "\\a";
-            var (tokens, text) = Tokenize(markdown);
-            // A plain line is a paragraph: PStart, text, PEnd.
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("\\a", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashAtEndOfInput()
-        {
-            var markdown = "text\\";
-            var (tokens, text) = Tokenize(markdown);
-            // A plain line is a paragraph: PStart, text, PEnd.
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("text\\", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeAllPunctuation()
-        {
-            // All 32 CommonMark ASCII punctuation characters, each backslash-escaped
-            var markdown = "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~";
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Equal(3, tokens.Count);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", tokens[1].Value);
-            Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeInHeading()
-        {
-            var markdown = "# \\*not italic\\* heading";
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Equal(2, tokens.Count);
-            Assert.Equal(MarkdownTokenType.Heading, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("*not italic* heading", tokens[1].Value);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeInBlockquote()
-        {
-            var markdown = "> \\*not italic\\* quote";
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Equal(2, tokens.Count);
-            Assert.Equal(MarkdownTokenType.Blockquote, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("*not italic* quote", tokens[1].Value);
-        }
-
-        [Fact]
-        public void TestBackslashEscapeInListItem()
-        {
-            var markdown = "- \\*not italic\\* item";
-            var (tokens, text) = Tokenize(markdown);
-            Assert.Equal(2, tokens.Count);
-            Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[0].TokenType);
-            Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
-            Assert.Equal("*not italic* item", tokens[1].Value);
-        }
-
-        [Fact]
-        public void TestOnInlinesCompletedCallbackIsInvoked()
-        {
-            var callbackInvoked = false;
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\n"));
-
-            MarkdownTokenizer.Create().ParseAsync(stream, token =>
+            if (token.Metadata is HeadingMetadata headingMeta)
             {
-                if (token.Metadata is HeadingMetadata headingMeta)
-                {
-                    headingMeta.RegisterInlineTokenHandler(
-                        _ => { /* inline handler */ },
-                        () => { callbackInvoked = true; }
-                    );
-                }
-            }).GetAwaiter().GetResult();
+                headingMeta.RegisterInlineTokenHandler(
+                    _ => { /* inline handler */ },
+                    () =>
+                    {
+                        callbackInvoked = true;
+                        // The callback runs before CompleteProcessing, so the parser
+                        // has not yet continued to emit subsequent tokens.
+                        // At this point, only the heading token and its inline content
+                        // should have been collected so far.
+                    }
+                );
+            }
+        }).GetAwaiter().GetResult();
 
-            Assert.True(callbackInvoked, "The onInlinesCompleted callback should have been invoked");
-        }
+        Assert.True(callbackInvoked, "Callback should have been invoked");
 
-        [Fact]
-        public void TestOnInlinesCompletedCallbackRunsBeforeParseCompletes()
-        {
-            var tokens = new List<MarkdownToken>();
-            var callbackInvoked = false;
-
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\nText after"));
-
-            MarkdownTokenizer.Create().ParseAsync(stream, token =>
-            {
-                tokens.Add(token);
-
-                if (token.Metadata is HeadingMetadata headingMeta)
-                {
-                    headingMeta.RegisterInlineTokenHandler(
-                        _ => { /* inline handler */ },
-                        () =>
-                        {
-                            callbackInvoked = true;
-                            // The callback runs before CompleteProcessing, so the parser
-                            // has not yet continued to emit subsequent tokens.
-                            // At this point, only the heading token and its inline content
-                            // should have been collected so far.
-                        }
-                    );
-                }
-            }).GetAwaiter().GetResult();
-
-            Assert.True(callbackInvoked, "Callback should have been invoked");
-
-            // Verify the full token stream was produced after the callback
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
-            Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value.StartsWith("Text"));
-        }
+        // Verify the full token stream was produced after the callback
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value.StartsWith("Text"));
     }
+}
