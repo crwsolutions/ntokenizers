@@ -35,8 +35,22 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     public static MarkdownTokenizer Create() => new();
 
     private bool _atLineStart = true;
-    private bool _inParagraph;
+    private BlockContext _block = BlockContext.None;
     private bool _pendingSoftBreak;
+
+    // Blank lines inside an open indented code block that are not yet known to belong to the
+    // block. Each buffered blank line contributes its (indentation-removed) content plus "\n".
+    // They are flushed when a code content line follows, and dropped when the block ends first.
+    private readonly StringBuilder _pendingBlankContent = new();
+
+    // The open block context. None, Paragraph and IndentedCodeBlock are mutually exclusive, so a
+    // single enum tracks them instead of several booleans.
+    private enum BlockContext
+    {
+        None,
+        Paragraph,
+        IndentedCodeBlock
+    }
 
     /// <summary>
     /// Parses the input stream and emits markdown tokens via the OnToken callback.
@@ -50,10 +64,31 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
             char c = (char)peek;
 
-            // Try to parse special constructs at line start
-            if (_atLineStart && !char.IsWhiteSpace(c))
+            // Inside an indented code block, consume the lines literally (no inline parsing)
+            // until the block ends. When the block ends on a non-indented line, that line is
+            // left unprocessed in the stream for the normal paragraph/construct handling on
+            // the next iteration. The position after ProcessCodeBlock is always at a line
+            // start, so _atLineStart is set there.
+            if (_block == BlockContext.IndentedCodeBlock)
             {
-                if (await TryParseLineStartConstructAsync())
+                ProcessCodeBlock();
+                continue;
+            }
+
+            // Try to parse special constructs at line start (headings, lists, fences, etc.).
+            // An indented code line (>= 4 spaces) is checked first because it begins with
+            // whitespace, and it cannot interrupt a paragraph. Line-start constructs (which
+            // allow up to 3 spaces of indentation) are checked afterwards.
+            if (_atLineStart)
+            {
+                // Indented (>= 4 spaces) code line at the top level. It cannot interrupt a
+                // paragraph, so it is only started when no paragraph is open.
+                if (_block != BlockContext.Paragraph && TryStartIndentedCodeBlock())
+                {
+                    continue;
+                }
+
+                if (!char.IsWhiteSpace(c) && await TryParseLineStartConstructAsync())
                 {
                     // A line-start block construct (heading, list, fence, ...) terminates an open paragraph.
                     CloseParagraph();
@@ -80,7 +115,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             {
                 _atLineStart = false;
 
-                if (_inParagraph)
+                if (_block == BlockContext.Paragraph)
                 {
                     if (_pendingSoftBreak)
                     {
@@ -91,7 +126,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 else
                 {
                     _pendingSoftBreak = false;
-                    _inParagraph = true;
+                    _block = BlockContext.Paragraph;
                     _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockStart, string.Empty));
                 }
             }
@@ -108,7 +143,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
             if (c == '\n')
             {
-                if (_inParagraph)
+                if (_block == BlockContext.Paragraph)
                 {
                     // Strip the trailing line break (and any preceding \r) from the line content.
                     _buffer.Length--;
@@ -147,9 +182,19 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             }
         }
 
-        // Emit any remaining text; a paragraph still open at EOF ends with the last line.
-        EmitText();
-        CloseParagraph();
+        // End of stream: close an open indented code block (its pending blank lines are
+        // dropped) or a still-open paragraph, and emit any remaining text.
+        if (_block == BlockContext.IndentedCodeBlock)
+        {
+            CloseIndentedCodeBlock();
+            EmitText();
+        }
+        else
+        {
+            // Emit any remaining text; a paragraph still open at EOF ends with the last line.
+            EmitText();
+            CloseParagraph();
+        }
     }
 
     /// <summary>
@@ -158,10 +203,237 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     /// </summary>
     private void CloseParagraph()
     {
-        if (_inParagraph)
+        if (_block == BlockContext.Paragraph)
         {
-            _inParagraph = false;
+            _block = BlockContext.None;
             _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockEnd, string.Empty));
+        }
+    }
+
+    /// <summary>
+    /// Attempts to start an indented code block on the current (line-start) position when the
+    /// line begins with four or more columns of indentation (spaces or tabs) followed by
+    /// non-blank content. Returns true when a block was started and the whole first line has
+    /// been consumed, so the loop can continue with the next line. A block is never started
+    /// while a paragraph is open (an indented code block cannot interrupt a paragraph) and a
+    /// blank line does not open a block on its own.
+    /// </summary>
+    private bool TryStartIndentedCodeBlock()
+    {
+        // Classify the line at the current position without consuming it; only an indented
+        // content line starts a block, so the line is read only when a block actually starts.
+        if (PeekCurrentLineKind() != LineStart.IndentedContent)
+        {
+            return false;
+        }
+
+        (string line, bool hasLineEnding) = ReadLineText();
+        _atLineStart = true; // The whole first line (and its line ending) has been consumed.
+
+        // Open the block and emit the first line (its leading indentation removed). The line
+        // ending is emitted only when the input has one, so the token stream stays faithful
+        // to the input.
+        EmitText();
+        _block = BlockContext.IndentedCodeBlock;
+        _pendingSoftBreak = false;
+        _pendingBlankContent.Clear();
+        _onToken(new MarkdownToken(MarkdownTokenType.IndentedCodeBlockStart, string.Empty));
+        _onToken(new MarkdownToken(MarkdownTokenType.Text, RemoveLeadingIndent(line) + (hasLineEnding ? "\n" : string.Empty)));
+        return true;
+    }
+
+    /// <summary>
+    /// Processes an open indented code block, line by line, until the block ends:
+    /// <list type="bullet">
+    /// <item>A line with at least four columns of indentation and non-blank content is code
+    /// content; its first four columns are removed and the rest is emitted immediately.</item>
+    /// <item>A blank line (no characters, or only spaces/tabs) may be followed by code
+    /// content; it is buffered tentatively, kept when code content follows, and dropped
+    /// when the block ends first (including end of stream).</item>
+    /// <item>Any other line ends the block.</item>
+    /// </list>
+    /// Only the start of the next line (indentation plus first character) ever needs to be
+    /// looked ahead, so the lookahead stays bounded. The line that ends the block is left
+    /// untouched in the stream so the main loop processes it as a normal line (paragraph,
+    /// heading, list, ...).
+    /// </summary>
+    private void ProcessCodeBlock()
+    {
+        while (true)
+        {
+            // End of stream: the block ends; any pending blank lines are dropped.
+            if (Peek() == -1)
+            {
+                break;
+            }
+
+            // Classify the line at the current position without consuming it.
+            LineStart kind = PeekCurrentLineKind();
+
+            if (kind == LineStart.IndentedContent)
+            {
+                // Code content: flush the pending blank lines that precede it, then emit
+                // this line (its first four columns of indentation removed). The line
+                // ending is appended only when the input has one, so the token stream
+                // stays faithful to the input.
+                (string line, bool hasLineEnding) = ReadLineText();
+                _atLineStart = true; // The line (and its line ending) has been consumed.
+                _pendingBlankContent.Append(RemoveLeadingIndent(line));
+                if (hasLineEnding)
+                {
+                    _pendingBlankContent.Append('\n');
+                }
+                _onToken(new MarkdownToken(MarkdownTokenType.Text, _pendingBlankContent.ToString()));
+                _pendingBlankContent.Clear();
+                continue;
+            }
+
+            if (kind == LineStart.Blank)
+            {
+                // A blank line may be followed by code content: buffer it tentatively. Its
+                // first four columns are removed too, so an indented blank line keeps any
+                // whitespace beyond those columns. A blank line always ends the line in
+                // the input, so its line ending is buffered as well.
+                (string line, _) = ReadLineText();
+                _atLineStart = true; // The blank line (and its line ending) has been consumed.
+                _pendingBlankContent.Append(RemoveLeadingIndent(line)).Append('\n');
+                continue;
+            }
+
+            // A non-indented, non-blank line ends the block. It is left untouched so the
+            // main loop processes it as a normal line; the pending blank lines before it
+            // are dropped.
+            break;
+        }
+
+        // The position is at a line start: either at the start of the line that ends the
+        // block (left untouched for the main loop) or at the end of the stream.
+        _atLineStart = true;
+        CloseIndentedCodeBlock();
+    }
+
+    /// <summary>
+    /// Reads one line from the stream: the line content (with any trailing \r removed; an
+    /// empty string at end of stream) and whether a line ending was present. The line
+    /// ending is consumed as well, leaving the position at the start of the next line.
+    /// The caller decides whether to include the line ending in its output.
+    /// </summary>
+    private (string line, bool hasLineEnding) ReadLineText()
+    {
+        var line = new StringBuilder();
+        while (true)
+        {
+            int c = Peek();
+            if (c == -1 || c == '\n')
+            {
+                break;
+            }
+            line.Append((char)Read());
+        }
+        if (line.Length > 0 && line[line.Length - 1] == '\r')
+        {
+            line.Length--;
+        }
+        bool hasLineEnding = Peek() == '\n';
+        if (hasLineEnding)
+        {
+            Read();
+        }
+        return (line.Length > 0 ? line.ToString() : string.Empty, hasLineEnding);
+    }
+
+    /// <summary>
+    /// What kind of line starts at the current position.
+    /// </summary>
+    private enum LineStart
+    {
+        // End of stream.
+        End,
+
+        // A blank line (no characters, or only spaces/tabs).
+        Blank,
+
+        // A line with at least four columns of indentation followed by non-blank content.
+        IndentedContent,
+
+        // Any other line (e.g. a paragraph line, a heading, or a construct with up to three
+        // columns of indentation).
+        Other
+    }
+
+    /// <summary>
+    /// Classifies the line at the current position, which must be a line start. Only the leading
+    /// spaces/tabs and the first content character are examined, so the lookahead stays bounded.
+    /// Nothing is consumed; the position is left at the start of the line.
+    /// </summary>
+    private LineStart PeekCurrentLineKind()
+    {
+        int columns = 0;
+        int pos = 0;
+        while (true)
+        {
+            char c = PeekAhead(pos);
+            if (c != ' ' && c != '\t')
+            {
+                break;
+            }
+            // A tab counts as the number of spaces to the next 4-column tab stop.
+            columns += c == '\t' ? 4 - (columns % 4) : 1;
+            pos++;
+        }
+
+        char ch = PeekAhead(pos);
+        if (ch == '\0')
+        {
+            return LineStart.End;
+        }
+        if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n')
+        {
+            return LineStart.Blank;
+        }
+        return columns >= 4 ? LineStart.IndentedContent : LineStart.Other;
+    }
+
+    /// <summary>
+    /// Removes up to the first four columns of indentation (spaces or tabs) from the given
+    /// line, preserving any additional indentation beyond the first four columns. A line with
+    /// fewer than four columns of indentation is reduced to its remaining (non-whitespace)
+    /// content, so an indented blank line never adds visible indentation to the code.
+    /// </summary>
+    private static string RemoveLeadingIndent(string line)
+    {
+        int columns = 0;
+        int i = 0;
+        while (i < line.Length)
+        {
+            char ch = line[i];
+            if (ch != ' ' && ch != '\t')
+            {
+                break;
+            }
+            // A tab counts as the number of spaces to the next 4-column tab stop.
+            columns += ch == '\t' ? 4 - (columns % 4) : 1;
+            i++;
+            if (columns >= 4)
+            {
+                break;
+            }
+        }
+
+        return i < line.Length ? line.Substring(i) : string.Empty;
+    }
+
+    /// <summary>
+    /// Closes the open indented code block by emitting an IndentedCodeBlockEnd token. Any pending
+    /// (trailing blank line) content is discarded.
+    /// </summary>
+    private void CloseIndentedCodeBlock()
+    {
+        if (_block == BlockContext.IndentedCodeBlock)
+        {
+            _block = BlockContext.None;
+            _pendingBlankContent.Clear(); // Trailing blank lines do not belong to the block.
+            _onToken(new MarkdownToken(MarkdownTokenType.IndentedCodeBlockEnd, string.Empty));
         }
     }
 

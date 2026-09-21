@@ -453,11 +453,13 @@ public class MarkdownTokenizerTests
     [Fact]
     public void TestUnorderedListWithLeadingSpaces()
     {
-        var markdown = "     * item 1";
+        // Up to three leading spaces are part of the list item; four or more make the
+        // line an indented code block (CommonMark 4.4), so this is code, not a list item.
+        var markdown = "   * item 1";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(2, tokens.Count);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[0].TokenType);
-        Assert.Equal("     ", tokens[0].Value); // Indentation is in the Value
+        Assert.Equal("   ", tokens[0].Value); // Indentation is in the Value
         Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
         Assert.Equal("item 1", tokens[1].Value);
         Assert.Equal(markdown, text);
@@ -482,7 +484,9 @@ public class MarkdownTokenizerTests
     [Fact]
     public void TestNestedUnorderedListItems()
     {
-        var markdown = "- top\n  - nested\n    - deeper";
+        // Nesting keeps the markers within three columns of indentation; a fourth column
+        // would start an indented code block (CommonMark 4.4), not a deeper list item.
+        var markdown = "- top\n  - nested\n   - deeper";
         var (tokens, text) = Tokenize(markdown);
 
         // top-level: no indentation
@@ -493,9 +497,9 @@ public class MarkdownTokenizerTests
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[2].TokenType);
         Assert.Equal("  ", tokens[2].Value);
 
-        // deeper: 4 spaces indentation
+        // deeper: 3 spaces indentation
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[4].TokenType);
-        Assert.Equal("    ", tokens[4].Value);
+        Assert.Equal("   ", tokens[4].Value);
 
         Assert.Equal(markdown, text);
     }

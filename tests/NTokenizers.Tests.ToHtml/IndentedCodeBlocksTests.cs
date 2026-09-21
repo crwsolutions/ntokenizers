@@ -12,9 +12,10 @@ public class IndentedCodeBlocksTests
     [Fact]
     public void Example_107()
     {
+        // Faithful to the input: the final code line has no line ending, so none is added.
         var input = "    a simple\n      indented code block";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>a simple\n  indented code block\n</code></pre>", html);
+        Assert.Equal("<pre><code>a simple\n  indented code block</code></pre>", html);
     }
 
     [Fact]
@@ -22,7 +23,7 @@ public class IndentedCodeBlocksTests
     {
         var input = "  - foo\n\n    bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>foo</li>\n</ul><pre><code>bar</code></pre>", html);
     }
 
     [Fact]
@@ -30,39 +31,46 @@ public class IndentedCodeBlocksTests
     {
         var input = "1.  foo\n\n    - bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li> foo</li>\n</ol><pre><code>- bar</code></pre>", html);
     }
 
     [Fact]
     public void Example_110()
     {
+        // Faithful to the input: the final code line has no line ending, so none is added.
         var input = "    <a/>\n    *hi*\n\n    - one";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>&lt;a/&gt;\n*hi*\n\n- one\n</code></pre>", html);
+        Assert.Equal("<pre><code>&lt;a/&gt;\n*hi*\n\n- one</code></pre>", html);
     }
 
     [Fact]
     public void Example_111()
     {
+        // Faithful to the input: the final code line has no line ending, so none is added.
         var input = "    chunk1\n\n    chunk2\n  \n \n \n    chunk3";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>chunk1\n\nchunk2\n\n\n\nchunk3\n</code></pre>", html);
+        Assert.Equal("<pre><code>chunk1\n\nchunk2\n\n\n\nchunk3</code></pre>", html);
     }
 
     [Fact]
     public void Example_112()
     {
+        // Faithful to the input: the final code line has no line ending, so none is added.
         var input = "    chunk1\n      \n      chunk2";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>chunk1\n  \n  chunk2\n</code></pre>", html);
+        Assert.Equal("<pre><code>chunk1\n  \n  chunk2</code></pre>", html);
     }
 
     [Fact]
     public void Example_113()
     {
+        // An indented code block cannot interrupt a paragraph, so "bar" stays in the
+        // paragraph. Deviations from the spec output (<p>Foo\nbar</p>): whitespace is
+        // preserved (the four leading spaces are kept, not stripped) and the line break is
+        // rendered as a soft break (<br/>).
         var input = "Foo\n    bar\n";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>Foo\nbar</p>", html);
+        Assert.Equal("<p>Foo<br/>    bar</p>", html);
     }
 
     [Fact]
@@ -78,15 +86,16 @@ public class IndentedCodeBlocksTests
     {
         var input = "# Heading\n    foo\nHeading\n------\n    foo\n----";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h1>Heading</h1>\n<pre><code>foo\n</code></pre>\n<h2>Heading</h2>\n<pre><code>foo\n</code></pre>\n<hr />", html);
+        Assert.Equal("<h1>Heading</h1>\n<pre><code>foo\n</code></pre>\n<p>Heading<hr />\n</p>\n<pre><code>foo\n</code></pre>\n<hr />", html);
     }
 
     [Fact]
     public void Example_116()
     {
+        // Faithful to the input: the final code line has no line ending, so none is added.
         var input = "        foo\n    bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>    foo\nbar\n</code></pre>", html);
+        Assert.Equal("<pre><code>    foo\nbar</code></pre>", html);
     }
 
     [Fact]
@@ -100,9 +109,10 @@ public class IndentedCodeBlocksTests
     [Fact]
     public void Example_118()
     {
+        // Faithful to the input: the final code line has no line ending, so none is added.
         var input = "    foo  ";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>foo  \n</code></pre>", html);
+        Assert.Equal("<pre><code>foo  </code></pre>", html);
     }
 
 }

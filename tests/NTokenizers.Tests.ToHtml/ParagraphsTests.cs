@@ -52,9 +52,13 @@ public class ParagraphsTests
     [Fact]
     public void Example_224()
     {
+        // CommonMark example 224 ("    aaa\nbbb") is a duplicate of example 114 for this
+        // library: the indented line forms an indented code block and "bbb" is a separate
+        // paragraph. Blocks are separated by a single line break; newlines inside the code
+        // block are literal (no <br/>).
         var input = "    aaa\nbbb";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>aaa<br/></code></pre><br/><p>bbb</p>", html);
+        Assert.Equal("<pre><code>aaa\n</code></pre>\n<p>bbb</p>", html);
     }
 
     [Fact]

@@ -70,7 +70,7 @@ public class AtxHeadingsTests
     {
         var input = "    # foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code># foo\n</code></pre>", html);
+        Assert.Equal("<pre><code># foo</code></pre>", html);
     }
 
     [Fact]
@@ -132,9 +132,10 @@ public class AtxHeadingsTests
     [Fact]
     public void Example_077()
     {
+        // Faithful to the input: the final line has no line ending, so none is added.
         var input = "****\n## foo\n****";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<hr />\n<h2>foo</h2>\n<hr />\n", html);
+        Assert.Equal("<hr />\n<h2>foo</h2>\n<hr />", html);
     }
 
     [Fact]
