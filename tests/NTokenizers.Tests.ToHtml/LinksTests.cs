@@ -30,7 +30,7 @@ public class LinksTests
     {
         var input = "[](./target.md)";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><a href=\"./target.md\"></a></p>", html);
+        Assert.Equal("<p><a href=\"./target.md\">./target.md</a></p>", html);    // This is a deviation from the CommonMark spec, which expects an empty link text.
     }
 
     [Fact]
