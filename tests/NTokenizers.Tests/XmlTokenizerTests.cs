@@ -1,4 +1,4 @@
-﻿using NTokenizers.Xml;
+using NTokenizers.Xml;
 using System.Text;
 
 namespace Xml;

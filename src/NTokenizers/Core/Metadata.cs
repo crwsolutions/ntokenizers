@@ -1,4 +1,4 @@
-﻿namespace NTokenizers.Core;
+namespace NTokenizers.Core;
 
 /// <summary>
 /// Base class for markdown token metadata.

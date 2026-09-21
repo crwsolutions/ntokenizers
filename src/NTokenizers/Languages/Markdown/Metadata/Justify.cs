@@ -1,4 +1,4 @@
-﻿namespace NTokenizers.Markdown.Metadata;
+namespace NTokenizers.Markdown.Metadata;
 
 /// <summary>
 /// Text alignment/justification options for table columns.

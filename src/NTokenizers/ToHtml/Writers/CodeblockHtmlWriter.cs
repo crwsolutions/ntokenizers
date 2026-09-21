@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using NTokenizers.C;
 using NTokenizers.Core;
 using NTokenizers.Cpp;

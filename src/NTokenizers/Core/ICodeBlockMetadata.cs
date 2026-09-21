@@ -1,4 +1,4 @@
-﻿namespace NTokenizers.Core;
+namespace NTokenizers.Core;
 
 /// <summary>
 /// Represents metadata for a code block within markdown content.

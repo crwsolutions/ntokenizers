@@ -1,4 +1,4 @@
-﻿namespace NTokenizers.Markdown.Metadata;
+namespace NTokenizers.Markdown.Metadata;
 
 /// <summary>
 /// Metadata for emoji tokens, containing the emoji name.

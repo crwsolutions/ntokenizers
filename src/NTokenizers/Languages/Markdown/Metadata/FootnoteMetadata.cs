@@ -1,4 +1,4 @@
-﻿namespace NTokenizers.Markdown.Metadata;
+namespace NTokenizers.Markdown.Metadata;
 
 /// <summary>
 /// Metadata for footnote tokens, containing the footnote identifier.

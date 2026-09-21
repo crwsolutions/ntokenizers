@@ -1,4 +1,4 @@
-﻿using NTokenizers.Core;
+using NTokenizers.Core;
 
 namespace NTokenizers.Typescript;
 

@@ -1,4 +1,4 @@
-﻿namespace NTokenizers.Xml;
+namespace NTokenizers.Xml;
 
 /// <summary>
 /// Represents the type of an XML token.

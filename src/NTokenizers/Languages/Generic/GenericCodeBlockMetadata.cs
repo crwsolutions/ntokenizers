@@ -1,4 +1,4 @@
-﻿using NTokenizers.Core;
+using NTokenizers.Core;
 using NTokenizers.Markdown;
 
 namespace NTokenizers.Generic;
