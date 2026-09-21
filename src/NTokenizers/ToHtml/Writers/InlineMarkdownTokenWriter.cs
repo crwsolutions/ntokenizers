@@ -1,3 +1,4 @@
+using System.Text;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
 
@@ -49,7 +50,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                     writer.Write($"<a href=\"{FormatLinkHref(linkMeta)}\"");
                     if (!string.IsNullOrEmpty(linkMeta.Title))
                     {
-                        writer.Write($" title=\"{EscapeHtml(linkMeta.Title)}\"");
+                        writer.Write($" title=\"{FormatTitle(linkMeta.Title)}\"");
                     }
                     writer.Write(">");
 
@@ -77,7 +78,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                     if (!string.IsNullOrEmpty(value))
                         writer.Write($" alt=\"{EscapeHtml(value)}\"");
                     if (!string.IsNullOrEmpty(imageMeta.Title))
-                        writer.Write($" title=\"{EscapeHtml(imageMeta.Title)}\"");
+                        writer.Write($" title=\"{FormatTitle(imageMeta.Title)}\"");
                     writer.Write(" />");
                 }
                 else
@@ -138,7 +139,65 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
 
     private string FormatLinkHref(LinkMetadata metadata)
     {
-        var url = metadata.IsBracketed ? metadata.Url.Replace(" ", "%20") : metadata.Url;
+        var url = metadata.Url;
+        if (metadata.IsBracketed)
+        {
+            url = url.Replace(" ", "%20");
+        }
+        else
+        {
+            url = UnescapeBackslashes(url);
+        }
         return EscapeHtml(url);
     }
+
+    /// <summary>
+    /// Removes backslash escapes from a URL, keeping only the escaped character.
+    /// Backslashes before non-ASCII-punctuation characters are preserved.
+    /// </summary>
+    private static string UnescapeBackslashes(string url)
+    {
+        var result = new StringBuilder(url.Length);
+        for (int i = 0; i < url.Length; i++)
+        {
+            if (url[i] == '\\' && i + 1 < url.Length)
+            {
+                char next = url[i + 1];
+                if (IsAsciiPunctuation(next))
+                {
+                    result.Append(next);
+                    i++;
+                }
+                else
+                {
+                    result.Append(url[i]);
+                }
+            }
+            else
+            {
+                result.Append(url[i]);
+            }
+        }
+        return result.ToString();
+    }
+
+    private string FormatTitle(string title)
+    {
+        // Escape & before other HTML characters, then escape remaining HTML chars
+        var escaped = title
+            .Replace("&", "&amp;")
+            .Replace("\"", "&quot;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;");
+        return escaped;
+    }
+
+    private static bool IsAsciiPunctuation(char c) => c switch
+    {
+        '!' or '"' or '#' or '$' or '%' or '&' or '\'' or '(' or ')' or '*' or
+        '+' or ',' or '-' or '.' or '/' or ':' or ';' or '<' or '=' or '>' or
+        '?' or '@' or '[' or '\\' or ']' or '^' or '_' or '`' or '{' or '|' or
+        '}' or '~' => true,
+        _ => false
+    };
 }

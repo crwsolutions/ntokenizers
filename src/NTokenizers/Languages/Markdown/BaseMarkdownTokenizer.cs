@@ -158,11 +158,23 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() != '(') return false;
         Read(); // Consume (
 
-        // Read URL until ) or "
+        // Read URL until unescaped ) or "
         var url = new StringBuilder();
-        while (Peek() != -1 && Peek() != ')' && Peek() != '"')
+        while (Peek() != -1)
         {
-            url.Append((char)Read());
+            if (Peek() == '\\' && AsciiPunctuation.Contains((char)PeekAhead(1)))
+            {
+                Read(); // Consume backslash
+                url.Append((char)Read()); // Keep escaped char
+            }
+            else if (Peek() == ')' || Peek() == '"')
+            {
+                break;
+            }
+            else
+            {
+                url.Append((char)Read());
+            }
         }
 
         var rawUrl = url.ToString().Trim();
@@ -175,16 +187,27 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         {
             Read(); // Consume "
             var titleBuilder = new StringBuilder();
-            while (Peek() != -1 && Peek() != '"')
+            while (Peek() != -1)
             {
-                titleBuilder.Append((char)Read());
+                if (Peek() == '\\' && AsciiPunctuation.Contains((char)PeekAhead(1)))
+                {
+                    Read(); // Consume backslash
+                    titleBuilder.Append((char)Read());
+                }
+                else if (Peek() == '"')
+                {
+                    Read(); // Consume closing "
+                    break;
+                }
+                else
+                {
+                    titleBuilder.Append((char)Read());
+                }
             }
-            if (Peek() == '"')
-                Read(); // Consume closing "
             title = titleBuilder.ToString().Trim();
 
-            // Skip optional space after title
-            if (Peek() == ' ')
+            // Skip optional whitespace between title and closing )
+            while (Peek() == ' ')
                 Read();
         }
 
@@ -226,11 +249,23 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() != '(') return false;
         Read(); // Consume (
 
-        // Read URL until ) or "
+        // Read URL until unescaped ) or "
         var url = new StringBuilder();
-        while (Peek() != -1 && Peek() != ')' && Peek() != '"')
+        while (Peek() != -1)
         {
-            url.Append((char)Read());
+            if (Peek() == '\\' && AsciiPunctuation.Contains((char)PeekAhead(1)))
+            {
+                Read(); // Consume backslash
+                url.Append((char)Read()); // Keep escaped char
+            }
+            else if (Peek() == ')' || Peek() == '"')
+            {
+                break;
+            }
+            else
+            {
+                url.Append((char)Read());
+            }
         }
 
         var rawUrl = url.ToString().Trim();
@@ -243,16 +278,27 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         {
             Read(); // Consume "
             var titleBuilder = new StringBuilder();
-            while (Peek() != -1 && Peek() != '"')
+            while (Peek() != -1)
             {
-                titleBuilder.Append((char)Read());
+                if (Peek() == '\\' && AsciiPunctuation.Contains((char)PeekAhead(1)))
+                {
+                    Read(); // Consume backslash
+                    titleBuilder.Append((char)Read());
+                }
+                else if (Peek() == '"')
+                {
+                    Read(); // Consume closing "
+                    break;
+                }
+                else
+                {
+                    titleBuilder.Append((char)Read());
+                }
             }
-            if (Peek() == '"')
-                Read(); // Consume closing "
             title = titleBuilder.ToString().Trim();
 
-            // Skip optional space after title
-            if (Peek() == ' ')
+            // Skip optional whitespace between title and closing )
+            while (Peek() == ' ')
                 Read();
         }
 
