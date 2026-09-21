@@ -165,7 +165,9 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             url.Append((char)Read());
         }
 
-        var urlStr = url.ToString().Trim();
+        var rawUrl = url.ToString().Trim();
+        var isBracketed = rawUrl.Length >= 2 && rawUrl[0] == '<' && rawUrl[rawUrl.Length - 1] == '>';
+        var urlStr = isBracketed ? rawUrl.Substring(1, rawUrl.Length - 2) : rawUrl;
         string? title = null;
 
         // Check for optional title
@@ -190,13 +192,13 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             Read(); // Consume )
 
         var value = string.IsNullOrEmpty(title)
-            ? $"[{linkText}]({urlStr})"
-            : $"[{linkText}]({urlStr} \"{title}\")";
+            ? $"[{linkText}]({rawUrl})"
+            : $"[{linkText}]({rawUrl} \"{title}\")";
 
         _onToken(new MarkdownToken(
             MarkdownTokenType.Link,
             value,
-            new LinkMetadata(urlStr, linkText.Length > 0 ? linkText.ToString().Trim() : null, title)
+            new LinkMetadata(urlStr, linkText.Length > 0 ? linkText.ToString().Trim() : null, title, isBracketed)
         ));
 
         return true;
@@ -231,7 +233,9 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             url.Append((char)Read());
         }
 
-        var urlStr = url.ToString().Trim();
+        var rawUrl = url.ToString().Trim();
+        var isBracketed = rawUrl.Length >= 2 && rawUrl[0] == '<' && rawUrl[rawUrl.Length - 1] == '>';
+        var urlStr = isBracketed ? rawUrl.Substring(1, rawUrl.Length - 2) : rawUrl;
         string? title = null;
 
         // Check for optional title
@@ -256,13 +260,13 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             Read(); // Consume )
 
         var value = string.IsNullOrEmpty(title)
-            ? $"![{altText}]({urlStr})"
-            : $"![{altText}]({urlStr} \"{title}\")";
+            ? $"![{altText}]({rawUrl})"
+            : $"![{altText}]({rawUrl} \"{title}\")";
 
         _onToken(new MarkdownToken(
             MarkdownTokenType.Image,
             value,
-            new LinkMetadata(urlStr, altText.Length > 0 ? altText.ToString().Trim() : null, title)
+            new LinkMetadata(urlStr, altText.Length > 0 ? altText.ToString().Trim() : null, title, isBracketed)
         ));
 
         return true;

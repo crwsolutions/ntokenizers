@@ -46,7 +46,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
             case MarkdownTokenType.Link:
                 if (token.Metadata is LinkMetadata linkMeta)
                 {
-                    writer.Write($"<a href=\"{EscapeHtml(linkMeta.Url)}\"");
+                    writer.Write($"<a href=\"{FormatLinkHref(linkMeta)}\"");
                     if (!string.IsNullOrEmpty(linkMeta.Title))
                     {
                         writer.Write($" title=\"{EscapeHtml(linkMeta.Title)}\"");
@@ -73,7 +73,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
             case MarkdownTokenType.Image:
                 if (token.Metadata is LinkMetadata imageMeta)
                 {
-                    writer.Write($"<img src=\"{EscapeHtml(imageMeta.Url)}\"");
+                    writer.Write($"<img src=\"{FormatLinkHref(imageMeta)}\"");
                     if (!string.IsNullOrEmpty(value))
                         writer.Write($" alt=\"{EscapeHtml(value)}\"");
                     if (!string.IsNullOrEmpty(imageMeta.Title))
@@ -134,5 +134,11 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 WriteValue(writer, value, null);
                 break;
         }
+    }
+
+    private string FormatLinkHref(LinkMetadata metadata)
+    {
+        var url = metadata.IsBracketed ? metadata.Url.Replace(" ", "%20") : metadata.Url;
+        return EscapeHtml(url);
     }
 }

@@ -362,6 +362,60 @@ public class MarkdownTokenizerTests
     }
 
     [Fact]
+    public void TestLinkWithBracketedEmptyUrl()
+    {
+        var markdown = "[link](<>)";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Link, tokens[1].TokenType);
+        Assert.Equal("[link](<>)", tokens[1].Value);
+        var metadata = (LinkMetadata)tokens[1].Metadata!;
+        Assert.Equal("", metadata.Url);
+        Assert.Equal("link", metadata.Text);
+        Assert.Null(metadata.Title);
+        Assert.True(metadata.IsBracketed);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestLinkWithBracketedUrl()
+    {
+        var markdown = "[link](</my uri>)";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Link, tokens[1].TokenType);
+        Assert.Equal("[link](</my uri>)", tokens[1].Value);
+        var metadata = (LinkMetadata)tokens[1].Metadata!;
+        Assert.Equal("/my uri", metadata.Url);
+        Assert.Equal("link", metadata.Text);
+        Assert.Null(metadata.Title);
+        Assert.True(metadata.IsBracketed);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestImageWithBracketedUrl()
+    {
+        var markdown = "![alt text](<http://example.com/image.png>)";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Image, tokens[1].TokenType);
+        Assert.Equal("![alt text](<http://example.com/image.png>)", tokens[1].Value);
+        var metadata = (LinkMetadata)tokens[1].Metadata!;
+        Assert.Equal("http://example.com/image.png", metadata.Url);
+        Assert.Equal("alt text", metadata.Text);
+        Assert.Null(metadata.Title);
+        Assert.True(metadata.IsBracketed);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
     public void TestImage()
     {
         var markdown = "![alt text](http://example.com/image.png)";
