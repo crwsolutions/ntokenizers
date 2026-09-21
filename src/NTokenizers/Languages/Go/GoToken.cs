@@ -1,5 +1,5 @@
-using NTokenizers.Core;
 using System.Diagnostics;
+using NTokenizers.Core;
 
 namespace NTokenizers.Go;
 

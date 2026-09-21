@@ -1,5 +1,5 @@
-using NTokenizers.Markdown;
 using System.Text;
+using NTokenizers.Markdown;
 
 namespace NTokenizers.ToHtml.Writers;
 

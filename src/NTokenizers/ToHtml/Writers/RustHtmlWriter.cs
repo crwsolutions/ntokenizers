@@ -1,5 +1,5 @@
-using NTokenizers.Rust;
 using System.Text;
+using NTokenizers.Rust;
 
 namespace NTokenizers.ToHtml.Writers;
 

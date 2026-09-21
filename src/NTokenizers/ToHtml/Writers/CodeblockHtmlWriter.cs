@@ -1,4 +1,5 @@
-﻿using NTokenizers.C;
+﻿using System.Text;
+using NTokenizers.C;
 using NTokenizers.Core;
 using NTokenizers.Cpp;
 using NTokenizers.CSharp;
@@ -17,7 +18,6 @@ using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using NTokenizers.Yaml;
-using System.Text;
 
 namespace NTokenizers.ToHtml.Writers;
 

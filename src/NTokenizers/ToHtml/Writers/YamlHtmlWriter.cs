@@ -1,5 +1,5 @@
-using NTokenizers.Yaml;
 using System.Text;
+using NTokenizers.Yaml;
 
 namespace NTokenizers.ToHtml.Writers;
 

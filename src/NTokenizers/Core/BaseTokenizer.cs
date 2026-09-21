@@ -214,7 +214,7 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
 
     internal char PeekAhead(int offset)
     {
-         while (_lookaheadBuffer.Count <= offset)
+        while (_lookaheadBuffer.Count <= offset)
         {
             try
             {

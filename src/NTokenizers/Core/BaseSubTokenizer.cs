@@ -1,5 +1,5 @@
-﻿using NTokenizers.Extensions;
-using System.Text;
+﻿using System.Text;
+using NTokenizers.Extensions;
 
 namespace NTokenizers.Core;
 

@@ -1,5 +1,7 @@
-using NTokenizers.Core;
+using System.Diagnostics;
+using System.Text;
 using NTokenizers.C;
+using NTokenizers.Core;
 using NTokenizers.Cpp;
 using NTokenizers.CSharp;
 using NTokenizers.Css;
@@ -18,8 +20,6 @@ using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using NTokenizers.Yaml;
-using System.Diagnostics;
-using System.Text;
 
 namespace NTokenizers.Markdown;
 
@@ -686,8 +686,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         "kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language)),
         "go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language)),
         "swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language)),
-         "python" or "py" => await ParseCodeInlines(new PythonCodeBlockMetadata(language)),
-         _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
+        "python" or "py" => await ParseCodeInlines(new PythonCodeBlockMetadata(language)),
+        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
     };
 
     private bool TryParseCustomContainer()

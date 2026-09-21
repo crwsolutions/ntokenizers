@@ -228,7 +228,7 @@ public sealed class CssTokenizer : BaseSubTokenizer<CssToken>
                 break;
 
             case '"':
-            case '\'' :
+            case '\'':
                 // Emit the opening quote as a separate token
                 _onToken(new CssToken(CssTokenType.Quote, c.ToString()));
                 state = ParseState.String;
@@ -348,7 +348,7 @@ public sealed class CssTokenizer : BaseSubTokenizer<CssToken>
                 break;
             case ParseState.Unit:
                 _onToken(new CssToken(CssTokenType.Unit, _buffer.ToString()));
-                break; 
+                break;
             case ParseState.Identifier:
                 if (inSelector)
                     _onToken(new CssToken(CssTokenType.Selector, _buffer.ToString()));

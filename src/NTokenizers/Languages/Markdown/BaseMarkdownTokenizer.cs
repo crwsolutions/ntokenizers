@@ -1,6 +1,6 @@
+using System.Text;
 using NTokenizers.Core;
 using NTokenizers.Markdown.Metadata;
-using System.Text;
 
 namespace NTokenizers.Markdown;
 
@@ -180,7 +180,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             if (Peek() == '"')
                 Read(); // Consume closing "
             title = titleBuilder.ToString().Trim();
-            
+
             // Skip optional space after title
             if (Peek() == ' ')
                 Read();
@@ -189,8 +189,8 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() == ')')
             Read(); // Consume )
 
-        var value = string.IsNullOrEmpty(title) 
-            ? $"[{linkText}]({urlStr})" 
+        var value = string.IsNullOrEmpty(title)
+            ? $"[{linkText}]({urlStr})"
             : $"[{linkText}]({urlStr} \"{title}\")";
 
         _onToken(new MarkdownToken(
@@ -246,7 +246,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             if (Peek() == '"')
                 Read(); // Consume closing "
             title = titleBuilder.ToString().Trim();
-            
+
             // Skip optional space after title
             if (Peek() == ' ')
                 Read();
@@ -255,8 +255,8 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() == ')')
             Read(); // Consume )
 
-        var value = string.IsNullOrEmpty(title) 
-            ? $"![{altText}]({urlStr})" 
+        var value = string.IsNullOrEmpty(title)
+            ? $"![{altText}]({urlStr})"
             : $"![{altText}]({urlStr} \"{title}\")";
 
         _onToken(new MarkdownToken(

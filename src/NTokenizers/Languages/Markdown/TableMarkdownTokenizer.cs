@@ -1,6 +1,7 @@
 using NTokenizers.Markdown.Metadata;
 
 namespace NTokenizers.Markdown;
+
 internal class TableMarkdownTokenizer : BaseMarkdownTokenizer
 {
     private readonly TableMetadata _tableMetaData;

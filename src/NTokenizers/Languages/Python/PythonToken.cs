@@ -1,5 +1,5 @@
-using NTokenizers.Core;
 using System.Diagnostics;
+using NTokenizers.Core;
 
 namespace NTokenizers.Python;
 
@@ -13,7 +13,7 @@ public class PythonToken : IToken<PythonTokenType>
     /// Gets the type of the Python token represented by this instance.
     /// </summary>
     public PythonTokenType TokenType { get; }
-    
+
     /// <summary>
     /// Gets the string representation of the current value.
     /// </summary>

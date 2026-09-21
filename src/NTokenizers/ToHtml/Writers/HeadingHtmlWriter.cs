@@ -1,5 +1,5 @@
-using NTokenizers.Markdown.Metadata;
 using System.Text;
+using NTokenizers.Markdown.Metadata;
 
 namespace NTokenizers.ToHtml.Writers;
 
@@ -12,7 +12,7 @@ internal sealed class HeadingHtmlWriter : AbstractMetadataToHtmlWriter<HeadingMe
 
     internal override void WriteAdditionalCss(StringBuilder css)
     {
-        
+
     }
 
     internal override Task WriteContentAsync(HeadingMetadata metadata, TextWriter writer)

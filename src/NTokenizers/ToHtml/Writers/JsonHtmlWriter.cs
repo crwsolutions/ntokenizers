@@ -1,5 +1,5 @@
-using NTokenizers.Json;
 using System.Text;
+using NTokenizers.Json;
 
 namespace NTokenizers.ToHtml.Writers;
 

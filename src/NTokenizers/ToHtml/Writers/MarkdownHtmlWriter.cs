@@ -1,7 +1,7 @@
+using System.Text;
 using NTokenizers.Core;
 using NTokenizers.Markdown;
 using NTokenizers.Markdown.Metadata;
-using System.Text;
 
 namespace NTokenizers.ToHtml.Writers;
 

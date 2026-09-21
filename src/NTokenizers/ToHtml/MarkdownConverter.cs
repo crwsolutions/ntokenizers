@@ -1,8 +1,6 @@
-using NTokenizers.Core;
+using System.Text;
 using NTokenizers.Markdown;
 using NTokenizers.ToHtml.Writers;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NTokenizers.ToHtml;
 

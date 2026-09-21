@@ -1,5 +1,5 @@
-using NTokenizers.Core;
 using System.Diagnostics;
+using NTokenizers.Core;
 
 namespace NTokenizers.C;
 
@@ -13,7 +13,7 @@ public class CToken : IToken<CTokenType>
     /// Gets the type of the C token represented by this instance.
     /// </summary>
     public CTokenType TokenType { get; }
-    
+
     /// <summary>
     /// Gets the string representation of the current value.
     /// </summary>

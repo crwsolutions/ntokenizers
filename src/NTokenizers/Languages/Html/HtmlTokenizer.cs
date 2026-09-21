@@ -1,7 +1,7 @@
+using System.Diagnostics;
 using NTokenizers.Core;
 using NTokenizers.Css;
 using NTokenizers.Typescript;
-using System.Diagnostics;
 
 namespace NTokenizers.Html;
 
@@ -409,7 +409,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
         {
             return isHandled;
         }
-        
+
         EmitClosingTag("script");
         state.Depth--;
         return true;
