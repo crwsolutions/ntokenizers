@@ -245,7 +245,6 @@ internal class CodeblockHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
         bob.AppendLine(".tok-inserted { background-color: #E6FFEC; }");
         bob.AppendLine(".tok-marked { background-color: #FFF5B8; }");
         bob.AppendLine(".tok-hr { display: block; border-top: 1px solid #DDD; margin: 16px 0; }");
-        bob.AppendLine(".tok-link { color: #0366D6; text-decoration: none; }");
         bob.AppendLine(".tok-subscript { vertical-align: sub; font-size: 0.8em; }");
         bob.AppendLine(".tok-superscript { vertical-align: super; font-size: 0.8em; }");
         bob.AppendLine();
@@ -270,6 +269,7 @@ internal class CodeblockHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
         bob.AppendLine("th { background-color: #F6F8FA; }");
         bob.AppendLine("tr:nth-child(even) { background-color: #F6F8FA; }");
         bob.AppendLine("hr { border-top: 1px solid #Dfe2E5; }");
+        bob.AppendLine("a { color: #0366D6; text-decoration: none; }");
         bob.AppendLine("img { max-width: 100%; }");
         bob.AppendLine();
     }

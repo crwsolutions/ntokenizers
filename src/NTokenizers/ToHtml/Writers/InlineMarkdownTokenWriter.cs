@@ -46,10 +46,14 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
             case MarkdownTokenType.Link:
                 if (token.Metadata is LinkMetadata linkMeta)
                 {
-                    writer.Write($"<a class=\"tok-link\" href=\"{EscapeHtml(linkMeta.Url)}\"");
+                    writer.Write($"<a href=\"{EscapeHtml(linkMeta.Url)}\"");
                     if (!string.IsNullOrEmpty(linkMeta.Title))
+                    {
                         writer.Write($" title=\"{EscapeHtml(linkMeta.Title)}\"");
+                    }
                     writer.Write(">");
+
+
                     if (!string.IsNullOrEmpty(linkMeta.Text))
                     {
                         WriteValue(writer, linkMeta.Text, null);
