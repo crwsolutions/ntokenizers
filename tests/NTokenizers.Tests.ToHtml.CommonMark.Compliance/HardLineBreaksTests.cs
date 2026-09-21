@@ -12,7 +12,7 @@ public class HardLineBreaksTests
     [Fact]
     public void Example_633()
     {
-        var input = "foo\\\nbaz";
+        var input = "foo  \nbaz";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<p>foo<br />\nbaz</p>", html);
     }
@@ -20,7 +20,7 @@ public class HardLineBreaksTests
     [Fact]
     public void Example_634()
     {
-        var input = "foo       \nbaz";
+        var input = "foo\\\nbaz";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<p>foo<br />\nbaz</p>", html);
     }
@@ -28,15 +28,15 @@ public class HardLineBreaksTests
     [Fact]
     public void Example_635()
     {
-        var input = "foo  \n     bar";
+        var input = "foo       \nbaz";
         var html = MarkdownConverter.ToHtml(input);
-        Assert.Equal("<p>foo<br />\nbar</p>", html);
+        Assert.Equal("<p>foo<br />\nbaz</p>", html);
     }
 
     [Fact]
     public void Example_636()
     {
-        var input = "foo\\\n     bar";
+        var input = "foo  \n     bar";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<p>foo<br />\nbar</p>", html);
     }
@@ -44,15 +44,15 @@ public class HardLineBreaksTests
     [Fact]
     public void Example_637()
     {
-        var input = "*foo  \nbar*";
+        var input = "foo\\\n     bar";
         var html = MarkdownConverter.ToHtml(input);
-        Assert.Equal("<p><em>foo<br />\nbar</em></p>", html);
+        Assert.Equal("<p>foo<br />\nbar</p>", html);
     }
 
     [Fact]
     public void Example_638()
     {
-        var input = "*foo\\\nbar*";
+        var input = "*foo  \nbar*";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<p><em>foo<br />\nbar</em></p>", html);
     }
@@ -60,13 +60,21 @@ public class HardLineBreaksTests
     [Fact]
     public void Example_639()
     {
+        var input = "*foo\\\nbar*";
+        var html = MarkdownConverter.ToHtml(input);
+        Assert.Equal("<p><em>foo<br />\nbar</em></p>", html);
+    }
+
+    [Fact]
+    public void Example_640()
+    {
         var input = "`code  \nspan`";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<p><code>code   span</code></p>", html);
     }
 
     [Fact]
-    public void Example_640()
+    public void Example_641()
     {
         var input = "`code\\\nspan`";
         var html = MarkdownConverter.ToHtml(input);
@@ -74,7 +82,7 @@ public class HardLineBreaksTests
     }
 
     [Fact]
-    public void Example_641()
+    public void Example_642()
     {
         var input = "<a href=\"foo  \nbar\">";
         var html = MarkdownConverter.ToHtml(input);
@@ -82,7 +90,7 @@ public class HardLineBreaksTests
     }
 
     [Fact]
-    public void Example_642()
+    public void Example_643()
     {
         var input = "<a href=\"foo\\\nbar\">";
         var html = MarkdownConverter.ToHtml(input);
@@ -90,7 +98,7 @@ public class HardLineBreaksTests
     }
 
     [Fact]
-    public void Example_643()
+    public void Example_644()
     {
         var input = "foo\\";
         var html = MarkdownConverter.ToHtml(input);
@@ -98,7 +106,7 @@ public class HardLineBreaksTests
     }
 
     [Fact]
-    public void Example_644()
+    public void Example_645()
     {
         var input = "foo  ";
         var html = MarkdownConverter.ToHtml(input);
@@ -106,7 +114,7 @@ public class HardLineBreaksTests
     }
 
     [Fact]
-    public void Example_645()
+    public void Example_646()
     {
         var input = "### foo\\";
         var html = MarkdownConverter.ToHtml(input);
@@ -114,19 +122,11 @@ public class HardLineBreaksTests
     }
 
     [Fact]
-    public void Example_646()
+    public void Example_647()
     {
         var input = "### foo  ";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<h3>foo</h3>", html);
-    }
-
-    [Fact]
-    public void Example_647()
-    {
-        var input = "foo\nbaz";
-        var html = MarkdownConverter.ToHtml(input);
-        Assert.Equal("<p>foo\nbaz</p>", html);
     }
 
 }

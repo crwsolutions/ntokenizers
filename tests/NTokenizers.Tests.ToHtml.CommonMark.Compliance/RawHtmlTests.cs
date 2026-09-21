@@ -12,13 +12,20 @@ public class RawHtmlTests
     [Fact]
     public void Example_613()
     {
+        var input = "<a><bab><c2c>";
+        var html = MarkdownConverter.ToHtml(input);
+        Assert.Equal("<p><a><bab><c2c></p>", html);
+    }
+    [Fact]
+    public void Example_614()
+    {
         var input = "<a/><b2/>";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<p><a/><b2/></p>", html);
     }
 
     [Fact]
-    public void Example_614()
+    public void Example_615()
     {
         var input = "<a  /><b2\ndata=\"foo\" >";
         var html = MarkdownConverter.ToHtml(input);
@@ -26,7 +33,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_615()
+    public void Example_616()
     {
         var input = "<a foo=\"bar\" bam = 'baz <em>\"</em>'\n_boolean zoop:33=zoop:33 />";
         var html = MarkdownConverter.ToHtml(input);
@@ -34,7 +41,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_616()
+    public void Example_617()
     {
         var input = "Foo <responsive-image src=\"foo.jpg\" />";
         var html = MarkdownConverter.ToHtml(input);
@@ -42,7 +49,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_617()
+    public void Example_618()
     {
         var input = "<33> <__>";
         var html = MarkdownConverter.ToHtml(input);
@@ -50,7 +57,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_618()
+    public void Example_619()
     {
         var input = "<a h*#ref=\"hi\">";
         var html = MarkdownConverter.ToHtml(input);
@@ -58,7 +65,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_619()
+    public void Example_620()
     {
         var input = "<a href=\"hi'> <a href=hi'>";
         var html = MarkdownConverter.ToHtml(input);
@@ -66,7 +73,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_620()
+    public void Example_621()
     {
         var input = "< a><\nfoo><bar/ >\n<foo bar=baz\nbim!bop />";
         var html = MarkdownConverter.ToHtml(input);
@@ -74,7 +81,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_621()
+    public void Example_622()
     {
         var input = "<a href='bar'title=title>";
         var html = MarkdownConverter.ToHtml(input);
@@ -82,7 +89,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_622()
+    public void Example_623()
     {
         var input = "</a></foo >";
         var html = MarkdownConverter.ToHtml(input);
@@ -90,7 +97,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_623()
+    public void Example_624()
     {
         var input = "</a href=\"foo\">";
         var html = MarkdownConverter.ToHtml(input);
@@ -98,7 +105,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_624()
+    public void Example_625()
     {
         var input = "foo <!-- this is a --\ncomment - with hyphens -->";
         var html = MarkdownConverter.ToHtml(input);
@@ -106,7 +113,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_625()
+    public void Example_626()
     {
         var input = "foo <!--> foo -->\n\nfoo <!---> foo -->";
         var html = MarkdownConverter.ToHtml(input);
@@ -114,7 +121,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_626()
+    public void Example_627()
     {
         var input = "foo <?php echo $a; ?>";
         var html = MarkdownConverter.ToHtml(input);
@@ -122,7 +129,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_627()
+    public void Example_628()
     {
         var input = "foo <!ELEMENT br EMPTY>";
         var html = MarkdownConverter.ToHtml(input);
@@ -130,7 +137,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_628()
+    public void Example_629()
     {
         var input = "foo <![CDATA[>&<]]>";
         var html = MarkdownConverter.ToHtml(input);
@@ -138,7 +145,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_629()
+    public void Example_630()
     {
         var input = "foo <a href=\"&ouml;\">";
         var html = MarkdownConverter.ToHtml(input);
@@ -146,7 +153,7 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_630()
+    public void Example_631()
     {
         var input = "foo <a href=\"\\*\">";
         var html = MarkdownConverter.ToHtml(input);
@@ -154,19 +161,12 @@ public class RawHtmlTests
     }
 
     [Fact]
-    public void Example_631()
+    public void Example_632()
     {
         var input = "<a href=\"\\\"\">";
         var html = MarkdownConverter.ToHtml(input);
         Assert.Equal("<p>&lt;a href=&quot;&quot;&quot;&gt;</p>", html);
     }
 
-    [Fact]
-    public void Example_632()
-    {
-        var input = "foo  \nbaz";
-        var html = MarkdownConverter.ToHtml(input);
-        Assert.Equal("<p>foo<br />\nbaz</p>", html);
-    }
-
 }
+

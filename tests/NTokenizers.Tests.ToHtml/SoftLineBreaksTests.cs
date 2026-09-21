@@ -12,7 +12,7 @@ public class SoftLineBreaksTests
     [Fact]
     public void Example_648()
     {
-        var input = "foo \n baz";
+        var input = "foo\nbaz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
         Assert.Equal("<p>foo\nbaz</p>", html);
     }
@@ -20,9 +20,9 @@ public class SoftLineBreaksTests
     [Fact]
     public void Example_649()
     {
-        var input = "hello $.;'there";
+        var input = "foo \n baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>hello $.;'there</p>", html);
+        Assert.Equal("<p>foo\nbaz</p>", html);
     }
 
 }

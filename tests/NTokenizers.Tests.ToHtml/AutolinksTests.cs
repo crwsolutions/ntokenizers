@@ -12,13 +12,21 @@ public class AutolinksTests
     [Fact]
     public void Example_594()
     {
+        var input = "<http://foo.bar.baz>";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p><a href=\"http://foo.bar.baz\">http://foo.bar.baz</a></p>", html);
+    }
+
+    [Fact]
+    public void Example_595()
+    {
         var input = "<https://foo.bar.baz/test?q=hello&id=22&boolean>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
         Assert.Equal("<p><a href=\"https://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean\">https://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>", html);
     }
 
     [Fact]
-    public void Example_595()
+    public void Example_596()
     {
         var input = "<irc://foo.bar:2233/baz>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -26,7 +34,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_596()
+    public void Example_597()
     {
         var input = "<MAILTO:FOO@BAR.BAZ>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -34,7 +42,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_597()
+    public void Example_598()
     {
         var input = "<a+b+c:d>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -42,7 +50,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_598()
+    public void Example_599()
     {
         var input = "<made-up-scheme://foo,bar>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -50,7 +58,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_599()
+    public void Example_600()
     {
         var input = "<https://../>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -58,7 +66,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_600()
+    public void Example_601()
     {
         var input = "<localhost:5001/foo>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -66,7 +74,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_601()
+    public void Example_602()
     {
         var input = "<https://foo.bar/baz bim>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -74,7 +82,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_602()
+    public void Example_603()
     {
         var input = "<https://example.com/\\[\\>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -82,7 +90,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_603()
+    public void Example_604()
     {
         var input = "<foo@bar.example.com>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -90,7 +98,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_604()
+    public void Example_605()
     {
         var input = "<foo+special@Bar.baz-bar0.com>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -98,7 +106,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_605()
+    public void Example_606()
     {
         var input = "<foo\\+@bar.example.com>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -106,7 +114,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_606()
+    public void Example_607()
     {
         var input = "<>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -114,7 +122,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_607()
+    public void Example_608()
     {
         var input = "< https://foo.bar >";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -122,7 +130,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_608()
+    public void Example_609()
     {
         var input = "<m:abc>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -130,7 +138,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_609()
+    public void Example_610()
     {
         var input = "<foo.bar.baz>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -138,7 +146,7 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_610()
+    public void Example_611()
     {
         var input = "https://example.com";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
@@ -146,19 +154,11 @@ public class AutolinksTests
     }
 
     [Fact]
-    public void Example_611()
+    public void Example_612()
     {
         var input = "foo@bar.example.com";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
         Assert.Equal("<p>foo@bar.example.com</p>", html);
-    }
-
-    [Fact]
-    public void Example_612()
-    {
-        var input = "<a><bab><c2c>";
-        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><a><bab><c2c></p>", html);
     }
 
 }
