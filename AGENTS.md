@@ -14,6 +14,12 @@ The NTokenizers and ToHtml libraries intentionally deviate from the CommonMark s
 - **Whitespace is preserved.** CommonMark removes or normalizes some whitespace and newlines, but this library must keep whitespace in the token stream (almost always). Dropping whitespace breaks the layout, because the token stream is also used to generate console output.
 - **Paragraph tokens are not mandatory.** Emitting paragraph tokens is not a requirement of the tokenizer. For example, paragraph tokens are not emitted inside lists.
 
+### Unsupported CommonMark features
+
+The following CommonMark features are intentionally not supported due to the streaming architecture:
+
+- **Link reference definitions.** `[foo]: /url "title"` definitions and their resolution to `[foo]` / `[foo][bar]` / `![foo]` references require buffering the entire document to build a lookup table, which is incompatible with streaming.
+
 ## Quick Checklist for New Language
 
 - [ ] Create 4 source files in `src/NTokenizers/Languages/[Language]/`
