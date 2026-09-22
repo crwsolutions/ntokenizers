@@ -75,8 +75,8 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 if (token.Metadata is LinkMetadata imageMeta)
                 {
                     writer.Write($"<img src=\"{FormatLinkHref(imageMeta)}\"");
-                    if (!string.IsNullOrEmpty(value))
-                        writer.Write($" alt=\"{EscapeHtml(value)}\"");
+                    if (!string.IsNullOrEmpty(imageMeta.Text))
+                        writer.Write($" alt=\"{EscapeHtml(imageMeta.Text)}\"");
                     if (!string.IsNullOrEmpty(imageMeta.Title))
                         writer.Write($" title=\"{FormatTitle(imageMeta.Title)}\"");
                     writer.Write(" />");
