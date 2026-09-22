@@ -22,7 +22,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
 
             case MarkdownTokenType.Bold:
                 writer.Write("<strong>");
-                WriteValue(writer, value, "tok-bold");
+                WriteValue(writer, value, null);
                 writer.Write("</strong>");
                 break;
 
