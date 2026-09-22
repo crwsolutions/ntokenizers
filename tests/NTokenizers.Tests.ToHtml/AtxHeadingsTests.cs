@@ -46,7 +46,7 @@ public class AtxHeadingsTests
     {
         var input = "# foo *bar* \\*baz\\*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h1>foo <em><span class=\"tok-italic\">bar</span></em> *baz*</h1>", html);
+        Assert.Equal("<h1>foo <em>bar</em> *baz*</h1>", html);
     }
 
     [Fact]

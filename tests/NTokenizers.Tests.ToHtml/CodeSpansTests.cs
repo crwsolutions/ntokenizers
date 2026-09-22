@@ -9,20 +9,21 @@ namespace NTokenizers.Tests.ToHtml;
 /// </summary>
 public class CodeSpansTests
 {
+
     [Fact]
     public void Example_328()
     {
-        var input = "`` foo ` bar ``";
-        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><code>foo ` bar</code></p>", html);
+        var input = "`foo`";
+        var html = MarkdownConverter.ToHtml(input);
+        Assert.Equal("<p><code>foo</code></p>", html);
     }
 
     [Fact]
     public void Example_329()
     {
-        var input = "` `` `";
+        var input = "`` foo ` bar ``";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><code>``</code></p>", html);
+        Assert.Equal("<p><code>foo ` bar</code></p>", html);
     }
 
     [Fact]

@@ -239,7 +239,6 @@ internal class CodeblockHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
 
         bob.AppendLine("/* === Markdown styles === */");
         bob.AppendLine(".tok-bold { font-weight: bold; }");
-        bob.AppendLine(".tok-italic { font-style: italic; }");
         bob.AppendLine(".tok-strikethrough { text-decoration: line-through; }");
         bob.AppendLine(".tok-inline-code { background-color: #F4F4F4; padding: 2px 4px; border-radius: 3px; font-family: monospace; }");
         bob.AppendLine(".tok-inserted { background-color: #E6FFEC; }");
@@ -269,6 +268,7 @@ internal class CodeblockHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
         bob.AppendLine("th { background-color: #F6F8FA; }");
         bob.AppendLine("tr:nth-child(even) { background-color: #F6F8FA; }");
         bob.AppendLine("hr { border-top: 1px solid #Dfe2E5; }");
+        bob.AppendLine("em { font-style: italic; }");
         bob.AppendLine("a { color: #0366D6; text-decoration: none; }");
         bob.AppendLine("img { max-width: 100%; }");
         bob.AppendLine();

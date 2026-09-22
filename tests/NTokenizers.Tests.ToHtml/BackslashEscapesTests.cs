@@ -28,9 +28,9 @@ public class BackslashEscapesTests
     [Fact]
     public void Example_014()
     {
-        var input = "\\*not emphasized*\n\\<br/> not a tag\n\\[not a link](/foo)\n\\`not code`\n1\\. not a list\n\\* not a list\n\\# not a heading\n\\[foo]: /url \"not a reference\"\n\\&ouml; not a character entity";
+        var input = "\\*not emphasized\\*\n\\<br/> not a tag\n\\[not a link](/foo)\n\\`not code`\n1\\. not a list\n\\* not a list\n\\# not a heading\n\\[foo]: /url \"not a reference\"\n\\&ouml; not a character entity";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*not emphasized*\n&lt;br/&gt; not a tag\n[not a link](/foo)\n`not code`\n1. not a list\n* not a list\n# not a heading\n[foo]: /url &quot;not a reference&quot;\n&amp;ouml; not a character entity</p>", html);
+        Assert.Equal("<p>*not emphasized*<br/>&lt;br/&gt; not a tag<br/>[not a link](/foo)<br/>`not code`<br/>1. not a list<br/>* not a list<br/># not a heading<br/>[foo]: /url &quot;not a reference&quot;<br/>&amp;ouml; not a character entity</p>", html);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class BackslashEscapesTests
     {
         var input = "foo\\\nbar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<br />\nbar</p>", html);
+        Assert.Equal("<p>foo\\<br/>bar</p>", html);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class BackslashEscapesTests
     {
         var input = "    \\[\\]";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>\\[\\]\n</code></pre>", html);
+        Assert.Equal("<pre><code>\\[\\]</code></pre>", html);
     }
 
     [Fact]

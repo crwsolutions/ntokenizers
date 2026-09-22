@@ -28,13 +28,13 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
 
             case MarkdownTokenType.Italic:
                 writer.Write("<em>");
-                WriteValue(writer, value, "tok-italic");
+                WriteValue(writer, value, null);
                 writer.Write("</em>");
                 break;
 
             case MarkdownTokenType.Emphasis:
                 writer.Write("<em>");
-                WriteValue(writer, value, "tok-italic");
+                WriteValue(writer, value, null);
                 writer.Write("</em>");
                 break;
 
