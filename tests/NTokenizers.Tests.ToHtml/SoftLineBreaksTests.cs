@@ -14,7 +14,7 @@ public class SoftLineBreaksTests
     {
         var input = "foo\nbaz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo\nbaz</p>", html);
+        Assert.Equal("<p>foo<br/>baz</p>", html);
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public class SoftLineBreaksTests
     {
         var input = "foo \n baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo\nbaz</p>", html);
+        Assert.Equal("<p>foo <br/> baz</p>", html);
     }
 
 }

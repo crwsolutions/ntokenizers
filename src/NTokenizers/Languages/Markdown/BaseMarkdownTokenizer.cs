@@ -29,7 +29,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                     _onToken(new MarkdownToken(MarkdownTokenType.Bold, boldText.ToString()));
                     return true;
                 }
-                boldText.Append((char)Read());
+                AppendEscapedChar(boldText);
             }
 
             // No closing found, treat as text
@@ -52,10 +52,12 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                     _onToken(new MarkdownToken(MarkdownTokenType.Bold, boldText.ToString()));
                     return true;
                 }
-                boldText.Append((char)Read());
+                AppendEscapedChar(boldText);
             }
             _buffer.Append("__").Append(boldText);
-            return false;
+            // The leading "__" was already consumed above, so the caller must not append the
+            // current character again; return true so the stream is left at the correct position.
+            return true;
         }
 
         // Check for single *
@@ -74,7 +76,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                     _onToken(new MarkdownToken(MarkdownTokenType.Italic, italicText.ToString()));
                     return true;
                 }
-                italicText.Append((char)Read());
+                AppendEscapedChar(italicText);
             }
 
             // No closing found, treat as text
@@ -90,7 +92,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             var italicText = new StringBuilder();
             while (Peek() != -1 && Peek() != '_')
             {
-                italicText.Append((char)Read());
+                AppendEscapedChar(italicText);
             }
             if (Peek() == '_')
             {
@@ -99,10 +101,30 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                 return true;
             }
             _buffer.Append('_').Append(italicText);
-            return false;
+            // The leading "_" was already consumed above, so the caller must not append the
+            // current character again; return true so the stream is left at the correct position.
+            return true;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Reads the next character of emphasis content and appends it to the given builder,
+    /// resolving backslash escapes (a backslash before an ASCII punctuation character is
+    /// dropped, keeping only the punctuation character).
+    /// </summary>
+    private void AppendEscapedChar(StringBuilder content)
+    {
+        if (Peek() == '\\' && AsciiPunctuation.Contains((char)PeekAhead(1)))
+        {
+            char escaped = (char)PeekAhead(1);
+            Read(); // Consume the backslash.
+            Read(); // Consume the escaped character.
+            content.Append(escaped);
+            return;
+        }
+        content.Append((char)Read());
     }
 
     internal bool TryParseInlineCode()
