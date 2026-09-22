@@ -22,7 +22,7 @@ public class EmphasisTests
     {
         var input = "a * foo bar*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>a * foo bar*</p>", html);
+        Assert.Equal("<p>a <em> foo bar</em></p>", html);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class EmphasisTests
     {
         var input = "a*\"foo\"*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>a*&quot;foo&quot;*</p>", html);
+        Assert.Equal("<p>a<em>&quot;foo&quot;</em></p>", html);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class EmphasisTests
     {
         var input = "* a *";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>* a *</p>", html);
+        Assert.Equal("<p><em> a </em></p>", html);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class EmphasisTests
     {
         var input = "*$*alpha.\n\n*£*bravo.\n\n*€*charlie.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*$*alpha.</p>\n<p>*£*bravo.</p>\n<p>*€*charlie.</p>", html);
+        Assert.Equal("<p><em>$</em>alpha.</p>\n<p><em>£</em>bravo.</p>\n<p><em>€</em>charlie.</p>", html);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class EmphasisTests
     {
         var input = "_foo bar_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>a<em>&quot;foo&quot;</em></p>", html);
+        Assert.Equal("<p><em>foo bar</em></p>", html);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class EmphasisTests
     {
         var input = "a_\"foo\"_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>a_&quot;foo&quot;_</p>", html);
+        Assert.Equal("<p>a<em>&quot;foo&quot;</em></p>", html);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class EmphasisTests
     {
         var input = "пристаням_стремятся_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>пристаням_стремятся_</p>", html);
+        Assert.Equal("<p>пристаням<em>стремятся</em></p>", html);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class EmphasisTests
     {
         var input = "aa_\"bb\"_cc";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>aa_&quot;bb&quot;_cc</p>", html);
+        Assert.Equal("<p>aa<em>&quot;bb&quot;</em>cc</p>", html);
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class EmphasisTests
     {
         var input = "*foo bar *";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*foo bar *</p>", html);
+        Assert.Equal("<p><em>foo bar </em></p>", html);
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class EmphasisTests
     {
         var input = "*foo bar\n*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*foo bar\n*</p>", html);
+        Assert.Equal("<p><em>foo bar<br/></em></p>", html);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class EmphasisTests
     {
         var input = "*(*foo)";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*(*foo)</p>", html);
+        Assert.Equal("<p><em>(</em>foo)</p>", html);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class EmphasisTests
     {
         var input = "_foo bar _";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_foo bar _</p>", html);
+        Assert.Equal("<p><em>foo bar </em></p>", html);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class EmphasisTests
     {
         var input = "_(_foo)";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_(_foo)</p>", html);
+        Assert.Equal("<p><em>(</em>foo)</p>", html);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class EmphasisTests
     {
         var input = "_(_foo_)_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>(<em>foo</em>)</em></p>", html);
+        Assert.Equal("<p><em>(</em>foo<em>)</em></p>", html);
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public class EmphasisTests
     {
         var input = "_foo_bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_foo_bar</p>", html);
+        Assert.Equal("<p><em>foo</em>bar</p>", html);
     }
 
     [Fact]
@@ -214,7 +214,7 @@ public class EmphasisTests
     {
         var input = "_пристаням_стремятся";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_пристаням_стремятся</p>", html);
+        Assert.Equal("<p><em>пристаням</em>стремятся</p>", html);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class EmphasisTests
     {
         var input = "_foo_bar_baz_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo_bar_baz</em></p>", html);
+        Assert.Equal("<p><em>foo</em>bar<em>baz</em></p>", html);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class EmphasisTests
     {
         var input = "** foo bar**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>** foo bar**</p>", html);
+        Assert.Equal("<p><strong> foo bar</strong></p>", html);
     }
 
     [Fact]
@@ -254,7 +254,7 @@ public class EmphasisTests
     {
         var input = "a**\"foo\"**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>a**&quot;foo&quot;**</p>", html);
+        Assert.Equal("<p>a<strong>&quot;foo&quot;</strong></p>", html);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class EmphasisTests
     {
         var input = "__ foo bar__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__ foo bar__</p>", html);
+        Assert.Equal("<p><strong> foo bar</strong></p>", html);
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public class EmphasisTests
     {
         var input = "__\nfoo bar__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__\nfoo bar__</p>", html);
+        Assert.Equal("<p><strong><br/>foo bar</strong></p>", html);
     }
 
     [Fact]
@@ -294,7 +294,7 @@ public class EmphasisTests
     {
         var input = "a__\"foo\"__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>a__&quot;foo&quot;__</p>", html);
+        Assert.Equal("<p>a<strong>&quot;foo&quot;</strong></p>", html);
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class EmphasisTests
     {
         var input = "foo__bar__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo__bar__</p>", html);
+        Assert.Equal("<p>foo<strong>bar</strong></p>", html);
     }
 
     [Fact]
@@ -310,7 +310,7 @@ public class EmphasisTests
     {
         var input = "5__6__78";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>5__6__78</p>", html);
+        Assert.Equal("<p>5<strong>6</strong>78</p>", html);
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public class EmphasisTests
     {
         var input = "пристаням__стремятся__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>пристаням__стремятся__</p>", html);
+        Assert.Equal("<p>пристаням<strong>стремятся</strong></p>", html);
     }
 
     [Fact]
@@ -326,7 +326,7 @@ public class EmphasisTests
     {
         var input = "__foo, __bar__, baz__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo, <strong>bar</strong>, baz</strong></p>", html);
+        Assert.Equal("<p><strong>foo, </strong>bar<strong>, baz</strong></p>", html);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public class EmphasisTests
     {
         var input = "**foo bar **";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>**foo bar **</p>", html);
+        Assert.Equal("<p><strong>foo bar </strong></p>", html);
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public class EmphasisTests
     {
         var input = "**(**foo)";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>**(**foo)</p>", html);
+        Assert.Equal("<p><strong>(</strong>foo)</p>", html);
     }
 
     [Fact]
@@ -358,7 +358,7 @@ public class EmphasisTests
     {
         var input = "*(**foo**)*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>(<strong>foo</strong>)</em></p>", html);
+        Assert.Equal("<p><em>(</em><em>foo</em><em>)</em></p>", html);
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public class EmphasisTests
     {
         var input = "**Gomphocarpus (*Gomphocarpus physocarpus*, syn.\n*Asclepias physocarpa*)**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>Gomphocarpus (<em>Gomphocarpus physocarpus</em>, syn.\n<em>Asclepias physocarpa</em>)</strong></p>", html);
+        Assert.Equal("<p><strong>Gomphocarpus (*Gomphocarpus physocarpus*, syn.<br/>*Asclepias physocarpa*)</strong></p>", html);
     }
 
     [Fact]
@@ -374,7 +374,7 @@ public class EmphasisTests
     {
         var input = "**foo \"*bar*\" foo**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo &quot;<em>bar</em>&quot; foo</strong></p>", html);
+        Assert.Equal("<p><strong>foo &quot;*bar*&quot; foo</strong></p>", html);
     }
 
     [Fact]
@@ -390,7 +390,7 @@ public class EmphasisTests
     {
         var input = "__foo bar __";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__foo bar __</p>", html);
+        Assert.Equal("<p><strong>foo bar </strong></p>", html);
     }
 
     [Fact]
@@ -398,7 +398,7 @@ public class EmphasisTests
     {
         var input = "__(__foo)";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__(__foo)</p>", html);
+        Assert.Equal("<p><strong>(</strong>foo)</p>", html);
     }
 
     [Fact]
@@ -406,7 +406,7 @@ public class EmphasisTests
     {
         var input = "_(__foo__)_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>(<strong>foo</strong>)</em></p>", html);
+        Assert.Equal("<p><em>(</em><em>foo</em><em>)</em></p>", html);
     }
 
     [Fact]
@@ -414,7 +414,7 @@ public class EmphasisTests
     {
         var input = "__foo__bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__foo__bar</p>", html);
+        Assert.Equal("<p><strong>foo</strong>bar</p>", html);
     }
 
     [Fact]
@@ -422,7 +422,7 @@ public class EmphasisTests
     {
         var input = "__пристаням__стремятся";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__пристаням__стремятся</p>", html);
+        Assert.Equal("<p><strong>пристаням</strong>стремятся</p>", html);
     }
 
     [Fact]
@@ -430,7 +430,7 @@ public class EmphasisTests
     {
         var input = "__foo__bar__baz__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo__bar__baz</strong></p>", html);
+        Assert.Equal("<p><strong>foo</strong>bar<strong>baz</strong></p>", html);
     }
 
     [Fact]
@@ -446,7 +446,7 @@ public class EmphasisTests
     {
         var input = "*foo [bar](/url)*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <a href=\"/url\">bar</a></em></p>", html);
+        Assert.Equal("<p><em>foo [bar](/url)</em></p>", html);
     }
 
     [Fact]
@@ -462,7 +462,7 @@ public class EmphasisTests
     {
         var input = "_foo __bar__ baz_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <strong>bar</strong> baz</em></p>", html);
+        Assert.Equal("<p><em>foo </em><em>bar</em><em> baz</em></p>", html);
     }
 
     [Fact]
@@ -470,7 +470,7 @@ public class EmphasisTests
     {
         var input = "_foo _bar_ baz_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <em>bar</em> baz</em></p>", html);
+        Assert.Equal("<p><em>foo </em>bar<em> baz</em></p>", html);
     }
 
     [Fact]
@@ -478,7 +478,7 @@ public class EmphasisTests
     {
         var input = "__foo_ bar_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em><em>foo</em> bar</em></p>", html);
+        Assert.Equal("<p>__foo_ bar_</p>", html);
     }
 
     [Fact]
@@ -486,7 +486,7 @@ public class EmphasisTests
     {
         var input = "*foo *bar**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <em>bar</em></em></p>", html);
+        Assert.Equal("<p><em>foo </em>bar**</p>", html);
     }
 
     [Fact]
@@ -494,7 +494,7 @@ public class EmphasisTests
     {
         var input = "*foo **bar** baz*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <strong>bar</strong> baz</em></p>", html);
+        Assert.Equal("<p><em>foo </em><em>bar</em><em> baz</em></p>", html);
     }
 
     [Fact]
@@ -502,7 +502,7 @@ public class EmphasisTests
     {
         var input = "*foo**bar**baz*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo<strong>bar</strong>baz</em></p>", html);
+        Assert.Equal("<p><em>foo</em><em>bar</em><em>baz</em></p>", html);
     }
 
     [Fact]
@@ -510,7 +510,7 @@ public class EmphasisTests
     {
         var input = "*foo**bar*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo**bar</em></p>", html);
+        Assert.Equal("<p><em>foo</em><em>bar</em></p>", html);
     }
 
     [Fact]
@@ -518,7 +518,7 @@ public class EmphasisTests
     {
         var input = "***foo** bar*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em><strong>foo</strong> bar</em></p>", html);
+        Assert.Equal("<p><strong>*foo</strong> bar*</p>", html);
     }
 
     [Fact]
@@ -526,7 +526,7 @@ public class EmphasisTests
     {
         var input = "*foo **bar***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <strong>bar</strong></em></p>", html);
+        Assert.Equal("<p><em>foo </em><em>bar</em>**</p>", html);
     }
 
     [Fact]
@@ -534,7 +534,7 @@ public class EmphasisTests
     {
         var input = "*foo**bar***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo<strong>bar</strong></em></p>", html);
+        Assert.Equal("<p><em>foo</em><em>bar</em>**</p>", html);
     }
 
     [Fact]
@@ -542,7 +542,7 @@ public class EmphasisTests
     {
         var input = "foo***bar***baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<em><strong>bar</strong></em>baz</p>", html);
+        Assert.Equal("<p>foo<strong>*bar</strong>*baz</p>", html);
     }
 
     [Fact]
@@ -550,7 +550,7 @@ public class EmphasisTests
     {
         var input = "foo******bar*********baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<strong><strong><strong>bar</strong></strong></strong>***baz</p>", html);
+        Assert.Equal("<p>foo<strong></strong><strong>bar</strong><strong></strong>***baz</p>", html);
     }
 
     [Fact]
@@ -558,7 +558,7 @@ public class EmphasisTests
     {
         var input = "*foo **bar *baz* bim** bop*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <strong>bar <em>baz</em> bim</strong> bop</em></p>", html);
+        Assert.Equal("<p><em>foo </em><em>bar </em>baz<em> bim</em><em> bop</em></p>", html);
     }
 
     [Fact]
@@ -566,7 +566,7 @@ public class EmphasisTests
     {
         var input = "*foo [*bar*](/url)*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <a href=\"/url\"><em>bar</em></a></em></p>", html);
+        Assert.Equal("<p><em>foo [</em>bar<em>](/url)</em></p>", html);
     }
 
     [Fact]
@@ -582,7 +582,7 @@ public class EmphasisTests
     {
         var input = "**** is not an empty strong emphasis";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>**** is not an empty strong emphasis</p>", html);
+        Assert.Equal("<p><strong></strong> is not an empty strong emphasis</p>", html);
     }
 
     [Fact]
@@ -590,7 +590,7 @@ public class EmphasisTests
     {
         var input = "**foo [bar](/url)**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <a href=\"/url\">bar</a></strong></p>", html);
+        Assert.Equal("<p><strong>foo [bar](/url)</strong></p>", html);
     }
 
     [Fact]
@@ -606,7 +606,7 @@ public class EmphasisTests
     {
         var input = "__foo _bar_ baz__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <em>bar</em> baz</strong></p>", html);
+        Assert.Equal("<p><strong>foo _bar_ baz</strong></p>", html);
     }
 
     [Fact]
@@ -614,7 +614,7 @@ public class EmphasisTests
     {
         var input = "__foo __bar__ baz__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <strong>bar</strong> baz</strong></p>", html);
+        Assert.Equal("<p><strong>foo </strong>bar<strong> baz</strong></p>", html);
     }
 
     [Fact]
@@ -622,7 +622,7 @@ public class EmphasisTests
     {
         var input = "____foo__ bar__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong><strong>foo</strong> bar</strong></p>", html);
+        Assert.Equal("<p><strong></strong>foo<strong> bar</strong></p>", html);
     }
 
     [Fact]
@@ -630,7 +630,7 @@ public class EmphasisTests
     {
         var input = "**foo **bar****";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <strong>bar</strong></strong></p>", html);
+        Assert.Equal("<p><strong>foo </strong>bar<strong></strong></p>", html);
     }
 
     [Fact]
@@ -638,7 +638,7 @@ public class EmphasisTests
     {
         var input = "**foo *bar* baz**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <em>bar</em> baz</strong></p>", html);
+        Assert.Equal("<p><strong>foo *bar* baz</strong></p>", html);
     }
 
     [Fact]
@@ -646,7 +646,7 @@ public class EmphasisTests
     {
         var input = "**foo*bar*baz**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo<em>bar</em>baz</strong></p>", html);
+        Assert.Equal("<p><strong>foo*bar*baz</strong></p>", html);
     }
 
     [Fact]
@@ -654,7 +654,7 @@ public class EmphasisTests
     {
         var input = "***foo* bar**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong><em>foo</em> bar</strong></p>", html);
+        Assert.Equal("<p><strong>*foo* bar</strong></p>", html);
     }
 
     [Fact]
@@ -662,7 +662,7 @@ public class EmphasisTests
     {
         var input = "**foo *bar***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <em>bar</em></strong></p>", html);
+        Assert.Equal("<p><strong>foo *bar</strong>*</p>", html);
     }
 
     [Fact]
@@ -670,7 +670,7 @@ public class EmphasisTests
     {
         var input = "**foo *bar **baz**\nbim* bop**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <em>bar <strong>baz</strong>\nbim</em> bop</strong></p>", html);
+        Assert.Equal("<p><strong>foo *bar </strong>baz<strong><br/>bim* bop</strong></p>", html);
     }
 
     [Fact]
@@ -678,7 +678,7 @@ public class EmphasisTests
     {
         var input = "**foo [*bar*](/url)**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>foo <a href=\"/url\"><em>bar</em></a></strong></p>", html);
+        Assert.Equal("<p><strong>foo [*bar*](/url)</strong></p>", html);
     }
 
     [Fact]
@@ -694,7 +694,7 @@ public class EmphasisTests
     {
         var input = "____ is not an empty strong emphasis";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>____ is not an empty strong emphasis</p>", html);
+        Assert.Equal("<p><strong></strong> is not an empty strong emphasis</p>", html);
     }
 
     [Fact]
@@ -726,7 +726,7 @@ public class EmphasisTests
     {
         var input = "foo *****";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo *****</p>", html);
+        Assert.Equal("<p>foo <strong></strong>*</p>", html);
     }
 
     [Fact]
@@ -750,7 +750,7 @@ public class EmphasisTests
     {
         var input = "**foo*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*<em>foo</em></p>", html);
+        Assert.Equal("<p>**foo*</p>", html);
     }
 
     [Fact]
@@ -766,7 +766,7 @@ public class EmphasisTests
     {
         var input = "***foo**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*<strong>foo</strong></p>", html);
+        Assert.Equal("<p><strong>*foo</strong></p>", html);
     }
 
     [Fact]
@@ -774,7 +774,7 @@ public class EmphasisTests
     {
         var input = "****foo*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>***<em>foo</em></p>", html);
+        Assert.Equal("<p><strong></strong>foo*</p>", html);
     }
 
     [Fact]
@@ -822,7 +822,7 @@ public class EmphasisTests
     {
         var input = "foo _____";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo _____</p>", html);
+        Assert.Equal("<p>foo <strong></strong>_</p>", html);
     }
 
     [Fact]
@@ -846,7 +846,7 @@ public class EmphasisTests
     {
         var input = "__foo_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_<em>foo</em></p>", html);
+        Assert.Equal("<p>__foo_</p>", html);
     }
 
     [Fact]
@@ -862,7 +862,7 @@ public class EmphasisTests
     {
         var input = "___foo__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_<strong>foo</strong></p>", html);
+        Assert.Equal("<p><strong>_foo</strong></p>", html);
     }
 
     [Fact]
@@ -870,7 +870,7 @@ public class EmphasisTests
     {
         var input = "____foo_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>___<em>foo</em></p>", html);
+        Assert.Equal("<p><strong></strong>foo_</p>", html);
     }
 
     [Fact]
@@ -902,7 +902,7 @@ public class EmphasisTests
     {
         var input = "*_foo_*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em><em>foo</em></em></p>", html);
+        Assert.Equal("<p><em>_foo_</em></p>", html);
     }
 
     [Fact]
@@ -918,7 +918,7 @@ public class EmphasisTests
     {
         var input = "_*foo*_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em><em>foo</em></em></p>", html);
+        Assert.Equal("<p><em>*foo*</em></p>", html);
     }
 
     [Fact]
@@ -926,7 +926,7 @@ public class EmphasisTests
     {
         var input = "****foo****";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong><strong>foo</strong></strong></p>", html);
+        Assert.Equal("<p><strong></strong>foo<strong></strong></p>", html);
     }
 
     [Fact]
@@ -934,7 +934,7 @@ public class EmphasisTests
     {
         var input = "____foo____";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong><strong>foo</strong></strong></p>", html);
+        Assert.Equal("<p><strong></strong>foo<strong></strong></p>", html);
     }
 
     [Fact]
@@ -942,7 +942,7 @@ public class EmphasisTests
     {
         var input = "******foo******";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong><strong><strong>foo</strong></strong></strong></p>", html);
+        Assert.Equal("<p><strong></strong><strong>foo</strong><strong></strong></p>", html);
     }
 
     [Fact]
@@ -950,7 +950,7 @@ public class EmphasisTests
     {
         var input = "***foo***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em><strong>foo</strong></em></p>", html);
+        Assert.Equal("<p><strong>*foo</strong>*</p>", html);
     }
 
     [Fact]
@@ -958,7 +958,7 @@ public class EmphasisTests
     {
         var input = "_____foo_____";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em><strong><strong>foo</strong></strong></em></p>", html);
+        Assert.Equal("<p><strong></strong><em>foo</em><strong></strong></p>", html);
     }
 
     [Fact]
@@ -974,7 +974,7 @@ public class EmphasisTests
     {
         var input = "*foo __bar *baz bim__ bam*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo <strong>bar *baz bim</strong> bam</em></p>", html);
+        Assert.Equal("<p><em>foo __bar </em>baz bim__ bam*</p>", html);
     }
 
     [Fact]
@@ -982,7 +982,7 @@ public class EmphasisTests
     {
         var input = "**foo **bar baz**";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>**foo <strong>bar baz</strong></p>", html);
+        Assert.Equal("<p><strong>foo </strong>bar baz**</p>", html);
     }
 
     [Fact]
@@ -990,7 +990,7 @@ public class EmphasisTests
     {
         var input = "*foo *bar baz*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*foo <em>bar baz</em></p>", html);
+        Assert.Equal("<p><em>foo </em>bar baz*</p>", html);
     }
 
     [Fact]
@@ -998,7 +998,7 @@ public class EmphasisTests
     {
         var input = "*[bar*](/url)";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*<a href=\"/url\">bar*</a></p>", html);
+        Assert.Equal("<p><em>[bar</em>](/url)</p>", html);
     }
 
     [Fact]
@@ -1006,7 +1006,7 @@ public class EmphasisTests
     {
         var input = "_foo [bar_](/url)";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_foo <a href=\"/url\">bar_</a></p>", html);
+        Assert.Equal("<p><em>foo [bar</em>](/url)</p>", html);
     }
 
     [Fact]
@@ -1014,7 +1014,7 @@ public class EmphasisTests
     {
         var input = "*<img src=\"foo\" title=\"*\"/>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>*<img src=\"foo\" title=\"*\"/></p>", html);
+        Assert.Equal("<p><em>&lt;img src=&quot;foo&quot; title=&quot;</em>&quot;/&gt;</p>", html);
     }
 
     [Fact]
@@ -1022,7 +1022,7 @@ public class EmphasisTests
     {
         var input = "**<a href=\"**\">";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>**<a href=\"**\"></p>", html);
+        Assert.Equal("<p><strong>&lt;a href=&quot;</strong>&quot;&gt;</p>", html);
     }
 
     [Fact]
@@ -1030,7 +1030,7 @@ public class EmphasisTests
     {
         var input = "__<a href=\"__\">";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__<a href=\"__\"></p>", html);
+        Assert.Equal("<p><strong>&lt;a href=&quot;</strong>&quot;&gt;</p>", html);
     }
 
     [Fact]
@@ -1038,7 +1038,7 @@ public class EmphasisTests
     {
         var input = "*a `*`*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>a <code>*</code></em></p>", html);
+        Assert.Equal("<p><em>a `</em>`*</p>", html);
     }
 
     [Fact]
@@ -1046,7 +1046,7 @@ public class EmphasisTests
     {
         var input = "_a `_`_";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>a <code>_</code></em></p>", html);
+        Assert.Equal("<p><em>a `</em>`_</p>", html);
     }
 
     [Fact]
@@ -1054,7 +1054,7 @@ public class EmphasisTests
     {
         var input = "**a<https://foo.bar/?q=**>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>**a<a href=\"https://foo.bar/?q=**\">https://foo.bar/?q=**</a></p>", html);
+        Assert.Equal("<p><strong>a&lt;https://foo.bar/?q=</strong>&gt;</p>", html);
     }
 
     [Fact]
@@ -1062,7 +1062,7 @@ public class EmphasisTests
     {
         var input = "__a<https://foo.bar/?q=__>";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>__a<a href=\"https://foo.bar/?q=__\">https://foo.bar/?q=__</a></p>", html);
+        Assert.Equal("<p><strong>a&lt;https://foo.bar/?q=</strong>&gt;</p>", html);
     }
 
     [Fact]

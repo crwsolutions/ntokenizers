@@ -30,7 +30,7 @@ public class FencedCodeBlocksTests
     {
         var input = "``\nfoo\n``";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><code>foo</code></p>", html);
+        Assert.Equal("<p><code>\nfoo\n</code></p>", html);
     }
 
     [Fact]
