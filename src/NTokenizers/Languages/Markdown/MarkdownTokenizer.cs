@@ -88,9 +88,18 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     continue;
                 }
 
-                if (!char.IsWhiteSpace(c) && await TryParseLineStartConstructAsync())
+                // A line-start construct allows at most three columns of indentation. When
+                // the first non-whitespace character is about to be processed the leading
+                // whitespace is still buffered, so the indent can be measured here. A line
+                // indented by four or more columns is not a line-start construct: with a
+                // paragraph open it is a lazy continuation line (handled below) and with no
+                // paragraph open it simply cannot start a construct.
+                if (!char.IsWhiteSpace(c) && CountLeadingIndentColumns() < 4 && await TryParseLineStartConstructAsync())
                 {
-                    // A line-start block construct (heading, list, fence, ...) terminates an open paragraph.
+                    // A line-start block construct (list, fence, ...) terminates an open
+                    // paragraph. Close it after the construct; for headings the paragraph is
+                    // already closed before the heading token is emitted (see
+                    // TryParseHeadingAsync), so this is a no-op in that case.
                     CloseParagraph();
                     _pendingSoftBreak = false;
 
@@ -437,6 +446,27 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         }
     }
 
+    /// <summary>
+    /// Counts the leading indentation of the buffered leading whitespace in columns
+    /// (a tab counts as the number of spaces to the next 4-column tab stop), stopping at
+    /// the first non-whitespace character. The buffer holds exactly the leading whitespace
+    /// of a line at the moment the first content character is processed.
+    /// </summary>
+    private int CountLeadingIndentColumns()
+    {
+        int columns = 0;
+        for (int i = 0; i < _buffer.Length; i++)
+        {
+            char ch = _buffer[i];
+            if (ch != ' ' && ch != '\t')
+            {
+                break;
+            }
+            columns += ch == '\t' ? 4 - (columns % 4) : 1;
+        }
+        return columns;
+    }
+
     private static bool AllWhiteSpace(string s)
     {
         foreach (var ch in s)
@@ -480,6 +510,12 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (next != ' ' && next != '\t' && next != '\n' && next != '\0')
             return false;
 
+        // An ATX heading interrupts a paragraph. Close any open paragraph before the
+        // heading is emitted, so that the paragraph's end token precedes the heading's
+        // tokens in the stream rather than wrapping it.
+        CloseParagraph();
+        _pendingSoftBreak = false;
+
         // Emit any pending text
         EmitText();
 
@@ -491,7 +527,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         while (char.IsWhiteSpace((char)Peek()) && Peek() != '\n')
             Read();
 
-        return await ParseInlines(MarkdownTokenType.Heading, new HeadingMetadata(level), InlineMarkdownTokenizer.Create());
+        // Headings parse their content with heading-specific rules (the optional
+        // closing sequence of '#' characters is stripped), so the dedicated heading
+        // inline tokenizer is used instead of the generic inline tokenizer.
+        return await ParseInlines(MarkdownTokenType.Heading, new HeadingMetadata(level), HeadingMarkdownTokenizer.Create());
     }
 
     private async Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync, string? value = null) where TToken : IToken

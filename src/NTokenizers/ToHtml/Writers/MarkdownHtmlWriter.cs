@@ -80,6 +80,10 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
                 {
                     var headingWriter = new HeadingHtmlWriter();
                     await headingWriter.WriteContentAsync(headingMeta, writer);
+                    // The heading is a top-level block: a following block is separated from
+                    // it by a line break, written before that block and omitted at end of
+                    // stream (consistent with paragraphs, code blocks, and thematic breaks).
+                    _pendingBlockBreak = true;
                 }
                 break;
 

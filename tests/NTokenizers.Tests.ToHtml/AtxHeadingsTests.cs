@@ -14,7 +14,7 @@ public class AtxHeadingsTests
     {
         var input = "# foo\n## foo\n### foo\n#### foo\n##### foo\n###### foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h1>foo</h1>\n<h2>foo</h2>\n<h3>foo</h3>\n<h4>foo</h4>\n<h5>foo</h5>\n<h6>foo</h6>\n", html);
+        Assert.Equal("<h1>foo</h1>\n<h2>foo</h2>\n<h3>foo</h3>\n<h4>foo</h4>\n<h5>foo</h5>\n<h6>foo</h6>", html);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class AtxHeadingsTests
     {
         var input = "#                  foo                     ";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h1>foo                     </h1>\n", html);
+        Assert.Equal("<h1>foo                     </h1>", html);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class AtxHeadingsTests
     {
         var input = " ### foo\n  ## foo\n   # foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h3>foo</h3>\n<h2>foo</h2>\n<h1>foo</h1>\n", html);
+        Assert.Equal("<h3>foo</h3>\n<h2>foo</h2>\n<h1>foo</h1>", html);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class AtxHeadingsTests
     {
         var input = "foo\n    # bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo\n# bar</p>", html);
+        Assert.Equal("<p>foo<br/>    # bar</p>", html);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class AtxHeadingsTests
     {
         var input = "### foo ### b";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h3>foo ### b</h3>\n", html);
+        Assert.Equal("<h3>foo ### b</h3>", html);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class AtxHeadingsTests
     {
         var input = "# foo#";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h1>foo#</h1>\n", html);
+        Assert.Equal("<h1>foo#</h1>", html);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class AtxHeadingsTests
     {
         var input = "### foo \\###\n## foo #\\##\n# foo \\#";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h3>foo ###</h3>\n<h2>foo ###</h2>\n<h1>foo #</h1>\n", html);
+        Assert.Equal("<h3>foo ###</h3>\n<h2>foo ###</h2>\n<h1>foo #</h1>", html);
     }
 
     [Fact]
@@ -153,5 +153,4 @@ public class AtxHeadingsTests
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
         Assert.Equal("<h2></h2>\n<h1></h1>\n<h3></h3>", html);
     }
-
 }

@@ -118,7 +118,7 @@ public class HardLineBreaksTests
     {
         var input = "### foo\\";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h3>foo\\</h3>\n", html);
+        Assert.Equal("<h3>foo\\</h3>", html);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class HardLineBreaksTests
     {
         var input = "### foo  ";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h3>foo  </h3>\n", html);
+        Assert.Equal("<h3>foo  </h3>", html);
     }
 
 }

@@ -17,6 +17,11 @@ internal sealed class HeadingHtmlWriter : AbstractMetadataToHtmlWriter<HeadingMe
 
     internal override Task WriteContentAsync(HeadingMetadata metadata, TextWriter writer)
     {
+        // The heading writes its closing tag without a trailing line break. A heading is a
+        // top-level block, so the separating line break is owned by the top-level Markdown
+        // writer (_pendingBlockBreak), which writes it before the following block and
+        // omits it at end of stream. This keeps heading output consistent with paragraphs,
+        // code blocks, and thematic breaks.
         writer.Write($"<h{metadata.Level}>");
         return metadata.RegisterInlineTokenHandler(token =>
         {
@@ -24,7 +29,7 @@ internal sealed class HeadingHtmlWriter : AbstractMetadataToHtmlWriter<HeadingMe
         },
         () =>
         {
-            writer.WriteLine($"</h{metadata.Level}>");
+            writer.Write($"</h{metadata.Level}>");
         });
     }
 }

@@ -86,7 +86,7 @@ public class TabsTests
     {
         var input = "#\tFoo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h1>Foo</h1>\n", html);
+        Assert.Equal("<h1>Foo</h1>", html);
     }
 
     [Fact]
