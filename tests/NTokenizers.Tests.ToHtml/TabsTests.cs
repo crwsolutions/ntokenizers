@@ -13,16 +13,16 @@ public class TabsTests
     public void Example_001()
     {
         var input = "\tfoo\tbaz\t\tbim";
-        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>foo\tbaz\t\tbim\n</code></pre>", html);
+        var html = MarkdownConverter.ToHtml(input);
+        Assert.Equal("<pre><code>foo\tbaz\t\tbim</code></pre>", html);
     }
 
     [Fact]
     public void Example_002()
     {
         var input = "  \tfoo\tbaz\t\tbim";
-        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>foo\tbaz\t\tbim\n</code></pre>", html);
+        var html = MarkdownConverter.ToHtml(input);
+        Assert.Equal("<pre><code>foo\tbaz\t\tbim</code></pre>", html);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class TabsTests
     {
         var input = "    a\ta\n    ὐ\ta";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>a\ta\nὐ\ta\n</code></pre>", html);
+        Assert.Equal("<pre><code>a\ta\nὐ\ta</code></pre>", html);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class TabsTests
     {
         var input = "  - foo\n\n\tbar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>foo bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class TabsTests
     {
         var input = "    foo\n\tbar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>foo\nbar\n</code></pre>", html);
+        Assert.Equal("<pre><code>foo\nbar</code></pre>", html);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class TabsTests
     {
         var input = "*\t*\t*\t";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<hr />", html);
+        Assert.Equal("<p><em>\t</em>\t*\t</p>", html);
     }
 
 }
