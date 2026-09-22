@@ -109,24 +109,54 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
     {
         if (Peek() != '`') return false;
 
-        EmitText();
-        Read(); // Consume opening `
+        // Count the opening backtick run. The closing delimiter must be a backtick run of the
+        // same length; shorter runs inside the code span are content and must not close it.
+        int openLength = 0;
+        while (Peek() == '`')
+        {
+            Read();
+            openLength++;
+        }
 
-        // Read code until closing `
+        EmitText();
+
+        // Keep reading (including whitespace and line breaks, which are preserved) until a
+        // backtick run of exactly the opening length closes the span, or end of stream.
         var code = new StringBuilder();
-        while (Peek() != -1 && Peek() != '\n')
+        var foundClose = false;
+        while (Peek() != -1)
         {
             char c = (char)Read();
-            if (c == '`')
+            if (c != '`')
             {
-                _onToken(new MarkdownToken(MarkdownTokenType.CodeInline, code.ToString()));
-                return true;
+                code.Append(c);
+                continue;
             }
-            code.Append(c);
+
+            int runLength = 1;
+            while (Peek() == '`')
+            {
+                Read();
+                runLength++;
+            }
+
+            if (runLength == openLength)
+            {
+                foundClose = true;
+                break;
+            }
+
+            code.Append('`', runLength);
+        }
+
+        if (foundClose)
+        {
+            _onToken(new MarkdownToken(MarkdownTokenType.CodeInline, code.ToString()));
+            return true;
         }
 
         // No closing found, treat as text
-        _buffer.Append('`').Append(code);
+        _buffer.Append('`', openLength).Append(code);
         return true;
     }
 

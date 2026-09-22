@@ -147,6 +147,48 @@ public class MarkdownTokenizerCodeBlocksTests
     }
 
     [Fact]
+    public void TestInlineCodeWithInnerBackticks()
+    {
+        // A backtick run shorter than the opening run is content, not a closing delimiter.
+        var markdown = "`` foo ` bar ``";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.CodeInline, tokens[1].TokenType);
+        Assert.Equal(" foo ` bar ", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestInlineCodeWithDoubleBacktickRunInside()
+    {
+        // A double-backtick run inside a single-backtick code span is content.
+        var markdown = "`  ``  `";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.CodeInline, tokens[1].TokenType);
+        Assert.Equal("  ``  ", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestInlineCodeLongerOpeningRun()
+    {
+        // A run of exactly the opening length closes the span; shorter runs are content.
+        var markdown = "``foo`bar``";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.CodeInline, tokens[1].TokenType);
+        Assert.Equal("foo`bar", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
     public void TestCodeBlock()
     {
         var markdown = "```\ncode\n```";

@@ -10,6 +10,14 @@ namespace NTokenizers.Tests.ToHtml;
 public class EmphasisTests
 {
     [Fact]
+    public void Example_349()
+    {
+        var input = "*foo bar*";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p><em>foo bar</em></p>", html);
+    }
+
+    [Fact]
     public void Example_350()
     {
         var input = "a * foo bar*";
