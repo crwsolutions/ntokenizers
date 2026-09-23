@@ -185,6 +185,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 _atLineStart = true;
             }
 
+            //Emit words to keep the streaming character of the tokenizer.
             if (!_atLineStart && c == ' ' && _buffer.Length > 1)
             {
                 EmitText();
