@@ -21,10 +21,6 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
     // is rendered as a soft line break (<br/>) rather than dropped.
     private bool _inParagraph;
 
-    // Whether the writer is currently inside an open indented code block (<pre><code>...</code></pre>).
-    // Newline text inside is rendered as a literal line break rather than dropped or as <br/>.
-    private bool _inPreBlock;
-
     public void WriteAdditionalCss(StringBuilder bob)
     {
         var codeBlockWriter = new CodeblockHtmlWriter();
@@ -44,13 +40,6 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
         switch (token.TokenType)
         {
             case MarkdownTokenType.Text:
-                if (_inPreBlock)
-                {
-                    // Inside an indented code block, text is literal: newlines are preserved
-                    // and HTML is escaped (no <br/> conversion, no span).
-                    WriteValue(writer, token.Value, null, inPreBlock: true);
-                    break;
-                }
                 if (!_inParagraph)
                 {
                     // Newline/whitespace text outside a paragraph is block separation, not content.
@@ -193,17 +182,15 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
                 _pendingBlockBreak = true;
                 break;
 
-            case MarkdownTokenType.IndentedCodeBlockStart:
-                writer.Write("<pre><code>");
-                _inPreBlock = true;
-                break;
-
-            case MarkdownTokenType.IndentedCodeBlockEnd:
-                writer.Write("</code></pre>");
-                _inPreBlock = false;
-                // A following block is separated from the code block by a line break; the
-                // break is written before that block (and omitted at end of stream).
-                _pendingBlockBreak = true;
+            case MarkdownTokenType.IndentedCodeBlock:
+                if (token.Metadata is IndentedCodeBlockMetadata icoMeta)
+                {
+                    var icoWriter = new IndentedCodeBlockHtmlWriter();
+                    await icoWriter.WriteContentAsync(icoMeta, writer);
+                    // A following block is separated from the code block by a line break; the
+                    // break is written before that block (and omitted at end of stream).
+                    _pendingBlockBreak = true;
+                }
                 break;
 
             default:

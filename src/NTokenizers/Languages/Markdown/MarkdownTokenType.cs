@@ -169,15 +169,10 @@ public enum MarkdownTokenType
     ParagraphBlockEnd,
 
     /// <summary>
-    /// Represents the start of an indented code block. Value is empty. Metadata is null.
-    /// An indented code block is a sequence of non-blank lines, each preceded by four or
-    /// more spaces of indentation, separated by blank lines. It has no info string.
+    /// Represents an indented code block. Value is empty; the content is streamed as plain Text
+    /// tokens through the metadata's inline token handler. An indented code block is a sequence of
+    /// non-blank lines, each preceded by four or more columns of indentation, separated by blank
+    /// lines. It has no info string.
     /// </summary>
-    IndentedCodeBlockStart,
-
-    /// <summary>
-    /// Represents the end of an indented code block. Value is empty. Metadata is null.
-    /// Follows the last line of the code block.
-    /// </summary>
-    IndentedCodeBlockEnd
+    IndentedCodeBlock
 }
