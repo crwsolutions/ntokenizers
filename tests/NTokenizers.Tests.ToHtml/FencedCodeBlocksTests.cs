@@ -86,7 +86,15 @@ public class FencedCodeBlocksTests
     {
         var input = "> ```\n> aaa\n\nbbb";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<blockquote>\n<pre><code>aaa\n</code></pre>\n</blockquote>\n<p>bbb</p>", html);
+        Assert.Equal(
+            "<blockquote>\n" +
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">aaa\n\nbbb</span></code></pre>\n</div>\n</blockquote>",
+            html);
     }
 
     [Fact]

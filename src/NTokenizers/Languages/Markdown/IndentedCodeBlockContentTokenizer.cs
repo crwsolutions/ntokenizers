@@ -125,18 +125,19 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
 
     /// <summary>
     /// Classifies the line at the current position of the given tokenizer, which must be a
-    /// line start. Only the leading spaces/tabs and the first content character are
-    /// examined, so the lookahead stays bounded. Nothing is consumed; the position is left
-    /// at the start of the line. Shared with the main tokenizer, which uses it for the
-    /// block start detection before the content tokenizer is wired to the stream.
+    /// line start, optionally starting <paramref name="offset"/> characters ahead. Only the
+    /// leading spaces/tabs and the first content character are examined, so the lookahead
+    /// stays bounded. Nothing is consumed; the position is left where it was. Shared with
+    /// the main tokenizer, which uses it for the block start detection before the content
+    /// tokenizer is wired to the stream.
     /// </summary>
-    internal static LineStart PeekCurrentLineKind(BaseTokenizer<MarkdownToken> tokenizer)
+    internal static LineStart PeekCurrentLineKind(BaseTokenizer<MarkdownToken> tokenizer, int offset = 0)
     {
         int columns = 0;
         int pos = 0;
         while (true)
         {
-            char c = tokenizer.PeekAhead(pos);
+            char c = tokenizer.PeekAhead(pos + offset);
             if (c != ' ' && c != '\t')
             {
                 break;
@@ -146,7 +147,7 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
             pos++;
         }
 
-        char ch = tokenizer.PeekAhead(pos);
+        char ch = tokenizer.PeekAhead(pos + offset);
         if (ch == '\0')
         {
             return LineStart.End;

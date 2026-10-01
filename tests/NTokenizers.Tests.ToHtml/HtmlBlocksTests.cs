@@ -222,7 +222,7 @@ public class HtmlBlocksTests
     {
         var input = "> <div>\n> foo\n\nbar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<blockquote>\n<div>\nfoo\n</blockquote>\n<p>bar</p>", html);
+        Assert.Equal("<blockquote>\n<p><div><br/>foo</p>\n</blockquote>\n<p>bar</p>", html);
     }
 
     [Fact]

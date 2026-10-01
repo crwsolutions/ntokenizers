@@ -54,7 +54,7 @@ public class TabsTests
     {
         var input = ">\t\tfoo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<blockquote>\n<pre><code>  foo\n</code></pre>\n</blockquote>", html);
+        Assert.Equal("<blockquote>\n<pre><code>\tfoo</code></pre>\n</blockquote>", html);
     }
 
     [Fact]

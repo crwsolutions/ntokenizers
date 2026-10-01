@@ -37,34 +37,69 @@ public class MarkdownTokenizerIndentedCodeBlockTests
     {
         var tokens = new List<MarkdownToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        var result = MarkdownTokenizer.Create().ParseAsync(stream, token =>
-        {
-            tokens.Add(token);
 
-            // Automatically set OnInlineToken to capture inline tokens
-            // Note: We just register the handler without waiting - the processing happens during parsing
+        // Recursively registers inline token handlers for markdown tokens. A token that
+        // carries InlineMetadata<MarkdownToken> (heading, blockquote, list item, indented
+        // code block, table) can itself contain markdown tokens - most importantly, a
+        // blockquote can nest another blockquote. Registering the handler here (recursively)
+        // ensures the whole token tree is captured in `tokens`; a flat registration would
+        // leave nested block content unhandled.
+        static void RegisterInlineHandlers(MarkdownToken token, List<MarkdownToken> tokens)
+        {
             if (token.Metadata is HeadingMetadata headingMeta)
             {
-                headingMeta.RegisterInlineTokenHandler(tokens.Add);
+                headingMeta.RegisterInlineTokenHandler(t =>
+                {
+                    tokens.Add(t);
+                    RegisterInlineHandlers(t, tokens);
+                });
             }
             else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
             {
-                blockquoteMeta.RegisterInlineTokenHandler(tokens.Add);
+                blockquoteMeta.RegisterInlineTokenHandler(t =>
+                {
+                    tokens.Add(t);
+                    RegisterInlineHandlers(t, tokens);
+                });
             }
             else if (token.Metadata is ListItemMetadata listMeta)
             {
-                listMeta.RegisterInlineTokenHandler(tokens.Add);
+                listMeta.RegisterInlineTokenHandler(t =>
+                {
+                    tokens.Add(t);
+                    RegisterInlineHandlers(t, tokens);
+                });
             }
             else if (token.Metadata is OrderedListItemMetadata orderedListMeta)
             {
-                orderedListMeta.RegisterInlineTokenHandler(tokens.Add);
+                orderedListMeta.RegisterInlineTokenHandler(t =>
+                {
+                    tokens.Add(t);
+                    RegisterInlineHandlers(t, tokens);
+                });
             }
-            else if (token.Metadata is IndentedCodeBlockMetadata icoMeta)
+            else if (token.Metadata is IndentedCodeBlockMetadata indentedCodeMeta)
             {
-                // For indented code blocks, we receive plain MarkdownToken Text objects.
-                icoMeta.RegisterInlineTokenHandler(tokens.Add);
+                // Indented code blocks stream plain markdown Text tokens.
+                indentedCodeMeta.RegisterInlineTokenHandler(tokens.Add);
             }
-            else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
+            else if (token.Metadata is TableMetadata tableMeta)
+            {
+                tableMeta.RegisterInlineTokenHandler(t =>
+                {
+                    tokens.Add(t);
+                    RegisterInlineHandlers(t, tokens);
+                });
+            }
+        }
+        var result = MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        {
+            tokens.Add(token);
+            RegisterInlineHandlers(token, tokens);
+
+            // Code block metadata streams language-specific (non-markdown) tokens; the
+            // no-op handlers below let the parser stream and discard that content.
+            if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
             {
                 // For C# code blocks, we receive CSharpToken objects
                 csharpMeta.RegisterInlineTokenHandler(token => { /* Capture C# tokens if needed */ });
@@ -104,21 +139,21 @@ public class MarkdownTokenizerIndentedCodeBlockTests
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMeta)
             {
-                // For XML, XAML, and SVG code blocks, we receive XmlToken objects
+                // For XML code blocks, we receive XmlToken objects
                 xmlMeta.RegisterInlineTokenHandler(token => { });
             }
             else if (token.Metadata is HtmlCodeBlockMetadata htmlMeta)
             {
                 // For XML code blocks, we receive XmlToken objects
-                htmlMeta.RegisterInlineTokenHandler(inlineToken =>
+                htmlMeta.RegisterInlineTokenHandler(token =>
                 {
-                    if (inlineToken.Metadata is CssCodeBlockMetadata cssMetadata)
+                    if (token.Metadata is CssCodeBlockMetadata cssMetadata)
                     {
-                        cssMetadata.RegisterInlineTokenHandler(cssToken => { });
+                        cssMetadata.RegisterInlineTokenHandler(token => { });
                     }
-                    else if (inlineToken.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
+                    else if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
                     {
-                        tsMetadata.RegisterInlineTokenHandler(tsToken => { });
+                        tsMetadata.RegisterInlineTokenHandler(token => { });
                     }
                 });
             }
@@ -136,10 +171,6 @@ public class MarkdownTokenizerIndentedCodeBlockTests
             {
                 // For TOML code blocks, we receive TomlToken objects
                 tomlMeta.RegisterInlineTokenHandler(token => { });
-            }
-            else if (token.Metadata is TableMetadata tableMeta)
-            {
-                tableMeta.RegisterInlineTokenHandler(tokens.Add);
             }
             else if (token.Metadata is GenericCodeBlockMetadata gMeta)
             {

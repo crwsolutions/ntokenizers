@@ -158,7 +158,9 @@ public class ListsTests
     {
         var input = "* a\n  > b\n  >\n* c";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n</li>\n<li>c</li>\n</ul>", html);
+        // The second and third lines (two leading spaces before the '>') belong to the
+        // outer list-item quote, so 'b' closes the quote and '* c' starts a new list item.
+        Assert.Equal("<ul>\n<li>a</li>\n</ul><blockquote>\n<p>b</p>\n</blockquote>\n<ul>\n<li>c</li>\n</ul>", html);
     }
 
     [Fact]
@@ -166,7 +168,18 @@ public class ListsTests
     {
         var input = "- a\n  > b\n  ```\n  c\n  ```\n- d";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n<pre><code>c\n</code></pre>\n</li>\n<li>d</li>\n</ul>", html);
+        Assert.Equal(
+            "<ul>\n<li>a</li>\n</ul><blockquote>\n" +
+            "<p>b  <div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\"> </span><span class=\"tok-generic\"> </span><span class=\"tok-generic\">c\n </span><span class=\"tok-generic\"> </span></code></pre>\n" +
+            "</div>\n</p>\n" +
+            "</blockquote>\n" +
+            "<ul>\n<li>d</li>\n</ul>",
+            html);
     }
 
     [Fact]

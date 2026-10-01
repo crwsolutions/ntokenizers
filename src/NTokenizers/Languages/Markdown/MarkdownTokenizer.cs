@@ -26,13 +26,51 @@ namespace NTokenizers.Markdown;
 /// <summary>
 /// A streaming tokenizer for Markdown/markdown constructs using a character-by-character state machine.
 /// </summary>
+/// <remarks>
+/// The public <see cref="Create"/> factory returns the top-level tokenizer (depth 0). The
+/// content of a blockquote is streamed by a nested instance at one deeper level (see the
+/// internal constructor): at each line start the blockquote decision table runs first,
+/// assigning the line's blockquote markers by depth; the remaining content is parsed as a
+/// full markdown sub-document (paragraphs, headings, lists, code blocks, tables, and
+/// nested blockquotes).
+/// </remarks>
 public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 {
     /// <summary>
-    /// Create a new instance of MarkdownTokenizer.
+    /// Create a new top-level instance of MarkdownTokenizer.
     /// </summary>
     /// <returns></returns>
     public static MarkdownTokenizer Create() => new();
+
+    /// <summary>
+    /// Initializes a new top-level MarkdownTokenizer instance.
+    /// </summary>
+    public MarkdownTokenizer() : this(depth: 0)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a MarkdownTokenizer instance. A depth of 0 is the top-level document; a
+    /// depth of N means this tokenizer runs as the content of the N-th nested blockquote.
+    /// Each line start is first offered to the blockquote decision table, which assigns the
+    /// line's blockquote markers by depth (marker K of a line belongs to nesting level K);
+    /// the remaining content is parsed as a full markdown sub-document.
+    /// </summary>
+    /// <param name="depth">The blockquote nesting depth (0 for the top-level document).</param>
+    internal MarkdownTokenizer(int depth)
+    {
+        _depth = depth;
+    }
+
+    // The blockquote nesting depth: 0 for the top-level document, N for the content of the
+    // N-th nested blockquote. Marker K of an input line belongs to nesting level K.
+    private readonly int _depth;
+
+    // One marker chain is stripped per input line, at each nesting level. It starts true so
+    // the trigger line's remainder goes straight to the normal line-start grammar, and it is
+    // reset to false every time this level processes a '\n' (or a line-start construct left
+    // it at a line start), so the next line's start is re-offered to the decision table.
+    private bool _prefixConsumedThisLine = true;
 
     private bool _atLineStart = true;
     private BlockContext _block = BlockContext.None;
@@ -40,8 +78,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
     // The open block context. None and Paragraph are mutually exclusive, so a single enum
     // tracks them instead of several booleans. An indented code block is not tracked here:
-    // its content is consumed by the IndentedCodeBlockContentTokenizer while the main loop
-    // is suspended on the inline handler pipe.
+    // its content is consumed by the IndentedCodeBlockContentTokenizer.
     private enum BlockContext
     {
         None,
@@ -66,6 +103,27 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             // allow up to 3 spaces of indentation) are checked afterwards.
             if (_atLineStart)
             {
+                // Blockquote content: the line is first offered to the blockquote decision
+                // table, which strips this level's marker prefix or ends the quote (line left
+                // untouched for the outer tokenizer).
+                if (_depth > 0 && !_prefixConsumedThisLine)
+                {
+                    if (!await TryHandleBlockquoteLineStartAsync())
+                    {
+                        break; // The quote is ended; the outer tokenizer takes over this line.
+                    }
+
+                    // The decision table consumed this line's prefix, so the character captured
+                    // at the top of the loop is stale; re-sync it with the stream.
+                    peek = Peek();
+                    if (peek == -1)
+                    {
+                        break;
+                    }
+
+                    c = (char)peek;
+                }
+
                 // Indented (>= 4 spaces) code line at the top level. It cannot interrupt a
                 // paragraph, so it is only started when no paragraph is open. The content is
                 // streamed through the inline handler pipe by the content tokenizer.
@@ -90,6 +148,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     _pendingSoftBreak = false;
 
                     //Eat newline after line-start construct
+                    bool ateNewline = false;
                     if (Peek() == '\r')
                     {
                         Read();
@@ -97,9 +156,19 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     if (Peek() == '\n')
                     {
                         Read();
+                        ateNewline = true;
                     }
 
                     _atLineStart = true;
+                    // After a line-start construct the stream sits at a line start. In blockquote
+                    // mode the construct may have consumed the line ending itself, in which case
+                    // this level never processed a '\n'; reset the per-line prefix flag
+                    // unconditionally so the next line is re-offered to the decision table.
+                    if (_depth > 0 || ateNewline)
+                    {
+                        _prefixConsumedThisLine = false;
+                    }
+
                     continue;
                 }
             }
@@ -169,6 +238,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     EmitText();
                 }
                 _atLineStart = true;
+                _prefixConsumedThisLine = false;
             }
 
             //Emit words to keep the streaming character of the tokenizer.
@@ -222,6 +292,220 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // Open the block: the token is emitted with its metadata and the block content is
         // streamed as plain Text tokens through the metadata's inline token handler.
         return await ParseInlines(MarkdownTokenType.IndentedCodeBlock, new IndentedCodeBlockMetadata(), IndentedCodeBlockContentTokenizer.Create());
+    }
+
+    /// <summary>
+    /// The blockquote decision table, evaluated at the start of each input line while this
+    /// tokenizer runs as blockquote content (see the internal constructor). The line is
+    /// examined without consuming it until a decision is made:
+    /// <list type="number">
+    /// <item>Markers are assigned by depth: marker K belongs to nesting level K, so this
+    /// level (depth <c>_depth</c>) continues only when the line carries at least <c>_depth</c>
+    /// markers (each: up to three columns of spaces or tabs, then <c>&gt;</c> plus an optional
+    /// single space). This level's markers are consumed; any excess stays in the remainder
+    /// and opens deeper nested quotes. With fewer markers: a valid lazy continuation (a
+    /// paragraph is open and the remainder is plain content) consumes them as decoration;
+    /// otherwise this level ends and the line is left for the outer tokenizer.</item>
+    /// <item>A blank line (no prefix) closes the paragraph, emits the whitespace plus line
+    /// ending as a Text token and ends the quote.</item>
+    /// <item>An indented line (four or more columns, no prefix) ends the quote when no
+    /// paragraph is open, so the outer tokenizer can start an indented code block.</item>
+    /// <item>A line starting a line-start construct ends the quote, leaving the line untouched.</item>
+    /// <item>Any other line is a lazy continuation while a paragraph is open and ends the
+    /// quote otherwise.</item>
+    /// </list>
+    /// </summary>
+    /// <returns>true when the prefix was stripped and the main loop should continue; false when
+    /// the quote is ended and the line is left untouched in the stream for the outer tokenizer.</returns>
+    private async Task<bool> TryHandleBlockquoteLineStartAsync()
+    {
+        // Row 1: walk the marker chain without consuming it. 'stop' marks the end of this
+        // level's _depth-th marker so a line carrying more markers leaves the excess in
+        // the remainder to open deeper nested quotes.
+        int markers = 0;
+        int end = 0;
+        int stop = 0;
+        while (true)
+        {
+            int col = 0;
+            int pos = end;
+            while ((PeekAhead(pos) == ' ' || PeekAhead(pos) == '\t') && col < 4)
+            {
+                col += PeekAhead(pos) == '\t' ? 4 - (col % 4) : 1;
+                pos++;
+            }
+            if (col >= 4 || PeekAhead(pos) != '>')
+            {
+                break;
+            }
+            pos++; // the '>'
+            if (PeekAhead(pos) == ' ')
+            {
+                pos++; // the optional single space is part of the marker
+            }
+            markers++;
+            end = pos;
+            if (markers == _depth)
+            {
+                stop = end;
+                break;
+            }
+        }
+
+        if (markers >= _depth)
+        {
+            // The line belongs to this level: strip only its _depth markers; any excess
+            // stays in the remainder to open deeper nested quotes.
+            EmitText();
+            for (int i = 0; i < stop; i++)
+            {
+                Read();
+            }
+            _prefixConsumedThisLine = true;
+            return true;
+        }
+
+        // Markers < depth: the markers belong to the outer levels. A valid lazy
+        // continuation consumes them as decoration; otherwise this level ends and the
+        // line is left untouched for the outer tokenizer. This must not fall through to
+        // rows 2-5: a blank remainder or line-start construct is not a lazy continuation,
+        // so row 5 would wrongly keep the paragraph open.
+        if (markers > 0)
+        {
+            bool lazy = _block == BlockContext.Paragraph
+                && IndentedCodeBlockContentTokenizer.PeekCurrentLineKind(this, end) == IndentedCodeBlockContentTokenizer.LineStart.Other
+                && !WouldStartBlockquoteBreakingConstruct(end);
+            if (lazy)
+            {
+                EmitText();
+                for (int i = 0; i < end; i++)
+                {
+                    Read();
+                }
+                _prefixConsumedThisLine = true;
+                return true;
+            }
+
+            CloseParagraph();
+            return false;
+        }
+
+        // Row 2: a blank line (no prefix) ends the quote. The paragraph is closed first and
+        // the line is emitted as a Text token so the stream stays faithful to the input.
+        if (IndentedCodeBlockContentTokenizer.PeekCurrentLineKind(this) == IndentedCodeBlockContentTokenizer.LineStart.Blank)
+        {
+            _pendingSoftBreak = false;
+            CloseParagraph();
+
+            (string line, bool hasLineEnding) = IndentedCodeBlockContentTokenizer.ReadLineText(this);
+            EmitText();
+            _onToken(new MarkdownToken(MarkdownTokenType.Text, line + (hasLineEnding ? "\n" : string.Empty)));
+            return false;
+        }
+
+        // Row 3: an indented (four or more columns) content line without a prefix ends the
+        // quote when no paragraph is open; the outer tokenizer starts an indented code block.
+        // With a paragraph open it is a lazy continuation line (fall through to the regular
+        // paragraph logic below).
+        if (IndentedCodeBlockContentTokenizer.PeekCurrentLineKind(this) == IndentedCodeBlockContentTokenizer.LineStart.IndentedContent
+            && _block != BlockContext.Paragraph)
+        {
+            return false;
+        }
+
+        // Row 4: a line that would start a line-start construct (same <4-column checks as the
+        // top-level grammar) ends the quote; the line stays untouched for the outer scope.
+        if (WouldStartBlockquoteBreakingConstruct())
+        {
+            return false;
+        }
+
+        // Row 5: any other line. A lazy continuation while a paragraph is open; otherwise the
+        // quote ends and the line belongs to the outer scope. When the line is a lazy
+        // continuation the decision is marked made so the table is not re-evaluated further
+        // down the line (after its leading whitespace is buffered), which would otherwise
+        // end the quote the moment the buffered content begins with a line-start construct.
+        if (_block == BlockContext.Paragraph)
+        {
+            _prefixConsumedThisLine = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Non-consumingly reports whether the line at the current (line-start) position,
+    /// optionally starting <paramref name="offset"/> characters ahead, would begin a
+    /// line-start construct: an ATX heading, a thematic break, a list marker, a code
+    /// fence, a ::: custom container, or a table. The same character conditions as the
+    /// consumer methods in <see cref="TryParseLineStartConstructAsync"/> are replicated here
+    /// without reading from the stream, so a "quote ends" decision never disturbs the line.
+    /// A leading blockquote marker is not part of this check: a line starting with <c>&gt;</c>
+    /// is handled by the marker row of the decision table.
+    /// </summary>
+    private bool WouldStartBlockquoteBreakingConstruct(int offset = 0)
+    {
+        char first = PeekAhead(offset);
+        if (first == ' ' || first == '\t')
+        {
+            return false;
+        }
+
+        if (first == '#')
+        {
+            // 1-6 '#' followed by space, tab, line ending, or end of stream.
+            int level = 0;
+            while (PeekAhead(level + offset) == '#' && level < 6)
+            {
+                level++;
+            }
+
+            char next = PeekAhead(level + offset);
+            return next == ' ' || next == '\t' || next == '\n' || next == '\0';
+        }
+
+        if (first == '-' || first == '*')
+        {
+            int count = 0;
+            while (PeekAhead(count + offset) == first)
+            {
+                count++;
+            }
+
+            // A thematic break: at least three of the same character, then line ending or EOF.
+            if (count >= 3 && (PeekAhead(count + offset) == '\r' || PeekAhead(count + offset) == '\n' || PeekAhead(count + offset) == '\0'))
+            {
+                return true;
+            }
+
+            // An unordered list marker: the character followed by a space.
+            return PeekAhead(1 + offset) == ' ';
+        }
+
+        if (char.IsDigit(first))
+        {
+            // An ordered list marker: digits, a dot, then a space.
+            int pos = 0;
+            while (char.IsDigit(PeekAhead(pos + offset)))
+            {
+                pos++;
+            }
+
+            return PeekAhead(pos + offset) == '.' && PeekAhead(pos + 1 + offset) == ' ';
+        }
+
+        if (first == '`')
+        {
+            return PeekAhead(1 + offset) == '`' && PeekAhead(2 + offset) == '`';
+        }
+
+        if (first == ':')
+        {
+            return PeekAhead(1 + offset) == ':' && PeekAhead(2 + offset) == ':';
+        }
+
+        return first == '|';
     }
 
     /// <summary>
@@ -349,8 +633,18 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     private Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer, string? value = null) where TToken : IToken =>
         ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, _lookaheadBuffer, handler), value);
 
-    private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken =>
-        ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(Reader, Bob, "```", handler));
+    private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken
+    {
+        // Fence content is read straight from the stream, bypassing the blockquote decision
+        // table. Inside a quote that would leak the '>' markers into the code (and a
+        // prefixed closing fence would go unrecognized), so the reader is wrapped to strip
+        // this level's markers while keeping them in the faithful text.
+        TextReader reader = _depth > 0
+            ? new FilteredBlockquoteReader(Reader, _depth, Bob)
+            : Reader;
+
+        return ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(reader, Bob, "```", handler));
+    }
 
     private bool TryParseHorizontalRule()
     {
@@ -384,9 +678,35 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         return true;
     }
 
+    /// <summary>
+    /// Attempts to parse a blockquote at the current (line-start) position. Consumes the
+    /// blockquote marker ('>' + optional single space) and streams the blockquote content
+    /// through the inline handler pipe.
+    /// </summary>
+    /// <remarks>
+    /// The content is parsed by a nested <see cref="MarkdownTokenizer"/> at one deeper
+    /// level, so the content is a full markdown sub-document: the content tokenizer reads
+    /// until the grammar no longer fits a quoted line, then the call stack unwinds and the
+    /// outer tokenizer's main loop takes the initiative back. Nesting is recursive through
+    /// the same metadata pipe; a nested Blockquote token carries its own BlockquoteMetadata.
+    /// <para>Documented simplifications (deviations from CommonMark):</para>
+    /// <list type="alpha">
+    /// <item>Setext headings are not supported (existing limitation).</item>
+    /// <item>An indented line (>= 4 spaces) without a prefix and without an open
+    /// sub-paragraph ends the quote; the outer scope turns it into an indented code block.</item>
+    /// <item>A blank line without a prefix ends the quote; a blank quote line (prefix +
+    /// whitespace only) is paragraph separation and keeps the quote open.</item>
+    /// </list>
+    /// </remarks>
     private async Task<bool> TryParseBlockquoteAsync()
     {
         if (Peek() != '>') return false;
+
+        // A blockquote interrupts a paragraph ("foo\n> bar" is a closed paragraph followed
+        // by a blockquote), so the paragraph's end token precedes the blockquote in the
+        // stream - the same rule as for ATX headings.
+        CloseParagraph();
+        _pendingSoftBreak = false;
 
         EmitText();
         Read(); // Consume >
@@ -395,7 +715,9 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (Peek() == ' ')
             Read();
 
-        await ParseInlines(MarkdownTokenType.Blockquote, new BlockquoteMetadata(), InlineMarkdownTokenizer.Create());
+        // The content is a full markdown sub-document parsed by a nested tokenizer at one
+        // deeper level, so the quote it opens is level _depth + 1.
+        await ParseInlines(MarkdownTokenType.Blockquote, new BlockquoteMetadata(), new MarkdownTokenizer(_depth + 1));
 
         return true;
     }

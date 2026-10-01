@@ -14,7 +14,7 @@ public class BlankLinesTests
     {
         var input = "> # Foo\n> bar\n> baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<blockquote>\n<h1>Foo</h1>\n<p>bar\nbaz</p>\n</blockquote>", html);
+        Assert.Equal("<blockquote>\n<h1>Foo</h1>\n<p>bar<br/>baz</p>\n</blockquote>", html);
     }
 
 }

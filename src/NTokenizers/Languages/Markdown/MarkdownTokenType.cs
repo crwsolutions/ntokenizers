@@ -41,7 +41,9 @@ public enum MarkdownTokenType
     Emphasis,
 
     /// <summary>
-    /// Represents a blockquote. Value contains the quoted text without > marker.
+    /// Represents a blockquote. Value is empty; the content is streamed as tokens through
+    /// the metadata's inline token handler (a full markdown sub-document, including nested
+    /// blockquotes).
     /// </summary>
     Blockquote,
 

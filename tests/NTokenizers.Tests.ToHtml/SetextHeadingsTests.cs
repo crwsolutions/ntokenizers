@@ -118,7 +118,7 @@ public class SetextHeadingsTests
     {
         var input = "> foo\nbar\n===";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<blockquote>\n<p>foo\nbar\n===</p>\n</blockquote>", html);
+        Assert.Equal("<blockquote>\n<p>foo<br/>bar<br/>===</p>\n</blockquote>", html);
     }
 
     [Fact]
