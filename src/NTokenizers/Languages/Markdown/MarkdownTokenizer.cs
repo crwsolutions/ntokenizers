@@ -76,6 +76,20 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     private BlockContext _block = BlockContext.None;
     private bool _pendingSoftBreak;
 
+    // The open list, if any. The line-start check keeps appending compatible items and
+    // closes the list at the first line that does not belong to it.
+    private ListState _listState = ListState.None;
+
+    // The ordered list delimiter ('.' or ')') of the open list.
+    private char _listDelimiter;
+
+    private enum ListState
+    {
+        None,
+        Unordered,
+        Ordered
+    }
+
     // The open block context. None and Paragraph are mutually exclusive, so a single enum
     // tracks them instead of several booleans. An indented code block is not tracked here:
     // its content is consumed by the IndentedCodeBlockContentTokenizer.
@@ -83,6 +97,37 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     {
         None,
         Paragraph
+    }
+
+    private enum ListKind
+    {
+        None,
+        Unordered,
+        Ordered
+    }
+
+    /// <summary>
+    /// The result of classifying a line start as a list marker (see
+    /// <see cref="PeekListItem"/>).
+    /// </summary>
+    private sealed class ListClassification
+    {
+        public ListKind Kind { get; }
+        public char Marker { get; }
+        public int Number { get; }
+        public int Digits { get; }
+        public int MarkerStart { get; }
+
+        public ListClassification(ListKind kind, char marker = '\0', int number = 0, int digits = 0, int markerStart = 0)
+        {
+            Kind = kind;
+            Marker = marker;
+            Number = number;
+            Digits = digits;
+            MarkerStart = markerStart;
+        }
+
+        public static ListClassification None => new(ListKind.None);
     }
 
     /// <summary>
@@ -122,6 +167,38 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     }
 
                     c = (char)peek;
+                }
+
+                // Sibling item of an open list: a list marker of the same kind (and, for
+                // ordered lists, the same delimiter). The leading whitespace of the line (if
+                // any) is already buffered; the stream sits at the first content character.
+                // Any other non-whitespace line ends the open list first. A blank line does
+                // not close the list — the whitespace is emitted as a Text token on the
+                // parent level and the list stays open.
+                if (_listState != ListState.None && !char.IsWhiteSpace(c))
+                {
+                    if (await TryParseSiblingListItemAsync())
+                    {
+                        // Eat the item's trailing line break, exactly as the line-start
+                        // construct path does, so that only real blank lines (not the single
+                        // line separator) surface as whitespace Text tokens between items.
+                        bool ateNewline = false;
+                        if (Peek() == '\r')
+                        {
+                            Read();
+                        }
+                        if (Peek() == '\n')
+                        {
+                            Read();
+                            ateNewline = true;
+                        }
+                        if (_depth > 0 || ateNewline)
+                        {
+                            _prefixConsumedThisLine = false;
+                        }
+                        continue;
+                    }
+                    EmitListEnd();
                 }
 
                 // Indented (>= 4 spaces) code line at the top level. It cannot interrupt a
@@ -249,9 +326,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         }
 
         // End of stream: emit any remaining text; a paragraph still open at EOF ends with
-        // the last line.
+        // the last line; an open list is closed as well.
         EmitText();
         CloseParagraph();
+        EmitListEnd();
     }
 
     /// <summary>
@@ -722,60 +800,172 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         return true;
     }
 
-    private async Task<bool> TryParseListItemAsync()
+    // Classifies a line-start list marker without consuming it. Leading whitespace (up to
+    // three columns) is skipped. Returns the list kind and, for ordered lists, the number
+    // and delimiter ('.' or ')'); for unordered lists, the marker. Returns None when the
+    // line does not start a list item. A marker must be followed by a single space (or,
+    // for ordered items, by end of line).
+    private ListClassification PeekListItem(int offset)
     {
-        char c = PeekAhead(0);
-
-        // Unordered list
-        if (c == '+' || c == '-' || c == '*')
+        int pos = offset;
+        int column = 0;
+        while (column < 4 && (PeekAhead(pos) == ' ' || PeekAhead(pos) == '\t'))
         {
-            // Check if followed by space
-            if (PeekAhead(1) != ' ')
-                return false;
-
-            var marker = c;
-
-            // Extract indentation from buffer (leading whitespace before marker)
-            var indentation = _buffer.ToString();
-            _buffer.Clear();
-
-            Read(); // Consume marker
-            Read(); // Consume space
-
-            await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(marker), InlineMarkdownTokenizer.Create(), indentation);
-
-            return true;
+            column += PeekAhead(pos) == '\t' ? 4 - (column % 4) : 1;
+            pos++;
         }
 
-        // Ordered list
+        // Four or more columns of leading whitespace is indented code, not a list item.
+        if (column >= 4)
+        {
+            return ListClassification.None;
+        }
+
+        int markerStart = pos;
+        char c = PeekAhead(pos);
+
+        if (c == '+' || c == '-' || c == '*')
+        {
+            if (PeekAhead(pos + 1) != ' ')
+                return ListClassification.None;
+            return new ListClassification(ListKind.Unordered, marker: c, markerStart: markerStart);
+        }
+
         if (char.IsDigit(c))
         {
-            int pos = 0;
+            int digitStart = pos;
             int number = 0;
-            while (char.IsDigit(PeekAhead(pos)))
+            // Ordered list markers are at most nine digits long; a run of ten or more
+            // digits is not a list marker (the delimiter check below fails on the next
+            // digit).
+            while (char.IsDigit(PeekAhead(pos)) && pos - digitStart < 9)
             {
                 number = number * 10 + (PeekAhead(pos) - '0');
                 pos++;
             }
+            int digits = pos - digitStart;
 
-            if (PeekAhead(pos) == '.' && PeekAhead(pos + 1) == ' ')
+            char delimiter = PeekAhead(pos);
+            if (delimiter is '.' or ')')
             {
-                // Extract indentation from buffer (leading whitespace before marker)
-                var indentation = _buffer.ToString();
-                _buffer.Clear();
-
-                // Consume number and dot
-                for (int i = 0; i <= pos; i++)
-                    Read();
-                Read(); // Consume space
-
-                await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(number), InlineMarkdownTokenizer.Create(), indentation);
-
-                return true;
+                char after = PeekAhead(pos + 1);
+                if (after == ' ' || after == '\n' || after == '\0')
+                {
+                    return new ListClassification(ListKind.Ordered, marker: delimiter, number: number, digits: digits, markerStart: markerStart);
+                }
             }
         }
 
-        return false;
+        return ListClassification.None;
+    }
+
+    // Emits the ListStart for an open list that has no start token yet, remembering the
+    // list kind and (for ordered lists) the delimiter.
+    private void EmitListStart(ListClassification item)
+    {
+        if (_listState == ListState.None)
+        {
+            bool isOrdered = item.Kind == ListKind.Ordered;
+            _listState = isOrdered ? ListState.Ordered : ListState.Unordered;
+            _listDelimiter = isOrdered ? item.Marker : '\0';
+            _onToken(new MarkdownToken(MarkdownTokenType.ListStart, string.Empty, new ListMetadata(isOrdered)));
+        }
+    }
+
+    private void EmitListEnd()
+    {
+        if (_listState != ListState.None)
+        {
+            _onToken(new MarkdownToken(MarkdownTokenType.ListEnd, string.Empty, new ListMetadata(_listState == ListState.Ordered)));
+            _listState = ListState.None;
+        }
+    }
+
+    // Starts a new item in an open list. The marker must match the open list kind (and,
+    // for ordered lists, its delimiter). The leading whitespace (if any) is in the buffer
+    // and is flushed as a Text token; the marker plus its trailing space are consumed from
+    // the stream before the item content is parsed.
+    private async Task<bool> TryParseSiblingListItemAsync()
+    {
+        ListClassification item = PeekListItem(0);
+        if (item.Kind == ListKind.None)
+        {
+            return false;
+        }
+
+        bool compatible = item.Kind == ListKind.Unordered
+            ? _listState == ListState.Unordered
+            : _listState == ListState.Ordered && item.Marker == _listDelimiter;
+        if (!compatible)
+        {
+            return false;
+        }
+
+        EmitText();
+        ConsumeMarker(item);
+        await EmitListItemAsync(item);
+        return true;
+    }
+
+    private async Task<bool> TryParseListItemAsync()
+    {
+        ListClassification item = PeekListItem(0);
+        if (item.Kind == ListKind.None)
+        {
+            return false;
+        }
+
+        // A list is a block construct: it terminates an open paragraph. Close it before
+        // emitting the list so the token order is ParagraphBlockEnd → ListStart → items.
+        CloseParagraph();
+        _pendingSoftBreak = false;
+
+        EmitListStart(item);
+
+        // Flush the leading indentation as text (decoration, not item content), then
+        // consume the marker plus its trailing space, when present.
+        EmitText();
+        ConsumeMarker(item);
+
+        await EmitListItemAsync(item);
+        return true;
+    }
+
+    // Consumes the list marker (and its trailing space, when present) from the stream.
+    // Any leading whitespace (spaces/tabs) before the marker is also consumed.
+    private void ConsumeMarker(ListClassification item)
+    {
+        // Consume leading whitespace (if any).
+        while (Peek() == ' ' || Peek() == '\t')
+        {
+            Read();
+        }
+
+        // Consume the marker itself.
+        int markerLen = item.Kind == ListKind.Ordered ? item.Digits + 1 : 1;
+        for (int i = 0; i < markerLen; i++)
+        {
+            Read();
+        }
+
+        // Consume the optional trailing space.
+        if (Peek() == ' ')
+        {
+            Read();
+        }
+    }
+
+    // Emits a list item token and streams its (single-line) content through the inline
+    // token handler pipe. The item token carries no value; the content follows as tokens.
+    private async Task EmitListItemAsync(ListClassification item)
+    {
+        if (item.Kind == ListKind.Unordered)
+        {
+            await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(item.Marker), InlineMarkdownTokenizer.Create());
+            return;
+        }
+
+        await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(item.Number, item.Marker), InlineMarkdownTokenizer.Create());
     }
 
     private async Task<bool> TryParseCodeFence()

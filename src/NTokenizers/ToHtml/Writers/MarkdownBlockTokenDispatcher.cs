@@ -110,6 +110,27 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 }
                 break;
 
+            case MarkdownTokenType.ListStart:
+                // A list is a block: the opening tag is separated from the previous block
+                // by a line break (the one already written above from _pendingBlockBreak).
+                // Items follow until the matching ListEnd.
+                if (token.Metadata is ListMetadata lsMeta)
+                {
+                    writer.Write(lsMeta.IsOrdered ? "<ol>\n" : "<ul>\n");
+                }
+                break;
+
+            case MarkdownTokenType.ListEnd:
+                // Close the list. No pending block break is set: consistent with the
+                // baseline, a list's closing does not create a block separation (the
+                // inter-item whitespace is dropped by the Text case at this level), so a
+                // following block starts immediately after the closing tag.
+                if (token.Metadata is ListMetadata leMeta)
+                {
+                    writer.Write(leMeta.IsOrdered ? "</ol>" : "</ul>");
+                }
+                break;
+
             case MarkdownTokenType.UnorderedListItem:
                 if (token.Metadata is ListItemMetadata liMeta)
                 {

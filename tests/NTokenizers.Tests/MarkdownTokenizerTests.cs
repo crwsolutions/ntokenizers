@@ -768,13 +768,15 @@ More text.";
         var markdown = "- Item 1\n- Item 2\n- Item 3";
 
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(6, tokens.Count);
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[0].TokenType);
-        Assert.Equal(string.Empty, tokens[0].Value); // List items have empty value
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[2].TokenType);
-        Assert.Equal(string.Empty, tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[4].TokenType);
-        Assert.Equal(string.Empty, tokens[4].Value); // List items have empty value
+        Assert.Equal(8, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
+        Assert.Equal(string.Empty, tokens[1].Value); // List items have empty value
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[3].TokenType);
+        Assert.Equal(string.Empty, tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[5].TokenType);
+        Assert.Equal(string.Empty, tokens[5].Value); // List items have empty value
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[7].TokenType);
         Assert.Equal(markdown, text);
     }
 

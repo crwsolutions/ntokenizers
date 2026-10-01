@@ -14,7 +14,7 @@ public class ListsTests
     {
         var input = "1. foo\n2. bar\n3) baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>foo</li>\n<li>bar</li>\n</ol>\n<ol start=\"3\">\n<li>baz</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>foo</li>\n<li>bar</li>\n</ol><ol>\n<li value=\"3\">baz</li>\n</ol>", html);
     }
 
     [Fact]

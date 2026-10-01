@@ -381,13 +381,15 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> foo\n- bar";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(6, tokens.Count);
+        Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.UnorderedListItem);
-        AssertToken(tokens[5], MarkdownTokenType.Text, "bar");
+        AssertToken(tokens[4], MarkdownTokenType.ListStart);
+        AssertToken(tokens[5], MarkdownTokenType.UnorderedListItem);
+        AssertToken(tokens[6], MarkdownTokenType.Text, "bar");
+        AssertToken(tokens[7], MarkdownTokenType.ListEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -570,15 +572,17 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> > - x\n\nHallo";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(8, tokens.Count);
+        Assert.Equal(10, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
-        AssertToken(tokens[2], MarkdownTokenType.UnorderedListItem);
-        AssertToken(tokens[3], MarkdownTokenType.Text, "x");
-        AssertToken(tokens[4], MarkdownTokenType.Text, "\n");
-        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[6], MarkdownTokenType.Text, "Hallo");
-        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[2], MarkdownTokenType.ListStart);
+        AssertToken(tokens[3], MarkdownTokenType.UnorderedListItem);
+        AssertToken(tokens[4], MarkdownTokenType.Text, "x");
+        AssertToken(tokens[5], MarkdownTokenType.Text, "\n");
+        AssertToken(tokens[6], MarkdownTokenType.ListEnd);
+        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[8], MarkdownTokenType.Text, "Hallo");
+        AssertToken(tokens[9], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 

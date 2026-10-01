@@ -17,14 +17,14 @@ internal sealed class ListItemHtmlWriter : AbstractMetadataToHtmlWriter<ListItem
 
     internal override Task WriteContentAsync(ListItemMetadata metadata, TextWriter writer)
     {
-        writer.Write("<ul>\n<li>");
+        writer.Write("<li>");
         return metadata.RegisterInlineTokenHandler(token =>
         {
             _inlineWriter.WriteToken(token, writer);
         },
         () =>
         {
-            writer.Write("</li>\n</ul>");
+            writer.Write("</li>\n");
         });
     }
 }

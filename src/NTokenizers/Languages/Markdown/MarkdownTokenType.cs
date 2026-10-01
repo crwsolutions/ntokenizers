@@ -58,6 +58,18 @@ public enum MarkdownTokenType
     OrderedListItem,
 
     /// <summary>
+    /// Represents the start of a list. Value is empty; <see cref="Metadata.ListMetadata"/>
+    /// carries the list kind (ordered or unordered).
+    /// </summary>
+    ListStart,
+
+    /// <summary>
+    /// Represents the end of a list. Value is empty; <see cref="Metadata.ListMetadata"/>
+    /// carries the list kind matching the corresponding <see cref="ListStart"/>.
+    /// </summary>
+    ListEnd,
+
+    /// <summary>
     /// Represents inline code. Value contains the code content without ` markers.
     /// </summary>
     CodeInline,
