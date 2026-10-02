@@ -939,12 +939,12 @@ Visit [Google](https://google.com) for more.";
     }
 
     [Fact]
-    public void TestOnInlinesCompletedCallbackIsInvoked()
+    public async Task TestOnInlinesCompletedCallbackIsInvoked()
     {
         var callbackInvoked = false;
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\n"));
 
-        MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
         {
             if (token.Metadata is HeadingMetadata headingMeta)
             {
@@ -953,20 +953,19 @@ Visit [Google](https://google.com) for more.";
                     () => { callbackInvoked = true; }
                 );
             }
-        }).GetAwaiter().GetResult();
-
+        });
         Assert.True(callbackInvoked, "The onInlinesCompleted callback should have been invoked");
     }
 
     [Fact]
-    public void TestOnInlinesCompletedCallbackRunsBeforeParseCompletes()
+    public async Task TestOnInlinesCompletedCallbackRunsBeforeParseCompletes()
     {
         var tokens = new List<MarkdownToken>();
         var callbackInvoked = false;
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\nText after"));
 
-        MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
         {
             tokens.Add(token);
 
@@ -984,7 +983,7 @@ Visit [Google](https://google.com) for more.";
                     }
                 );
             }
-        }).GetAwaiter().GetResult();
+        });
 
         Assert.True(callbackInvoked, "Callback should have been invoked");
 

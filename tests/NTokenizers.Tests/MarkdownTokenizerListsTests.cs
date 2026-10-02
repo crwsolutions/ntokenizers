@@ -179,11 +179,11 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(7, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.IsType<ListMetadata>(tokens[0].Metadata);
-        Assert.False(((ListMetadata)tokens[0].Metadata).IsOrdered);
+        Assert.False(Assert.IsType<ListMetadata>(tokens[0].Metadata).IsOrdered);
 
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // Unordered list items have empty value
-        Assert.Equal('-', ((ListItemMetadata)tokens[1].Metadata).Marker);
+        Assert.Equal('-', Assert.IsType<ListItemMetadata>(tokens[1].Metadata).Marker);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
         Assert.Equal("item ", tokens[3].Value);
@@ -203,7 +203,7 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal('+', ((ListItemMetadata)tokens[1].Metadata).Marker);
+        Assert.Equal('+', Assert.IsType<ListItemMetadata>(tokens[1].Metadata).Marker);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
         Assert.Equal("item ", tokens[3].Value);
@@ -223,7 +223,7 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // Unordered list items have empty value
-        Assert.Equal('*', ((ListItemMetadata)tokens[1].Metadata).Marker);
+        Assert.Equal('*', Assert.IsType<ListItemMetadata>(tokens[1].Metadata).Marker);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
         Assert.Equal("item ", tokens[3].Value);
@@ -249,7 +249,7 @@ public class MarkdownTokenizerListsTests
         Assert.Equal("   ", tokens[1].Value); // Leading indentation as whitespace text
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[2].TokenType);
         Assert.Equal(string.Empty, tokens[2].Value);
-        Assert.Equal('*', ((ListItemMetadata)tokens[2].Metadata).Marker);
+        Assert.Equal('*', Assert.IsType<ListItemMetadata>(tokens[2].Metadata).Marker);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[3].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
         Assert.Equal("item ", tokens[4].Value);
@@ -268,15 +268,15 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(8, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.IsType<ListMetadata>(tokens[0].Metadata);
-        Assert.True(((ListMetadata)tokens[0].Metadata).IsOrdered);
+        Assert.True(Assert.IsType<ListMetadata>(tokens[0].Metadata).IsOrdered);
         Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
         Assert.Equal("  ", tokens[1].Value); // Leading indentation as whitespace text
         Assert.Equal(MarkdownTokenType.OrderedListItem, tokens[2].TokenType);
         Assert.Equal(string.Empty, tokens[2].Value);
         Assert.NotNull(tokens[2].Metadata);
-        Assert.IsType<OrderedListItemMetadata>(tokens[2].Metadata);
-        Assert.Equal(1, ((OrderedListItemMetadata)tokens[2].Metadata).Number);
-        Assert.Equal('.', ((OrderedListItemMetadata)tokens[2].Metadata).Marker);
+        var orderedMeta = Assert.IsType<OrderedListItemMetadata>(tokens[2].Metadata);
+        Assert.Equal(1, orderedMeta.Number);
+        Assert.Equal('.', orderedMeta.Marker);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[3].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
         Assert.Equal("item ", tokens[4].Value);
@@ -321,7 +321,7 @@ public class MarkdownTokenizerListsTests
 
         var items = tokens.Where(t => t.TokenType == MarkdownTokenType.UnorderedListItem).ToList();
         Assert.Equal(3, items.Count);
-        Assert.Equal(new[] { '-', '*', '+' }, items.Select(i => ((ListItemMetadata)i.Metadata).Marker));
+        Assert.Equal(new[] { '-', '*', '+' }, items.Select(i => Assert.IsType<ListItemMetadata>(i.Metadata).Marker));
 
         // No whitespace text between tightly packed items (the line separators are consumed).
         Assert.Equal(markdown, text);
@@ -334,12 +334,12 @@ public class MarkdownTokenizerListsTests
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(10, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
-        Assert.True(((ListMetadata)tokens[0].Metadata).IsOrdered);
+        Assert.True(Assert.IsType<ListMetadata>(tokens[0].Metadata).IsOrdered);
 
         var items = tokens.Where(t => t.TokenType == MarkdownTokenType.OrderedListItem).ToList();
         Assert.Equal(2, items.Count);
-        Assert.Equal(1, ((OrderedListItemMetadata)items[0].Metadata).Number);
-        Assert.Equal(2, ((OrderedListItemMetadata)items[1].Metadata).Number);
+        Assert.Equal(1, Assert.IsType<OrderedListItemMetadata>(items[0].Metadata).Number);
+        Assert.Equal(2, Assert.IsType<OrderedListItemMetadata>(items[1].Metadata).Number);
 
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
         Assert.Equal(markdown, text);
@@ -353,7 +353,7 @@ public class MarkdownTokenizerListsTests
         var (tokens, text) = Tokenize(markdown);
         var items = tokens.Where(t => t.TokenType == MarkdownTokenType.OrderedListItem).ToList();
         Assert.Equal(2, items.Count);
-        Assert.All(items, i => Assert.Equal(')', ((OrderedListItemMetadata)i.Metadata).Marker));
+        Assert.All(items, i => Assert.Equal(')', Assert.IsType<OrderedListItemMetadata>(i.Metadata).Marker));
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
         Assert.Equal(markdown, text);
@@ -380,8 +380,8 @@ public class MarkdownTokenizerListsTests
         var (tokens, text) = Tokenize(markdown);
         var listStarts = tokens.Where(t => t.TokenType == MarkdownTokenType.ListStart).ToList();
         Assert.Equal(2, listStarts.Count);
-        Assert.False(((ListMetadata)listStarts[0].Metadata).IsOrdered);
-        Assert.True(((ListMetadata)listStarts[1].Metadata).IsOrdered);
+        Assert.False(Assert.IsType<ListMetadata>(listStarts[0].Metadata).IsOrdered);
+        Assert.True(Assert.IsType<ListMetadata>(listStarts[1].Metadata).IsOrdered);
         Assert.Equal(markdown, text);
     }
 
@@ -424,8 +424,8 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.OrderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // Value is empty when OnInlineToken is used
         Assert.NotNull(tokens[1].Metadata);
-        Assert.IsType<OrderedListItemMetadata>(tokens[1].Metadata);
-        Assert.Equal(1, ((OrderedListItemMetadata)tokens[1].Metadata).Number);
+        var orderedMeta = Assert.IsType<OrderedListItemMetadata>(tokens[1].Metadata);
+        Assert.Equal(1, orderedMeta.Number);
 
         // Inline content
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
@@ -447,7 +447,7 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.OrderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value);
-        Assert.Equal(42, ((OrderedListItemMetadata)tokens[1].Metadata).Number);
+        Assert.Equal(42, Assert.IsType<OrderedListItemMetadata>(tokens[1].Metadata).Number);
 
         // Inline content
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);

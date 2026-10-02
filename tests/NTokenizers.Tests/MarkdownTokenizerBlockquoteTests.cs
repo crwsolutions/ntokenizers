@@ -694,7 +694,7 @@ public class MarkdownTokenizerBlockquoteTests
         var markdown = "> foo\nbar";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(markdown, text);
-        Assert.Single(tokens.Where(t => t.TokenType == MarkdownTokenType.Blockquote));
+        Assert.Single(tokens, t => t.TokenType == MarkdownTokenType.Blockquote);
         Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value == "bar");
     }
 

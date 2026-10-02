@@ -50,18 +50,16 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                     writer.Write($"<a href=\"{FormatLinkHref(linkMeta)}\"");
                     if (!string.IsNullOrEmpty(linkMeta.Title))
                     {
-                        writer.Write($" title=\"{FormatTitle(linkMeta.Title)}\"");
+                        writer.Write($" title=\"{FormatTitle(linkMeta.Title!)}\"");
                     }
                     writer.Write(">");
-
-
                     if (!string.IsNullOrEmpty(linkMeta.Text))
                     {
-                        WriteValue(writer, linkMeta.Text, null);
+                        WriteValue(writer, linkMeta.Text!, null);
                     }
                     else
                     {
-                        WriteValue(writer, linkMeta.Url, null);
+                        WriteValue(writer, linkMeta.Url!, null);
                     }
                     writer.Write("</a>");
                 }
@@ -76,9 +74,9 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 {
                     writer.Write($"<img src=\"{FormatLinkHref(imageMeta)}\"");
                     if (!string.IsNullOrEmpty(imageMeta.Text))
-                        writer.Write($" alt=\"{EscapeHtml(imageMeta.Text)}\"");
+                        writer.Write($" alt=\"{EscapeHtml(imageMeta.Text!)}\"");
                     if (!string.IsNullOrEmpty(imageMeta.Title))
-                        writer.Write($" title=\"{FormatTitle(imageMeta.Title)}\"");
+                        writer.Write($" title=\"{FormatTitle(imageMeta.Title!)}\"");
                     writer.Write(" />");
                 }
                 else
