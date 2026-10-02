@@ -314,11 +314,18 @@ public class MarkdownTokenizerBackslasTests
     {
         var markdown = "- \\*not italic\\* item";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(4, tokens.Count);
+        Assert.Equal(8, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
-        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-        Assert.Equal("*not italic* item", tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("*not ", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("italic* ", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[5].TokenType);
+        Assert.Equal("item", tokens[5].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[6].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[7].TokenType);
+        Assert.Equal(markdown, text);
     }
 }

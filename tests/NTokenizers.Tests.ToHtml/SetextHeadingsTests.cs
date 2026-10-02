@@ -127,7 +127,7 @@ public class SetextHeadingsTests
         // Faithful to the input: the final line has no line ending, so none is added.
         var input = "- Foo\n---";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>Foo</li>\n</ul><hr />", html);
+        Assert.Equal("<ul>\n<li>\n<p>Foo</p>\n</li>\n</ul><hr />", html);
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class SetextHeadingsTests
         // Faithful to the input: the final line has no line ending, so none is added.
         var input = "- foo\n-----";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n</ul><hr />", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n</ul><hr />", html);
     }
 
     [Fact]

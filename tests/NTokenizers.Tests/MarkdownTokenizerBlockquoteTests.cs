@@ -381,15 +381,17 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> foo\n- bar";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(8, tokens.Count);
+        Assert.Equal(10, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
         AssertToken(tokens[4], MarkdownTokenType.ListStart);
         AssertToken(tokens[5], MarkdownTokenType.UnorderedListItem);
-        AssertToken(tokens[6], MarkdownTokenType.Text, "bar");
-        AssertToken(tokens[7], MarkdownTokenType.ListEnd);
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "bar");
+        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[9], MarkdownTokenType.ListEnd);
         Assert.Equal(markdown, text);
     }
 

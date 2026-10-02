@@ -17,7 +17,7 @@ internal sealed class BlockquoteHtmlWriter : AbstractMetadataToHtmlWriter<Blockq
 
     internal override Task WriteContentAsync(BlockquoteMetadata metadata, TextWriter writer)
     {
-        var dispatcher = new MarkdownBlockTokenDispatcher();
+        var dispatcher = new MarkdownBlockTokenDispatcher(inlineListItems: true);
         writer.Write("<blockquote>\n");
         return metadata.RegisterInlineTokenHandler(
             token =>

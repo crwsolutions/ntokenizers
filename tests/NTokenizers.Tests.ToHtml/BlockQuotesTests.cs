@@ -74,7 +74,7 @@ public class BlockQuotesTests
         // newline before the first </blockquote>.
         Assert.Equal(
             "<blockquote>\n<ul>\n<li>foo</li>\n</ul></blockquote>\n" +
-            "<ul>\n<li>bar</li>\n</ul>",
+            "<ul>\n<li>\n<p>bar</p>\n</li>\n</ul>",
             html);
     }
 

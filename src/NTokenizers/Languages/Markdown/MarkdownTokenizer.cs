@@ -75,6 +75,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     private bool _atLineStart = true;
     private BlockContext _block = BlockContext.None;
     private bool _pendingSoftBreak;
+    private bool _listItemOwnsLineBreak;
 
     // The open list, if any. The line-start check keeps appending compatible items and
     // closes the list at the first line that does not belong to it.
@@ -117,14 +118,16 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         public int Number { get; }
         public int Digits { get; }
         public int MarkerStart { get; }
+        public int MarkerColumn { get; }
 
-        public ListClassification(ListKind kind, char marker = '\0', int number = 0, int digits = 0, int markerStart = 0)
+        public ListClassification(ListKind kind, char marker = '\0', int number = 0, int digits = 0, int markerStart = 0, int markerColumn = 0)
         {
             Kind = kind;
             Marker = marker;
             Number = number;
             Digits = digits;
             MarkerStart = markerStart;
+            MarkerColumn = markerColumn;
         }
 
         public static ListClassification None => new(ListKind.None);
@@ -177,30 +180,40 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 // parent level and the list stays open.
                 if (_listState != ListState.None && !char.IsWhiteSpace(c))
                 {
-                    if (await TryParseSiblingListItemAsync())
+                    bool closesListAtOutdent = _depth == 0 && CountLeadingIndentColumns() < 4;
+                    if (_depth == 0 && CountLeadingIndentColumns() >= 4)
                     {
-                        // Eat the item's trailing line break, exactly as the line-start
-                        // construct path does, so that only real blank lines (not the single
-                        // line separator) surface as whitespace Text tokens between items.
-                        bool ateNewline = false;
-                        if (Peek() == '\r')
-                        {
-                            Read();
-                        }
-                        if (Peek() == '\n')
-                        {
-                            Read();
-                            ateNewline = true;
-                        }
-                        if (_depth > 0 || ateNewline)
-                        {
-                            _prefixConsumedThisLine = false;
-                        }
-                        continue;
+                        goto ProcessLineStartConstruct;
                     }
-                    EmitListEnd();
+                    if (_depth > 0 || closesListAtOutdent)
+                    {
+                        bool parsedSibling = await TryParseSiblingListItemAsync();
+                        if (!parsedSibling)
+                        {
+                            EmitListEnd();
+                        }
+                        else
+                        {
+                            // Eat the item's trailing line break, exactly as the line-start
+                            // construct path does, so only real blank lines surface as Text.
+                            bool ateNewline = false;
+                            bool listItemOwnsLineBreak = _listItemOwnsLineBreak;
+                            _listItemOwnsLineBreak = false;
+                            if (!listItemOwnsLineBreak && Peek() == '\r')
+                                Read();
+                            if (!listItemOwnsLineBreak && Peek() == '\n')
+                            {
+                                Read();
+                                ateNewline = true;
+                            }
+                            if (_depth > 0 || ateNewline)
+                                _prefixConsumedThisLine = false;
+                            continue;
+                        }
+                    }
                 }
 
+            ProcessLineStartConstruct:
                 // Indented (>= 4 spaces) code line at the top level. It cannot interrupt a
                 // paragraph, so it is only started when no paragraph is open. The content is
                 // streamed through the inline handler pipe by the content tokenizer.
@@ -226,11 +239,13 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
                     //Eat newline after line-start construct
                     bool ateNewline = false;
-                    if (Peek() == '\r')
+                    bool listItemOwnsLineBreak = _listItemOwnsLineBreak;
+                    _listItemOwnsLineBreak = false;
+                    if (!listItemOwnsLineBreak && Peek() == '\r')
                     {
                         Read();
                     }
-                    if (Peek() == '\n')
+                    if (!listItemOwnsLineBreak && Peek() == '\n')
                     {
                         Read();
                         ateNewline = true;
@@ -745,11 +760,20 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (next != '\r' && next != '\n' && next != '\0')
             return false;
 
-        EmitText();
-
+        bool hadOpenParagraph = _block == BlockContext.Paragraph;
+        // Do not emit buffered text until after the fence characters are consumed.
+        // Retaining the buffered line content allows the parent to classify an
+        // outdented break before the paragraph is closed.
         // Consume the characters
         for (int i = 0; i < count; i++)
             Read();
+
+        if (hadOpenParagraph)
+        {
+            EmitText();
+            CloseParagraph();
+            _pendingSoftBreak = false;
+        }
 
         _onToken(new MarkdownToken(MarkdownTokenType.HorizontalRule, new string(c, count)));
 
@@ -808,11 +832,14 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     private ListClassification PeekListItem(int offset)
     {
         int pos = offset;
-        int column = 0;
-        while (column < 4 && (PeekAhead(pos) == ' ' || PeekAhead(pos) == '\t'))
+        int column = CountLeadingIndentColumns();
+        if (column == 0)
         {
-            column += PeekAhead(pos) == '\t' ? 4 - (column % 4) : 1;
-            pos++;
+            while (column < 4 && (PeekAhead(pos) == ' ' || PeekAhead(pos) == '\t'))
+            {
+                column += PeekAhead(pos) == '\t' ? 4 - (column % 4) : 1;
+                pos++;
+            }
         }
 
         // Four or more columns of leading whitespace is indented code, not a list item.
@@ -826,9 +853,12 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         if (c == '+' || c == '-' || c == '*')
         {
-            if (PeekAhead(pos + 1) != ' ')
+            char afterMarker = PeekAhead(pos + 1);
+            if (afterMarker != ' ' && afterMarker != '\r' && afterMarker != '\n' && afterMarker != '\0')
                 return ListClassification.None;
-            return new ListClassification(ListKind.Unordered, marker: c, markerStart: markerStart);
+            if (_block == BlockContext.Paragraph && afterMarker is '\r' or '\n' or '\0')
+                return ListClassification.None;
+            return new ListClassification(ListKind.Unordered, marker: c, markerStart: markerStart, markerColumn: column);
         }
 
         if (char.IsDigit(c))
@@ -849,9 +879,13 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             if (delimiter is '.' or ')')
             {
                 char after = PeekAhead(pos + 1);
-                if (after == ' ' || after == '\n' || after == '\0')
+                if (after == ' ' || after == '\r' || after == '\n' || after == '\0')
                 {
-                    return new ListClassification(ListKind.Ordered, marker: delimiter, number: number, digits: digits, markerStart: markerStart);
+                    if (_block == BlockContext.Paragraph && (number != 1 || after is '\r' or '\n' or '\0'))
+                    {
+                        return ListClassification.None;
+                    }
+                    return new ListClassification(ListKind.Ordered, marker: delimiter, number: number, digits: digits, markerStart: markerStart, markerColumn: column);
                 }
             }
         }
@@ -948,7 +982,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             Read();
         }
 
-        // Consume the optional trailing space.
+        // Consume one marker-padding column; any additional padding remains item content.
+        // The reader uses the full original padding width for continuation classification.
         if (Peek() == ' ')
         {
             Read();
@@ -959,6 +994,28 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     // token handler pipe. The item token carries no value; the content follows as tokens.
     private async Task EmitListItemAsync(ListClassification item)
     {
+        if (_depth == 0)
+        {
+            int contentOffset = GetListContentOffset(item);
+            bool startsAtLineStart = _lookaheadBuffer.Count > 0 && (_lookaheadBuffer.Peek() == '\r' || _lookaheadBuffer.Peek() == '\n');
+            var reader = new ListContentReader(Reader, contentOffset, Bob, startsAtLineStart);
+
+            if (item.Kind == ListKind.Unordered)
+            {
+                await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(item.Marker),
+                    handler => new MarkdownTokenizer(0).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+            }
+            else
+            {
+                await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(item.Number, item.Marker),
+                    handler => new MarkdownTokenizer(0).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+            }
+
+            reader.Handoff(_lookaheadBuffer);
+            _listItemOwnsLineBreak = true;
+            return;
+        }
+
         if (item.Kind == ListKind.Unordered)
         {
             await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(item.Marker), InlineMarkdownTokenizer.Create());
@@ -966,6 +1023,12 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         }
 
         await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(item.Number, item.Marker), InlineMarkdownTokenizer.Create());
+    }
+
+    private int GetListContentOffset(ListClassification item)
+    {
+        int markerWidth = item.Kind == ListKind.Ordered ? item.Digits + 1 : 1;
+        return item.MarkerColumn + markerWidth + 1;
     }
 
     private async Task<bool> TryParseCodeFence()

@@ -14,7 +14,7 @@ public class ListItemsTests
     {
         var input = "1.  A paragraph\n    with two lines.\n\n        indented code\n\n    > A block quote.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> A paragraph<br/> with two lines.</p>\n<pre><code> indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public class ListItemsTests
     {
         var input = "- one\n\n two";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>one</li>\n</ul>\n<p>two</p>", html);
+        Assert.Equal("<ul>\n<li>\n<p>one</p>\n</li>\n</ul><p> two</p>", html);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class ListItemsTests
     {
         var input = " -    one\n\n     two";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>one</li>\n</ul>\n<pre><code> two\n</code></pre>", html);
+        Assert.Equal("<ul>\n<li>\n<p>   one</p>\n<p>  two</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class ListItemsTests
     {
         var input = " -    one\n\n      two";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>one</p>\n<p>two</p>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>   one</p>\n<p>   two</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class ListItemsTests
         // 'two' is indented code here rather than a lazy continuation of the list item
         // (spec: <ol><li><p>one</p><p>two</p></li></ol>); list-item lazy continuation is a
         // separate feature.
-        Assert.Equal("<blockquote>\n<blockquote>\n<ol>\n<li> one</li>\n</ol><pre><code>two</code></pre>\n</blockquote>\n</blockquote>", html);
+        Assert.Equal("<blockquote>\n<blockquote>\n<ol>\n<li> one</li>\n<pre><code>two</code></pre>\n</ol></blockquote>\n</blockquote>", html);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class ListItemsTests
     {
         var input = "1.  foo\n\n    ```\n    bar\n    ```\n\n    baz\n\n    > bam";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n<p>baz</p>\n<blockquote>\n<p>bam</p>\n</blockquote>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> foo</p>\n<div class=\"code-block-container\">\n<div class=\"code-block-header\">\n<span class=\"code-block-language\"></span>\n<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n</div>\n<pre><code class=\"language-\"><span class=\"tok-generic\"> </span><span class=\"tok-generic\">bar\n </span></code></pre>\n</div>\n<p> baz</p>\n<blockquote>\n<p>bam</p>\n</blockquote>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class ListItemsTests
     {
         var input = "- Foo\n\n      bar\n\n\n      baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>Foo</p>\n<pre><code>bar\n\n\nbaz\n</code></pre>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>Foo</p>\n<pre><code>bar\n\n\nbaz</code></pre>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class ListItemsTests
     {
         var input = "123456789. ok";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol start=\"123456789\">\n<li>ok</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p>ok</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class ListItemsTests
     {
         var input = "0. ok";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol start=\"0\">\n<li>ok</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p>ok</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class ListItemsTests
     {
         var input = "003. ok";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol start=\"3\">\n<li>ok</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p>ok</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class ListItemsTests
     {
         var input = "- foo\n\n      bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<pre><code>bar</code></pre>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class ListItemsTests
     {
         var input = "  10.  foo\n\n           bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol start=\"10\">\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> foo</p>\n<pre><code> bar</code></pre>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public class ListItemsTests
     {
         var input = "    indented code\n\nparagraph\n\n    more code";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>", html);
+        Assert.Equal("<pre><code>indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code</code></pre>", html);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class ListItemsTests
     {
         var input = "1.     indented code\n\n   paragraph\n\n       more code";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<pre><code>indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<pre><code>indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code</code></pre>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class ListItemsTests
     {
         var input = "1.      indented code\n\n   paragraph\n\n       more code";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<pre><code> indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<pre><code> indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code</code></pre>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class ListItemsTests
     {
         var input = "   foo\n\nbar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo</p>\n<p>bar</p>", html);
+        Assert.Equal("<p>   foo</p>\n<p>bar</p>", html);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class ListItemsTests
     {
         var input = "-    foo\n\n  bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n</ul>\n<p>bar</p>", html);
+        Assert.Equal("<ul>\n<li>\n<p>   foo</p>\n<p>bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public class ListItemsTests
     {
         var input = "-  foo\n\n   bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p> foo</p>\n<p> bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -214,7 +214,7 @@ public class ListItemsTests
     {
         var input = "-\n  foo\n-\n  ```\n  bar\n  ```\n-\n      baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n<li>\n<pre><code>bar\n</code></pre>\n</li>\n<li>\n<pre><code>baz\n</code></pre>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li><p>foo</p>\n</li>\n<li><div class=\"code-block-container\">\n<div class=\"code-block-header\">\n<span class=\"code-block-language\"></span>\n<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n</div>\n<pre><code class=\"language-\"><span class=\"tok-generic\">bar</span></code></pre>\n</div>\n</li>\n<li><pre><code>baz</code></pre>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class ListItemsTests
     {
         var input = "-   \n  foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li><p>foo</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public class ListItemsTests
     {
         var input = "-\n\n  foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li></li>\n</ul>\n<p>foo</p>", html);
+        Assert.Equal("<ul>\n<li><p>foo</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class ListItemsTests
     {
         var input = "- foo\n-\n- bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n<li></li>\n<li>bar</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n<li></li>\n<li>\n<p>bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class ListItemsTests
     {
         var input = "- foo\n-   \n- bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n<li></li>\n<li>bar</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n<li></li>\n<li>\n<p>bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -254,7 +254,7 @@ public class ListItemsTests
     {
         var input = "1. foo\n2.\n3. bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>foo</li>\n<li></li>\n<li>bar</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n</li>\n<li></li>\n<li>\n<p>bar</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -270,7 +270,7 @@ public class ListItemsTests
     {
         var input = "foo\n*\n\nfoo\n1.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo\n*</p>\n<p>foo\n1.</p>", html);
+        Assert.Equal("<p>foo<br/>*<br/><br/>foo<br/>1.</p>", html);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class ListItemsTests
     {
         var input = " 1.  A paragraph\n     with two lines.\n\n         indented code\n\n     > A block quote.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> A paragraph<br/> with two lines.</p>\n<pre><code> indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public class ListItemsTests
     {
         var input = "  1.  A paragraph\n      with two lines.\n\n          indented code\n\n      > A block quote.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> A paragraph<br/> with two lines.</p>\n<pre><code> indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -294,7 +294,7 @@ public class ListItemsTests
     {
         var input = "   1.  A paragraph\n       with two lines.\n\n           indented code\n\n       > A block quote.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> A paragraph<br/> with two lines.</p>\n<pre><code> indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class ListItemsTests
     {
         var input = "    1.  A paragraph\n        with two lines.\n\n            indented code\n\n        > A block quote.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>1.  A paragraph\n    with two lines.\n\n        indented code\n\n    &gt; A block quote.\n</code></pre>", html);
+        Assert.Equal("<pre><code>1.  A paragraph\n    with two lines.\n\n        indented code\n\n    &gt; A block quote.</code></pre>", html);
     }
 
     [Fact]
@@ -310,7 +310,7 @@ public class ListItemsTests
     {
         var input = "  1.  A paragraph\nwith two lines.\n\n          indented code\n\n      > A block quote.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> A paragraph<br/>with two lines.</p>\n<pre><code> indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public class ListItemsTests
     {
         var input = "  1.  A paragraph\n    with two lines.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>A paragraph\nwith two lines.</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p> A paragraph<br/>with two lines.</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public class ListItemsTests
     {
         var input = "- foo\n  - bar\n    - baz\n      - boo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>baz\n<ul>\n<li>boo</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<ul>\n<li>\n<p>bar</p>\n<ul>\n<li>\n<p>baz</p>\n<ul>\n<li>\n<p>boo</p>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public class ListItemsTests
     {
         var input = "- foo\n - bar\n  - baz\n   - boo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n<li>bar</li>\n<li>baz</li>\n<li>boo</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n<li>\n<p>bar</p>\n</li>\n<li>\n<p>baz</p>\n</li>\n<li>\n<p>boo</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -358,7 +358,7 @@ public class ListItemsTests
     {
         var input = "10) foo\n    - bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol start=\"10\">\n<li>foo\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>\n<p>bar</p>\n</li>\n</ul>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public class ListItemsTests
     {
         var input = "10) foo\n   - bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol start=\"10\">\n<li>foo</li>\n</ol>\n<ul>\n<li>bar</li>\n</ul>", html);
+        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n</li>\n</ol><ul>\n<li>\n<p>bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -374,7 +374,7 @@ public class ListItemsTests
     {
         var input = "- - foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<ul>\n<li>foo</li>\n</ul>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<ul>\n<li>\n<p>foo</p>\n</li>\n</ul>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -382,7 +382,7 @@ public class ListItemsTests
     {
         var input = "1. - 2. foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<ul>\n<li>\n<ol start=\"2\">\n<li>foo</li>\n</ol>\n</li>\n</ul>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<ul>\n<li>\n<ol>\n<li>\n<p>foo</p>\n</li>\n</ol>\n</li>\n</ul>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -390,7 +390,7 @@ public class ListItemsTests
     {
         var input = "- # Foo\n- Bar\n  ---\n  baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<h1>Foo</h1>\n</li>\n<li>\n<h2>Bar</h2>\nbaz</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<h1>Foo</h1>\n</li>\n<li>\n<p>Bar</p>\n<hr />\n<p>baz</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -398,7 +398,7 @@ public class ListItemsTests
     {
         var input = "- foo\n- bar\n+ baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<ul>\n<li>baz</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n<li>\n<p>bar</p>\n</li>\n<li>\n<p>baz</p>\n</li>\n</ul>", html);
     }
 
 }

@@ -22,6 +22,12 @@ namespace NTokenizers.ToHtml.Writers;
 internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
 {
     private readonly InlineMarkdownTokenWriter _inlineWriter = new();
+    private readonly bool _inlineListItems;
+
+    internal MarkdownBlockTokenDispatcher(bool inlineListItems = false)
+    {
+        _inlineListItems = inlineListItems;
+    }
 
     // Whether the writer is currently inside an open <p>...</p> region, so newline text
     // is rendered as a soft line break (<br/>) rather than dropped.
@@ -134,7 +140,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
             case MarkdownTokenType.UnorderedListItem:
                 if (token.Metadata is ListItemMetadata liMeta)
                 {
-                    var liWriter = new ListItemHtmlWriter();
+                    var liWriter = new ListItemHtmlWriter(_inlineListItems || _inParagraph);
                     await liWriter.WriteContentAsync(liMeta, writer);
                 }
                 break;
@@ -142,7 +148,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
             case MarkdownTokenType.OrderedListItem:
                 if (token.Metadata is OrderedListItemMetadata oliMeta)
                 {
-                    var oliWriter = new OrderedListItemHtmlWriter();
+                    var oliWriter = new OrderedListItemHtmlWriter(_inlineListItems || _inParagraph);
                     await oliWriter.WriteContentAsync(oliMeta, writer);
                 }
                 break;

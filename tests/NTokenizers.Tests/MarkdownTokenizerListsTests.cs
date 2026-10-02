@@ -175,8 +175,8 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "- item 1";
         var (tokens, text) = Tokenize(markdown);
-        // P1: a single item is wrapped in a balanced ListStart / ListEnd group.
-        Assert.Equal(4, tokens.Count);
+        // P2: the item is a paragraph sub-document within a balanced list group.
+        Assert.Equal(7, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.IsType<ListMetadata>(tokens[0].Metadata);
         Assert.False(((ListMetadata)tokens[0].Metadata).IsOrdered);
@@ -184,10 +184,13 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // Unordered list items have empty value
         Assert.Equal('-', ((ListItemMetadata)tokens[1].Metadata).Marker);
-        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-        Assert.Equal("item 1", tokens[2].Value);
-
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("item ", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("1", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[6].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -196,14 +199,18 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "+ item 1";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(4, tokens.Count);
+        Assert.Equal(7, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value);
         Assert.Equal('+', ((ListItemMetadata)tokens[1].Metadata).Marker);
-        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-        Assert.Equal("item 1", tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("item ", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("1", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[6].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -212,14 +219,18 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "* item 1";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(4, tokens.Count);
+        Assert.Equal(7, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // Unordered list items have empty value
         Assert.Equal('*', ((ListItemMetadata)tokens[1].Metadata).Marker);
-        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-        Assert.Equal("item 1", tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("item ", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("1", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[6].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -232,16 +243,20 @@ public class MarkdownTokenizerListsTests
         // (decoration, not item content); the item Value stays empty.
         var markdown = "   * item 1";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(5, tokens.Count);
+        Assert.Equal(8, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
         Assert.Equal("   ", tokens[1].Value); // Leading indentation as whitespace text
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[2].TokenType);
         Assert.Equal(string.Empty, tokens[2].Value);
         Assert.Equal('*', ((ListItemMetadata)tokens[2].Metadata).Marker);
-        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-        Assert.Equal("item 1", tokens[3].Value);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[4].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("item ", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[5].TokenType);
+        Assert.Equal("1", tokens[5].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[6].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[7].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -250,7 +265,7 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "  1. item 1";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(5, tokens.Count);
+        Assert.Equal(8, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.IsType<ListMetadata>(tokens[0].Metadata);
         Assert.True(((ListMetadata)tokens[0].Metadata).IsOrdered);
@@ -262,22 +277,25 @@ public class MarkdownTokenizerListsTests
         Assert.IsType<OrderedListItemMetadata>(tokens[2].Metadata);
         Assert.Equal(1, ((OrderedListItemMetadata)tokens[2].Metadata).Number);
         Assert.Equal('.', ((OrderedListItemMetadata)tokens[2].Metadata).Marker);
-        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
-        Assert.Equal("item 1", tokens[3].Value);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[4].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("item ", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[5].TokenType);
+        Assert.Equal("1", tokens[5].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[6].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[7].TokenType);
         Assert.Equal(markdown, text);
     }
 
     [Fact]
     public void TestFlatListGrouping()
     {
-        // P1: consecutive unordered items with indent under four columns are grouped in a
-        // single balanced ListStart / ListEnd run (one <ul> in HTML), not one list per item.
-        // True nesting (a nested ListStart inside an item) arrives in P2. The leading
-        // whitespace of the indented siblings is emitted as Text on the list level.
+        // Consecutive list markers at the item's content offset become nested sub-document
+        // lists, while the shallower marker is a sibling in the outer list.
         var markdown = "- top\n  - nested\n   - deeper";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(10, tokens.Count);
+        Assert.Equal(markdown, text);
+        Assert.Equal(17, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
 
@@ -289,7 +307,6 @@ public class MarkdownTokenizerListsTests
         Assert.Contains("top", content);
         Assert.Contains("nested", content);
         Assert.Contains("deeper", content);
-        Assert.Equal(markdown, text);
     }
 
     [Fact]
@@ -315,7 +332,7 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "1. a\n2. b";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(6, tokens.Count);
+        Assert.Equal(10, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.True(((ListMetadata)tokens[0].Metadata).IsOrdered);
 
@@ -371,9 +388,10 @@ public class MarkdownTokenizerListsTests
     [Fact]
     public void TestBlankLineBetweenItemsIsPreserved()
     {
-        // A blank line between list items is preserved as a whitespace Text token on the
-        // parent (list) level — console output keeps the newline; HTML may ignore it.
-        var markdown = "- a\n\n- b";
+        // A blank line continues the first item's sub-document when its next line is
+        // indented to the content offset; the blank run before the sibling is handed back
+        // to the parent as whitespace Text.
+        var markdown = "- a\n\n  continued\n\n- b";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
@@ -401,7 +419,7 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "1. item 1";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(4, tokens.Count); // ListStart + OrderedListItem + inline text + ListEnd
+        Assert.Equal(7, tokens.Count); // ListStart + item paragraph + ListEnd
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.OrderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // Value is empty when OnInlineToken is used
@@ -410,9 +428,13 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(1, ((OrderedListItemMetadata)tokens[1].Metadata).Number);
 
         // Inline content
-        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-        Assert.Equal("item 1", tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("item ", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("1", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[6].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -421,16 +443,18 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "42. item";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(4, tokens.Count); // ListStart + OrderedListItem + inline text + ListEnd
+        Assert.Equal(6, tokens.Count); // ListStart + item paragraph + ListEnd
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.OrderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value);
         Assert.Equal(42, ((OrderedListItemMetadata)tokens[1].Metadata).Number);
 
         // Inline content
-        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
-        Assert.Equal("item", tokens[2].Value);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("item", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[5].TokenType);
         Assert.Equal(markdown, text);
     }
 }

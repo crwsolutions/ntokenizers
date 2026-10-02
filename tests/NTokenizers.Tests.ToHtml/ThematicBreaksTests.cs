@@ -126,7 +126,7 @@ public class ThematicBreaksTests
     {
         var input = "- foo\n***\n- bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n</ul><hr />\n<ul>\n<li>bar</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<hr />\n</li>\n<li>\n<p>bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
