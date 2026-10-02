@@ -571,22 +571,16 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             return next == ' ' || next == '\t' || next == '\n' || next == '\0';
         }
 
-        if (first == '-' || first == '*')
+        if (IsThematicBreakMarker(first))
         {
-            int count = 0;
-            while (PeekAhead(count + offset) == first)
-            {
-                count++;
-            }
-
-            // A thematic break: at least three of the same character, then line ending or EOF.
-            if (count >= 3 && (PeekAhead(count + offset) == '\r' || PeekAhead(count + offset) == '\n' || PeekAhead(count + offset) == '\0'))
+            // A thematic break (any marker, spaces between) ends the quote.
+            if (TryScanThematicBreak(out _, out _, out _, offset))
             {
                 return true;
             }
 
-            // An unordered list marker: the character followed by a space.
-            return PeekAhead(1 + offset) == ' ';
+            // An unordered list marker ('-' or '*' only): the character followed by a space.
+            return first is '-' or '*' && PeekAhead(1 + offset) == ' ';
         }
 
         if (char.IsDigit(first))
@@ -753,28 +747,38 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     }
 
     /// <summary>
-    /// Scans the line at the current position as a potential thematic break without
+    /// Whether the character is a valid thematic break marker ('-', '*', or '_').
+    /// </summary>
+    private static bool IsThematicBreakMarker(char c) => c is '-' or '*' or '_';
+
+    /// <summary>
+    /// Scans the line at <paramref name="offset"/> as a potential thematic break without
     /// consuming it. A thematic break is a line consisting of three or more of the same
     /// marker character ('-', '*', or '_'), each optionally followed by any number of
-    /// spaces, and nothing else before the line ending or end of stream. The leading
-    /// indentation of the line is already buffered, so the scan starts at the first
-    /// non-whitespace character. When the line is a break, <paramref name="marker"/>,
-    /// <paramref name="markers"/> and <paramref name="lineLength"/> (the number of
-    /// characters to consume, up to but not including the line ending) are set.
+    /// spaces, and nothing else before the line ending or end of stream.
     /// </summary>
-    private bool TryScanThematicBreak(out char marker, out int markers, out int lineLength)
+    /// <remarks>
+    /// The scan starts at the first content character of the line; every call site
+    /// positions the stream (or <paramref name="offset"/>) at that character, so leading
+    /// indentation is not part of the scan. When the line is a break,
+    /// <paramref name="marker"/>, <paramref name="markers"/> and
+    /// <paramref name="lineLength"/> (the number of characters after the offset to
+    /// consume, up to but not including the line ending) are set.
+    /// </remarks>
+    private bool TryScanThematicBreak(out char marker, out int markers, out int lineLength, int offset = 0)
     {
         marker = '\0';
         markers = 0;
         lineLength = 0;
 
-        char c = PeekAhead(0);
-        if (c is not ('-' or '*' or '_')) return false;
+        char c = PeekAhead(offset);
+        if (!IsThematicBreakMarker(c)) return false;
 
+        // Walk the rest of the line: the same marker, or spaces between markers.
         int pos = 0;
         while (true)
         {
-            char lookahead = PeekAhead(pos);
+            char lookahead = PeekAhead(pos + offset);
             if (lookahead == c)
             {
                 markers++;
@@ -791,7 +795,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         }
 
         // The line must end (line ending or end of stream) and carry at least three markers.
-        char terminator = PeekAhead(pos);
+        char terminator = PeekAhead(pos + offset);
         if (markers < 3 || (terminator != '\r' && terminator != '\n' && terminator != '\0'))
             return false;
 

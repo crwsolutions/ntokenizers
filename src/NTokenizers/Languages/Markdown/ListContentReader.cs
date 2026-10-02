@@ -310,7 +310,7 @@ internal sealed class ListContentReader : TextReader
 
     private static bool IsThematicBreak(List<char> characters, int start)
     {
-        if (start >= characters.Count || characters[start] is not ('-' or '*'))
+        if (start >= characters.Count || characters[start] is not ('-' or '*' or '_'))
         {
             return false;
         }

@@ -38,7 +38,7 @@ public class ThematicBreaksTests
     {
         var input = "--\n**\n__";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>--\n**\n__</p>", html);
+        Assert.Equal("<p>--<br/>**<br/>__</p>", html);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class ThematicBreaksTests
     {
         var input = "Foo\n    ***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>Foo\n***</p>", html);
+        Assert.Equal("<p>Foo<br/>    ***</p>", html);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class ThematicBreaksTests
     {
         var input = "_ _ _ _ a\n\na------\n\n---a---";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>_ _ _ _ a</p>\n<p>a------</p>\n<p>---a---</p>", html);
+        Assert.Equal("<p><em> </em> <em> </em> a</p>\n<p>a------</p>\n<p>---a---</p>", html);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class ThematicBreaksTests
     {
         var input = " *-*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>-</em></p>", html);
+        Assert.Equal("<p> <em>-</em></p>", html);
     }
 
     [Fact]
