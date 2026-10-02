@@ -110,7 +110,7 @@ public class ListItemsTests
     {
         var input = "123456789. ok";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>ok</p>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li value=\"123456789\">\n<p>ok</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class ListItemsTests
     {
         var input = "0. ok";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>ok</p>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li value=\"0\">\n<p>ok</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class ListItemsTests
     {
         var input = "003. ok";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>ok</p>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li value=\"3\">\n<p>ok</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class ListItemsTests
     {
         var input = "  10.  foo\n\n           bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p> foo</p>\n<pre><code> bar</code></pre>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li value=\"10\">\n<p> foo</p>\n<pre><code> bar</code></pre>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -358,7 +358,7 @@ public class ListItemsTests
     {
         var input = "10) foo\n    - bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>\n<p>bar</p>\n</li>\n</ul>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li value=\"10\">\n<p>foo</p>\n<ul>\n<li>\n<p>bar</p>\n</li>\n</ul>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public class ListItemsTests
     {
         var input = "10) foo\n   - bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n</li>\n</ol><ul>\n<li>\n<p>bar</p>\n</li>\n</ul>", html);
+        Assert.Equal("<ol>\n<li value=\"10\">\n<p>foo</p>\n</li>\n</ol><ul>\n<li>\n<p>bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -382,7 +382,7 @@ public class ListItemsTests
     {
         var input = "1. - 2. foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<ul>\n<li>\n<ol>\n<li>\n<p>foo</p>\n</li>\n</ol>\n</li>\n</ul>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<ul>\n<li>\n<ol>\n<li value=\"2\">\n<p>foo</p>\n</li>\n</ol>\n</li>\n</ul>\n</li>\n</ol>", html);
     }
 
     [Fact]

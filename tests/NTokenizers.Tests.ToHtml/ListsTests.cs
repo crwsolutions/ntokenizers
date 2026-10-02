@@ -14,7 +14,7 @@ public class ListsTests
     {
         var input = "1. foo\n2. bar\n3) baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n</li>\n<li>\n<p>bar</p>\n</li>\n</ol><ol>\n<li>\n<p>baz</p>\n</li>\n</ol>", html);
+        Assert.Equal("<ol>\n<li>\n<p>foo</p>\n</li>\n<li>\n<p>bar</p>\n</li>\n</ol><ol>\n<li value=\"3\">\n<p>baz</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -233,6 +233,17 @@ public class ListsTests
         var input = "`foo`";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
         Assert.Equal("<p><code>foo</code></p>", html);
+    }
+
+    [Fact]
+    public void OrderedJumpEmitsValueOnlyOnDeviation()
+    {
+        // The number is always carried on the item metadata; ToHtml emits value="N" only
+        // where it deviates from the simulated browser counter (1, 2, then 6: value on the
+        // jump, 7 continues). No ol start attribute is used.
+        var input = "1. A\n2. B\n6. C\n7. D";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<ol>\n<li>\n<p>A</p>\n</li>\n<li>\n<p>B</p>\n</li>\n<li value=\"6\">\n<p>C</p>\n</li>\n<li>\n<p>D</p>\n</li>\n</ol>", html);
     }
 
 }

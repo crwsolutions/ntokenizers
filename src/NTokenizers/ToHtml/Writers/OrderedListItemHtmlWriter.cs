@@ -13,10 +13,12 @@ internal sealed class OrderedListItemHtmlWriter : AbstractMetadataToHtmlWriter<O
     private bool _hasContent;
 
     private readonly bool _inlineOnly;
+    private readonly int? _value;
 
-    internal OrderedListItemHtmlWriter(bool inlineOnly = false)
+    internal OrderedListItemHtmlWriter(bool inlineOnly = false, int? value = null)
     {
         _inlineOnly = inlineOnly;
+        _value = value;
     }
 
     internal override void WriteAdditionalCss(StringBuilder css)
@@ -28,7 +30,9 @@ internal sealed class OrderedListItemHtmlWriter : AbstractMetadataToHtmlWriter<O
     {
         var dispatcher = new MarkdownBlockTokenDispatcher();
         var inlineWriter = new InlineMarkdownTokenWriter();
-        writer.Write("<li>");
+        // value="N" is written only where the source number deviates from the logical
+        // sequence (the dispatcher's counter simulation); the browser continues from it.
+        writer.Write(_value.HasValue ? $"<li value=\"{_value.Value}\">" : "<li>");
         return metadata.RegisterInlineTokenHandler(token =>
         {
             if (!_hasContent && token.TokenType is MarkdownTokenType.ParagraphBlockStart or MarkdownTokenType.Blockquote or MarkdownTokenType.ListStart or MarkdownTokenType.CodeBlock or MarkdownTokenType.IndentedCodeBlock or MarkdownTokenType.Heading or MarkdownTokenType.Table or MarkdownTokenType.HorizontalRule)

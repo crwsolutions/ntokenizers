@@ -37,6 +37,11 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
     // paragraph by a line break; at end of stream no trailing line break is emitted.
     private bool _pendingBlockBreak;
 
+    // Ordered-list counter simulation: mirrors the browser's ol counter so a <li value="N">
+    // is emitted only where the source number deviates from the logical sequence.
+    private int _orderedCounter;
+    private bool _inOrderedList;
+
     /// <summary>
     /// Writes the pending block separation line break, if any. Called by container writers
     /// (e.g. blockquote) before writing their closing tag, so the separation is written
@@ -123,6 +128,11 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 if (token.Metadata is ListMetadata lsMeta)
                 {
                     writer.Write(lsMeta.IsOrdered ? "<ol>\n" : "<ul>\n");
+                    _inOrderedList = lsMeta.IsOrdered;
+                    if (_inOrderedList)
+                    {
+                        _orderedCounter = 1; // browser default start
+                    }
                 }
                 break;
 
@@ -134,6 +144,10 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 if (token.Metadata is ListMetadata leMeta)
                 {
                     writer.Write(leMeta.IsOrdered ? "</ol>" : "</ul>");
+                    if (leMeta.IsOrdered)
+                    {
+                        _inOrderedList = false;
+                    }
                 }
                 break;
 
@@ -148,7 +162,11 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
             case MarkdownTokenType.OrderedListItem:
                 if (token.Metadata is OrderedListItemMetadata oliMeta)
                 {
-                    var oliWriter = new OrderedListItemHtmlWriter(_inlineListItems || _inParagraph);
+                    // Emit value="N" only where the number deviates from the simulated
+                    // browser counter; otherwise the counter simply advances.
+                    int? value = _inOrderedList && oliMeta.Number != _orderedCounter ? oliMeta.Number : null;
+                    _orderedCounter = value.HasValue ? oliMeta.Number + 1 : _orderedCounter + 1;
+                    var oliWriter = new OrderedListItemHtmlWriter(_inlineListItems || _inParagraph, value);
                     await oliWriter.WriteContentAsync(oliMeta, writer);
                 }
                 break;
