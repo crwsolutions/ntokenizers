@@ -180,6 +180,19 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 // parent level and the list stays open.
                 if (_listState != ListState.None && !char.IsWhiteSpace(c))
                 {
+                    // A thematic break is a block construct, not a list item: it must not be
+                    // claimed by the sibling item logic (which would read its first two
+                    // characters as a nested marker). A break never belongs to the open list,
+                    // so close the list first; the line-start chain then parses the break.
+                    // A line indented by four or more columns is not a break (it is indented
+                    // code or a lazy continuation), so the break check respects the same
+                    // three-column limit as the line-start constructs.
+                    if (CountLeadingIndentColumns() < 4 && TryScanThematicBreak(out _, out _, out _))
+                    {
+                        EmitListEnd();
+                        goto ProcessLineStartConstruct;
+                    }
+
                     bool closesListAtOutdent = _depth == 0 && CountLeadingIndentColumns() < 4;
                     if (_depth == 0 && CountLeadingIndentColumns() >= 4)
                     {
@@ -739,43 +752,78 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         return ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(reader, Bob, "```", handler));
     }
 
-    private bool TryParseHorizontalRule()
+    /// <summary>
+    /// Scans the line at the current position as a potential thematic break without
+    /// consuming it. A thematic break is a line consisting of three or more of the same
+    /// marker character ('-', '*', or '_'), each optionally followed by any number of
+    /// spaces, and nothing else before the line ending or end of stream. The leading
+    /// indentation of the line is already buffered, so the scan starts at the first
+    /// non-whitespace character. When the line is a break, <paramref name="marker"/>,
+    /// <paramref name="markers"/> and <paramref name="lineLength"/> (the number of
+    /// characters to consume, up to but not including the line ending) are set.
+    /// </summary>
+    private bool TryScanThematicBreak(out char marker, out int markers, out int lineLength)
     {
-        char c = PeekAhead(0);
-        if (c != '-' && c != '*') return false;
+        marker = '\0';
+        markers = 0;
+        lineLength = 0;
 
-        // Check for at least 3 of the same character
-        int count = 0;
+        char c = PeekAhead(0);
+        if (c is not ('-' or '*' or '_')) return false;
+
         int pos = 0;
-        while (PeekAhead(pos) == c)
+        while (true)
         {
-            count++;
-            pos++;
+            char lookahead = PeekAhead(pos);
+            if (lookahead == c)
+            {
+                markers++;
+                pos++;
+            }
+            else if (lookahead == ' ')
+            {
+                pos++;
+            }
+            else
+            {
+                break;
+            }
         }
 
-        if (count < 3) return false;
+        // The line must end (line ending or end of stream) and carry at least three markers.
+        char terminator = PeekAhead(pos);
+        if (markers < 3 || (terminator != '\r' && terminator != '\n' && terminator != '\0'))
+            return false;
 
-        // Must be followed by newline or end of stream
-        char next = PeekAhead(pos);
-        if (next != '\r' && next != '\n' && next != '\0')
+        marker = c;
+        lineLength = pos;
+        return true;
+    }
+
+    private bool TryParseHorizontalRule()
+    {
+        if (!TryScanThematicBreak(out char marker, out int markers, out int lineLength))
             return false;
 
         bool hadOpenParagraph = _block == BlockContext.Paragraph;
-        // Do not emit buffered text until after the fence characters are consumed.
-        // Retaining the buffered line content allows the parent to classify an
-        // outdented break before the paragraph is closed.
-        // Consume the characters
-        for (int i = 0; i < count; i++)
+
+        // Flush the buffered leading whitespace (and any other buffered content) before the
+        // break, matching how a list item flushes its marker indentation. Outside a
+        // paragraph the HTML writer drops this text; it is only content inside a paragraph.
+        EmitText();
+
+        // Consume the break line up to (not including) the line ending; the main loop owns
+        // the line ending (it re-arms _atLineStart and the blockquote decision table).
+        for (int i = 0; i < lineLength; i++)
             Read();
 
         if (hadOpenParagraph)
         {
-            EmitText();
             CloseParagraph();
             _pendingSoftBreak = false;
         }
 
-        _onToken(new MarkdownToken(MarkdownTokenType.HorizontalRule, new string(c, count)));
+        _onToken(new MarkdownToken(MarkdownTokenType.HorizontalRule, new string(marker, markers)));
 
         return true;
     }
@@ -997,7 +1045,35 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (_depth == 0)
         {
             int contentOffset = GetListContentOffset(item);
-            bool startsAtLineStart = _lookaheadBuffer.Count > 0 && (_lookaheadBuffer.Peek() == '\r' || _lookaheadBuffer.Peek() == '\n');
+
+            // A preceding line-start scan (e.g. the thematic-break probe) may have buffered
+            // the tail of the marker's line, including its line ending. If that tail carries
+            // no content (only whitespace up to the line ending), drop it so the
+            // ListContentReader reads the first content line from the source and strips its
+            // indentation: a line ending consumed from the shared buffer would otherwise
+            // desync the reader's line tracking. When the tail does carry content it is left
+            // in the shared buffer for the item sub-document to read.
+            bool tailIsBlank = _lookaheadBuffer.Count > 0;
+            foreach (char buffered in _lookaheadBuffer)
+            {
+                if (buffered is not (' ' or '\t' or '\r' or '\n'))
+                {
+                    tailIsBlank = false;
+                    break;
+                }
+            }
+
+            bool startsAtLineStart;
+            if (tailIsBlank)
+            {
+                _lookaheadBuffer.Clear();
+                startsAtLineStart = true;
+            }
+            else
+            {
+                startsAtLineStart = _lookaheadBuffer.Count > 0 && (_lookaheadBuffer.Peek() == '\r' || _lookaheadBuffer.Peek() == '\n');
+            }
+
             var reader = new ListContentReader(Reader, contentOffset, Bob, startsAtLineStart);
 
             if (item.Kind == ListKind.Unordered)

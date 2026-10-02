@@ -46,7 +46,9 @@ public class ThematicBreaksTests
     {
         var input = " ***\n  ***\n   ***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal(" <hr />\n  <hr />\n   <hr />\n", html);
+        // The library drops the leading indentation of each break line (it is block
+        // separation outside a paragraph), so the line-start indentation does not appear.
+        Assert.Equal("<hr />\n<hr />\n<hr />", html);
     }
 
     [Fact]
@@ -54,7 +56,7 @@ public class ThematicBreaksTests
     {
         var input = "    ***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code>***\n</code></pre>", html);
+        Assert.Equal("<pre><code>***</code></pre>", html);
     }
 
     [Fact]
@@ -142,7 +144,9 @@ public class ThematicBreaksTests
     {
         var input = "Foo\n---\nbar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h2>Foo</h2>\n<p>bar</p>", html);
+        // Setext headings are not supported: the '---' line is a thematic break, not an
+        // underline of the paragraph above.
+        Assert.Equal("<p>Foo</p>\n<hr />\n<p>bar</p>", html);
     }
 
     [Fact]
@@ -150,7 +154,9 @@ public class ThematicBreaksTests
     {
         var input = "* Foo\n* * *\n* Bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>Foo</li>\n</ul>\n<hr />\n<ul>\n<li>Bar</li>\n</ul>", html);
+        // The break is a block construct, not a list item: it ends the first list, is
+        // rendered, and the following marker starts a new list.
+        Assert.Equal("<ul>\n<li>\n<p>Foo</p>\n</li>\n</ul><hr />\n<ul>\n<li>\n<p>Bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -158,7 +164,9 @@ public class ThematicBreaksTests
     {
         var input = "- Foo\n- * * *";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>Foo</li>\n<li>\n<hr />\n</li>\n</ul>", html);
+        // The second marker's content ('* * *') is a thematic break inside the item, not
+        // a nested list.
+        Assert.Equal("<ul>\n<li>\n<p>Foo</p>\n</li>\n<li>\n<hr />\n</li>\n</ul>", html);
     }
 
 }

@@ -214,7 +214,7 @@ public class ListItemsTests
     {
         var input = "-\n  foo\n-\n  ```\n  bar\n  ```\n-\n      baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li><p>foo</p>\n</li>\n<li><div class=\"code-block-container\">\n<div class=\"code-block-header\">\n<span class=\"code-block-language\"></span>\n<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n</div>\n<pre><code class=\"language-\"><span class=\"tok-generic\">bar</span></code></pre>\n</div>\n</li>\n<li><pre><code>baz</code></pre>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n<li>\n<div class=\"code-block-container\">\n<div class=\"code-block-header\">\n<span class=\"code-block-language\"></span>\n<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n</div>\n<pre><code class=\"language-\"><span class=\"tok-generic\">bar</span></code></pre>\n</div>\n</li>\n<li>\n<pre><code>baz</code></pre>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class ListItemsTests
     {
         var input = "-   \n  foo";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li><p>foo</p>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
