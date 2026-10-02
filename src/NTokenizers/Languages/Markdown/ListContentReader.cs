@@ -173,7 +173,7 @@ internal sealed class ListContentReader : TextReader
         }
 
         if (line.IsLineStartConstruct && line.IndentColumns < _contentOffset
-            && IsThematicBreak(line.Characters, line.IndentColumns))
+            && IsThematicBreak(line.Characters, line.ContentStartIndex))
         {
             foreach (var blankLine in blankLines)
             {
@@ -236,6 +236,7 @@ internal sealed class ListContentReader : TextReader
                 return new LinePrefix(characters, columns, isBlank: true, isListMarker: false, isLineStartConstruct: false, isEof: next == -1);
             }
 
+            int contentStartIndex = characters.Count;
             char first = (char)_inner.Read();
             characters.Add(first);
             if (first is '-' or '*')
@@ -257,12 +258,12 @@ internal sealed class ListContentReader : TextReader
                     {
                         characters.Add((char)_inner.Read());
                     }
-                    return new LinePrefix(characters, columns, isBlank: false, isListMarker: false, isLineStartConstruct: true, isEof: false);
+                    return new LinePrefix(characters, columns, isBlank: false, isListMarker: false, isLineStartConstruct: true, isEof: false, contentStartIndex);
                 }
             }
             bool isListMarker = CaptureListMarkerSuffix(characters, characters[characters.Count - 1]);
-            bool isLineStartConstruct = characters[columns] is '#' or '>' or '`' or '~' or '|' or '-' or '*';
-            return new LinePrefix(characters, columns, isBlank: false, isListMarker, isLineStartConstruct, isEof: false);
+            bool isLineStartConstruct = first is '#' or '>' or '`' or '~' or '|' or '-' or '*';
+            return new LinePrefix(characters, columns, isBlank: false, isListMarker, isLineStartConstruct, isEof: false, contentStartIndex);
         }
     }
 
@@ -358,7 +359,17 @@ internal sealed class ListContentReader : TextReader
             int nextColumn = columns + (c == '\t' ? 4 - (columns % 4) : 1);
             if (columns >= _contentOffset)
             {
-                _ready.Enqueue(new ReadyCharacter(c, isStripped: false));
+                if (c == '\t')
+                {
+                    for (int space = 0; space < nextColumn - columns; space++)
+                    {
+                        _ready.Enqueue(new ReadyCharacter(' ', isStripped: false));
+                    }
+                }
+                else
+                {
+                    _ready.Enqueue(new ReadyCharacter(c, isStripped: false));
+                }
             }
             else
             {
@@ -384,8 +395,9 @@ internal sealed class ListContentReader : TextReader
         internal bool IsListMarker { get; }
         internal bool IsLineStartConstruct { get; }
         internal bool IsEof { get; }
+        internal int ContentStartIndex { get; }
 
-        internal LinePrefix(List<char> characters, int indentColumns, bool isBlank, bool isListMarker, bool isLineStartConstruct, bool isEof)
+        internal LinePrefix(List<char> characters, int indentColumns, bool isBlank, bool isListMarker, bool isLineStartConstruct, bool isEof, int contentStartIndex = 0)
         {
             Characters = characters;
             IndentColumns = indentColumns;
@@ -393,6 +405,7 @@ internal sealed class ListContentReader : TextReader
             IsListMarker = isListMarker;
             IsLineStartConstruct = isLineStartConstruct;
             IsEof = isEof;
+            ContentStartIndex = contentStartIndex;
         }
     }
 

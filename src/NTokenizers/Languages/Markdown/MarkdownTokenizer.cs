@@ -76,6 +76,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     private BlockContext _block = BlockContext.None;
     private bool _pendingSoftBreak;
     private bool _listItemOwnsLineBreak;
+    private bool _listItemHasNormalizedTabPadding;
 
     // The open list, if any. The line-start check keeps appending compatible items and
     // closes the list at the first line that does not belong to it.
@@ -906,7 +907,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (c == '+' || c == '-' || c == '*')
         {
             char afterMarker = PeekAhead(pos + 1);
-            if (afterMarker != ' ' && afterMarker != '\r' && afterMarker != '\n' && afterMarker != '\0')
+            if (afterMarker != ' ' && afterMarker != '\t' && afterMarker != '\r' && afterMarker != '\n' && afterMarker != '\0')
+                return ListClassification.None;
+            // A tab-separated run of asterisks is inline emphasis, not nested list markers.
+            if (c == '*' && afterMarker == '\t' && PeekAhead(pos + 2) == '*')
                 return ListClassification.None;
             if (_block == BlockContext.Paragraph && afterMarker is '\r' or '\n' or '\0')
                 return ListClassification.None;
@@ -931,7 +935,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             if (delimiter is '.' or ')')
             {
                 char after = PeekAhead(pos + 1);
-                if (after == ' ' || after == '\r' || after == '\n' || after == '\0')
+                if (after == ' ' || after == '\t' || after == '\r' || after == '\n' || after == '\0')
                 {
                     if (_block == BlockContext.Paragraph && (number != 1 || after is '\r' or '\n' or '\0'))
                     {
@@ -1034,11 +1038,45 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             Read();
         }
 
-        // Consume one marker-padding column; any additional padding remains item content.
-        // The reader uses the full original padding width for continuation classification.
         if (Peek() == ' ')
         {
             Read();
+        }
+        else if (Peek() == '\t')
+        {
+            _listItemHasNormalizedTabPadding = true;
+            int column = item.MarkerColumn + markerLen;
+            int tabWidth = 4 - (column % 4);
+            Read();
+
+            var normalizedPadding = new List<char>();
+            for (int i = 1; i < tabWidth; i++)
+            {
+                normalizedPadding.Add(' ');
+            }
+            column += tabWidth;
+
+            while (Peek() is ' ' or '\t')
+            {
+                char whitespace = (char)Read();
+                int width = whitespace == '\t' ? 4 - (column % 4) : 1;
+                for (int i = 0; i < width; i++)
+                {
+                    normalizedPadding.Add(' ');
+                }
+                column += width;
+            }
+
+            var remaining = _lookaheadBuffer.ToArray();
+            _lookaheadBuffer.Clear();
+            foreach (char whitespace in normalizedPadding)
+            {
+                _lookaheadBuffer.Enqueue(whitespace);
+            }
+            foreach (char buffered in remaining)
+            {
+                _lookaheadBuffer.Enqueue(buffered);
+            }
         }
     }
 
@@ -1049,6 +1087,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (_depth == 0)
         {
             int contentOffset = GetListContentOffset(item);
+            bool hasNormalizedTabPadding = _listItemHasNormalizedTabPadding;
+            _listItemHasNormalizedTabPadding = false;
 
             // A preceding line-start scan (e.g. the thematic-break probe) may have buffered
             // the tail of the marker's line, including its line ending. If that tail carries
@@ -1068,7 +1108,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             }
 
             bool startsAtLineStart;
-            if (tailIsBlank)
+            if (tailIsBlank && !hasNormalizedTabPadding)
             {
                 _lookaheadBuffer.Clear();
                 startsAtLineStart = true;
