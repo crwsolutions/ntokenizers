@@ -14,7 +14,7 @@ public class PrecedenceTests
     {
         var input = "- `one\n- two`";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>`one</li>\n<li>two`</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>`one<br/></p>\n</li>\n<li>\n<p>two`</p>\n</li>\n</ul>", html);
     }
 
 }
