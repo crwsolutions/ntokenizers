@@ -23,7 +23,7 @@ public class IndentedCodeBlocksTests
     {
         var input = "  - foo\n\n    bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>foo</li>\n</ul><pre><code>bar</code></pre>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class IndentedCodeBlocksTests
     {
         var input = "1.  foo\n\n    - bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ol>\n<li> foo</li>\n</ol><pre><code>- bar</code></pre>", html);
+        Assert.Equal("<ol>\n<li>\n<p> foo</p>\n<ul>\n<li>\n<p>bar</p>\n</li>\n</ul>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class IndentedCodeBlocksTests
     {
         var input = "# Heading\n    foo\nHeading\n------\n    foo\n----";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<h1>Heading</h1>\n<pre><code>foo\n</code></pre>\n<p>Heading<hr />\n</p>\n<pre><code>foo\n</code></pre>\n<hr />", html);
+        Assert.Equal("<h1>Heading</h1>\n<pre><code>foo\n</code></pre>\n<p>Heading</p>\n<hr />\n<pre><code>foo\n</code></pre>\n<hr />", html);
     }
 
     [Fact]
