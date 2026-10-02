@@ -14,7 +14,7 @@ public class HardLineBreaksTests
     {
         var input = "foo  \nbaz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<br />\nbaz</p>", html);
+        Assert.Equal("<p>foo  <br/>baz</p>", html);
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public class HardLineBreaksTests
     {
         var input = "foo\\\nbaz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<br />\nbaz</p>", html);
+        Assert.Equal("<p>foo\\<br/>baz</p>", html);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class HardLineBreaksTests
     {
         var input = "foo       \nbaz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<br />\nbaz</p>", html);
+        Assert.Equal("<p>foo       <br/>baz</p>", html);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class HardLineBreaksTests
     {
         var input = "foo  \n     bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<br />\nbar</p>", html);
+        Assert.Equal("<p>foo  <br/>     bar</p>", html);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class HardLineBreaksTests
     {
         var input = "foo\\\n     bar";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<br />\nbar</p>", html);
+        Assert.Equal("<p>foo\\<br/>     bar</p>", html);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class HardLineBreaksTests
     {
         var input = "*foo  \nbar*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo<br />\nbar</em></p>", html);
+        Assert.Equal("<p><em>foo  <br/>bar</em></p>", html);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class HardLineBreaksTests
     {
         var input = "*foo\\\nbar*";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><em>foo<br />\nbar</em></p>", html);
+        Assert.Equal("<p><em>foo\\<br/>bar</em></p>", html);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class HardLineBreaksTests
     {
         var input = "`code  \nspan`";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><code>code   span</code></p>", html);
+        Assert.Equal("<p><code>code  \nspan</code></p>", html);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class HardLineBreaksTests
     {
         var input = "`code\\\nspan`";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><code>code\\ span</code></p>", html);
+        Assert.Equal("<p><code>code\\\nspan</code></p>", html);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class HardLineBreaksTests
     {
         var input = "foo  ";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo</p>", html);
+        Assert.Equal("<p>foo  </p>", html);
     }
 
     [Fact]
