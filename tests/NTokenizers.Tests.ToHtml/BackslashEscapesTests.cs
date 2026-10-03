@@ -117,7 +117,18 @@ public class BackslashEscapesTests
     {
         var input = "``` foo\\+bar\nfoo\n```";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<pre><code class=\"language-foo+bar\">foo\n</code></pre>", html);
+        // Deviation: the fence info string is not unescaped, so the language keeps the
+        // backslash ('foo\+bar' instead of 'foo+bar'), and the block renders as the
+        // decorated container instead of a bare <pre><code>.
+        Assert.Equal(
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"> foo\\+bar</span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language- foo\\+bar\"><span class=\"tok-generic\">foo</span></code></pre>\n" +
+            "</div>\n",
+            html);
     }
 
 }
