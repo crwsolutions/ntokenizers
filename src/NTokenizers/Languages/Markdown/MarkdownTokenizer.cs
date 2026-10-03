@@ -596,9 +596,9 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             return PeekAhead(pos + offset) == '.' && PeekAhead(pos + 1 + offset) == ' ';
         }
 
-        if (first == '`')
+        if (first is '`' or '~')
         {
-            return PeekAhead(1 + offset) == '`' && PeekAhead(2 + offset) == '`';
+            return PeekAhead(1 + offset) == first && PeekAhead(2 + offset) == first;
         }
 
         if (first == ':')
@@ -734,7 +734,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     private Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer, string? value = null) where TToken : IToken =>
         ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, _lookaheadBuffer, handler), value);
 
-    private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken
+    private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata, string fence) where TToken : IToken
     {
         // Fence content is read straight from the stream, bypassing the blockquote decision
         // table. Inside a quote that would leak the '>' markers into the code (and a
@@ -744,7 +744,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             ? new FilteredBlockquoteReader(Reader, _depth, Bob)
             : Reader;
 
-        return ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(reader, Bob, "```", handler));
+        return ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(reader, Bob, fence, handler));
     }
 
     /// <summary>
@@ -1153,15 +1153,28 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
     private async Task<bool> TryParseCodeFence()
     {
-        if (PeekAhead(0) != '`' || PeekAhead(1) != '`' || PeekAhead(2) != '`')
+        char fenceChar = (char)PeekAhead(0);
+        if (fenceChar is not ('`' or '~'))
+            return false;
+
+        // Count the opening fence run: a code fence is at least three consecutive
+        // backtick or tilde characters (the two cannot be mixed).
+        int fenceLength = 0;
+        while (PeekAhead(fenceLength) == fenceChar)
+        {
+            fenceLength++;
+        }
+
+        if (fenceLength < 3)
             return false;
 
         EmitText();
 
-        // Consume ```
-        Read();
-        Read();
-        Read();
+        // Consume the fence characters
+        for (int i = 0; i < fenceLength; i++)
+        {
+            Read();
+        }
 
         // Read language identifier
         var lang = new StringBuilder();
@@ -1176,30 +1189,31 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (Peek() == '\n')
             Read();
 
-        // Create appropriate metadata based on language
-        return await ParseCodeInlines(lang.ToString());
+        // The closing fence must use the same character and at least as many of it as
+        // the opening fence, so the opening fence itself is the stop delimiter.
+        return await ParseCodeInlines(lang.ToString(), new string(fenceChar, fenceLength));
     }
 
-    private async Task<bool> ParseCodeInlines(string language) => language.Trim().ToLowerInvariant() switch
+    private async Task<bool> ParseCodeInlines(string language, string fence) => language.Trim().ToLowerInvariant() switch
     {
-        "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language)),
-        "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language)),
-        "xml" or "xaml" or "svg" => await ParseCodeInlines(new XmlCodeBlockMetadata(language)),
-        "html" => await ParseCodeInlines(new HtmlCodeBlockMetadata(language)),
-        "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language)),
-        "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language)),
-        "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language)),
-        "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language)),
-        "toml" => await ParseCodeInlines(new TomlCodeBlockMetadata(language)),
-        "java" => await ParseCodeInlines(new JavaCodeBlockMetadata(language)),
-        "c" => await ParseCodeInlines(new CCodeBlockMetadata(language)),
-        "cpp" or "c++" => await ParseCodeInlines(new CppCodeBlockMetadata(language)),
-        "rust" or "rs" => await ParseCodeInlines(new RustCodeBlockMetadata(language)),
-        "kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language)),
-        "go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language)),
-        "swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language)),
-        "python" or "py" => await ParseCodeInlines(new PythonCodeBlockMetadata(language)),
-        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language))
+        "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language), fence),
+        "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language), fence),
+        "xml" or "xaml" or "svg" => await ParseCodeInlines(new XmlCodeBlockMetadata(language), fence),
+        "html" => await ParseCodeInlines(new HtmlCodeBlockMetadata(language), fence),
+        "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language), fence),
+        "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language), fence),
+        "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language), fence),
+        "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language), fence),
+        "toml" => await ParseCodeInlines(new TomlCodeBlockMetadata(language), fence),
+        "java" => await ParseCodeInlines(new JavaCodeBlockMetadata(language), fence),
+        "c" => await ParseCodeInlines(new CCodeBlockMetadata(language), fence),
+        "cpp" or "c++" => await ParseCodeInlines(new CppCodeBlockMetadata(language), fence),
+        "rust" or "rs" => await ParseCodeInlines(new RustCodeBlockMetadata(language), fence),
+        "kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language), fence),
+        "go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language), fence),
+        "swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language), fence),
+        "python" or "py" => await ParseCodeInlines(new PythonCodeBlockMetadata(language), fence),
+        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language), fence)
     };
 
     private bool TryParseCustomContainer()

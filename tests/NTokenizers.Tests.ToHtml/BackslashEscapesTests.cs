@@ -72,9 +72,19 @@ public class BackslashEscapesTests
     {
         var input = "~~~\n\\[\\]\n~~~";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Known deviation: tilde fences (~~~) are not recognized; only backtick fences (```)
-        // are. The ~ runs are treated as text (and even as superscript markers). Failing.
-        Assert.Equal("<pre><code>\\[\\]\n</code></pre>", html);
+        // Matches the CommonMark spec content: a tilde fence is recognized and the
+        // backslash escapes in the code content are literal (no unescaping in code).
+        // Deviation: the decorated container wrapper; the code span omits the content's
+        // trailing newline.
+        Assert.Equal(
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">\\[\\]</span></code></pre>\n" +
+            "</div>\n",
+            html);
     }
 
     [Fact]

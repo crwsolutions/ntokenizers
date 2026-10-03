@@ -454,6 +454,77 @@ public class MarkdownTokenizerCodeBlocksTests
     }
 
     [Fact]
+    public void TestTildeCodeBlock()
+    {
+        // A run of three tildes opens a fenced code block, just like backticks.
+        var markdown = "~~~\ncode\n~~~";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Single(tokens);
+        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[0].TokenType);
+        Assert.Equal(string.Empty, tokens[0].Value); // Code blocks have empty value
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestTildeCodeBlockWithLanguage()
+    {
+        // The language identifier after a tilde fence is carried by the metadata.
+        var markdown = "~~~ruby\ncode\n~~~";
+        var (tokens, text) = Tokenize(markdown);
+        var codeBlock = Assert.Single(tokens, t => t.TokenType == MarkdownTokenType.CodeBlock);
+        var metadata = Assert.IsAssignableFrom<NTokenizers.Core.ICodeBlockMetadata>(codeBlock.Metadata);
+        Assert.Equal("ruby", metadata.Language);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestLongFenceRequiresMatchingClose()
+    {
+        // Fence length matching: a closing fence must use the same character and at
+        // least as many of it as the opening fence. The '```' line is content, and the
+        // '``````' line closes the block; the two extra backticks beyond the required
+        // run surface as a following paragraph.
+        var markdown = "````\n```\n``````";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[1].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+        Assert.Equal("``", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[3].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestTildeFenceContentWithBackticks()
+    {
+        // Tildes and backticks cannot be mixed: inside a tilde fence a line of
+        // backticks is content, not a closing fence.
+        var markdown = "~~~\naaa\n```\n~~~";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Single(tokens);
+        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[0].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestTildeFenceBreaksQuote()
+    {
+        // Decision table, row 4 (line-start construct): a tilde code fence ends the
+        // quote, the same as a backtick fence.
+        var markdown = "> foo\n~~~";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(5, tokens.Count);
+        Assert.Equal(MarkdownTokenType.Blockquote, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[1].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
+        Assert.Equal("foo", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[4].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
     public void TestSvgCodeBlock()
     {
         var markdown = """

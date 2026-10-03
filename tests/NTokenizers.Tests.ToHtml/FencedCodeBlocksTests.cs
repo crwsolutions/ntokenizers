@@ -38,12 +38,17 @@ public class FencedCodeBlocksTests
     {
         var input = "~~~\n<\n >\n~~~";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: '~~~' is not recognized as a fence; a line-start '~' parses as a
-        // superscript marker, so the whole line is plain text with an empty superscript.
+        // A '~~~' tilde fence is recognized just like a backtick fence, so this renders as
+        // the decorated code block container. The content '<\n >' is generic code.
         Assert.Equal(
-            "<p><sup><span class=\"tok-superscript\"></span></sup>~<br/>&lt;</p>\n" +
-            "<blockquote>\n</blockquote>\n" +
-            "<p><sup><span class=\"tok-superscript\"></span></sup>~</p>",
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">&lt;\n </span>" +
+            "<span class=\"tok-generic\">&gt;</span></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
@@ -80,17 +85,17 @@ public class FencedCodeBlocksTests
     {
         var input = "~~~\naaa\n```\n~~~";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: '~~~' is not a fence, so the first line and 'aaa' form a paragraph.
-        // The '```' line then opens a fenced code block whose content is the final '~~~'.
+        // Matches the CommonMark spec content: only the '~~~' fence closes the tilde
+        // block, so '```' stays as code content. Deviation: the decorated container
+        // wrapper.
         Assert.Equal(
-            "<p><sup><span class=\"tok-superscript\"></span></sup>~<br/>aaa" +
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
             "<span class=\"code-block-language\"></span>\n" +
             "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
             "</div>\n" +
-            "<pre><code class=\"language-\"><span class=\"tok-generic\">~~~</span></code></pre>\n" +
-            "</div>\n</p>",
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">aaa\n```</span></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
@@ -99,24 +104,20 @@ public class FencedCodeBlocksTests
     {
         var input = "````\naaa\n```\n``````";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: the opening '````' is read as '```' plus a language of '`', so the
-        // block contains 'aaa' and is closed by the bare '```' line. The final '``````'
-        // line then opens a second (empty) code block whose language is '```'.
+        // Matches the CommonMark spec content (fence length matching): the '```' line is
+        // shorter than the opening '````' fence, so it is content and the '``````' line
+        // closes the block. Deviations: the decorated container wrapper, and the
+        // unclosed-block content is cut at the first line carrying the stop delimiter, so
+        // the two backticks of '``````' beyond the required run form a paragraph after.
         Assert.Equal(
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
-            "<span class=\"code-block-language\">`</span>\n" +
+            "<span class=\"code-block-language\"></span>\n" +
             "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
             "</div>\n" +
-            "<pre><code class=\"language-`\"><span class=\"tok-generic\">aaa</span></code></pre>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">aaa\n```</span></code></pre>\n" +
             "</div>\n" +
-            "<div class=\"code-block-container\">\n" +
-            "<div class=\"code-block-header\">\n" +
-            "<span class=\"code-block-language\">```</span>\n" +
-            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
-            "</div>\n" +
-            "<pre><code class=\"language-```\"></code></pre>\n" +
-            "</div>\n",
+            "<p>``</p>",
             html);
     }
 
@@ -125,14 +126,17 @@ public class FencedCodeBlocksTests
     {
         var input = "~~~~\naaa\n~~~\n~~~~";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: '~~~~' is not a fence; the runs of '~' parse as superscript markers,
-        // so the whole block is a plain paragraph.
+        // Matches the CommonMark spec content (fence length matching): the '~~~' line is
+        // shorter than the opening '~~~~' fence, so it is content and the final '~~~~'
+        // closes the block. Deviation: the decorated container wrapper.
         Assert.Equal(
-            "<p><sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup><br/>aaa<br/>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>~<br/>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup></p>",
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">aaa\n~~~</span></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
@@ -159,18 +163,20 @@ public class FencedCodeBlocksTests
     {
         var input = "`````\n\n```\naaa";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: the opening '`````' is read as '```' plus a language of '``'. The
-        // following blank line is consumed as the block's (empty) content line, and the
-        // bare '```' line closes the block. The remaining 'aaa' forms a paragraph.
+        // Matches the CommonMark spec content (fence length matching): the bare '```' line
+        // is shorter than the opening '`````' fence, so it is content and the block runs
+        // to end of stream. Deviations: the decorated container wrapper, and the unclosed
+        // block content is cut at the first line carrying the stop delimiter, so the extra
+        // backtick of the '```' line (and the 'aaa') stay in the code instead of being
+        // emitted as a paragraph.
         Assert.Equal(
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
-            "<span class=\"code-block-language\">``</span>\n" +
+            "<span class=\"code-block-language\"></span>\n" +
             "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
             "</div>\n" +
-            "<pre><code class=\"language-``\"></code></pre>\n" +
-            "</div>\n" +
-            "<p>aaa</p>",
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">\n```\naaa</span></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
@@ -399,14 +405,19 @@ public class FencedCodeBlocksTests
     {
         var input = "~~~~~~\naaa\n~~~ ~~";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: '~~~~~~' is not a fence; the runs of '~' parse as superscript
-        // markers, so the whole block is a plain paragraph.
+        // Matches the CommonMark spec content (fence length matching): the '~~~ ~~' line
+        // is not a run of six tildes, so it is content and the block runs to end of
+        // stream. Deviations: the decorated container wrapper, and the '~~~ ~~' content is
+        // emitted as two generic spans split at the space.
         Assert.Equal(
-            "<p><sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup><br/>aaa<br/>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"> </span></sup>~</p>",
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">aaa\n~~~ </span>" +
+            "<span class=\"tok-generic\">~~</span></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
@@ -436,13 +447,19 @@ public class FencedCodeBlocksTests
     {
         var input = "foo\n---\n~~~\nbar\n~~~\n# baz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: '~~~' is not a fence, so the lines between the '---' horizontal rule
-        // and the heading form a paragraph with superscript markers instead of a code block.
+        // Matches the CommonMark spec content: the '~~~' lines open and close a tilde
+        // code block between the thematic break and the heading. Deviation: the
+        // decorated container wrapper.
         Assert.Equal(
             "<p>foo</p>\n" +
             "<hr />\n" +
-            "<p><sup><span class=\"tok-superscript\"></span></sup>~<br/>bar<br/>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>~</p>\n" +
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"><span class=\"tok-generic\">bar</span></code></pre>\n" +
+            "</div>\n" +
             "<h1>baz</h1>",
             html);
     }
@@ -475,16 +492,29 @@ public class FencedCodeBlocksTests
     {
         var input = "~~~~    ruby startline=3 $%@#$\ndef foo(x)\n  return 3\nend\n~~~~~~~";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: '~~~~' is not a fence; the runs of '~' parse as superscript markers,
-        // so the whole block is a plain paragraph (the spec treats it as a ruby code block
-        // with an info string).
+        // Matches the CommonMark spec content: a '~~~~' tilde fence with an info string,
+        // closed by the longer '~~~~~~~' fence. Deviations: the decorated container
+        // wrapper, and the info string is not trimmed or reduced to its first word, so
+        // the language keeps its leading spaces ('    ruby startline=3 $%@#$').
         Assert.Equal(
-            "<p><sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>" +
-            "    ruby startline=3 $%@#$<br/>def foo(x)<br/>  return 3<br/>end<br/>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>~</p>",
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\">    ruby startline=3 $%@#$</span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-    ruby startline=3 $%@#$\"><span class=\"tok-generic\">def </span>" +
+            "<span class=\"tok-generic\">foo(x)\n </span>" +
+            "<span class=\"tok-generic\"> </span>" +
+            "<span class=\"tok-generic\">return </span>" +
+            "<span class=\"tok-generic\">3\nend</span></code></pre>\n" +
+            "</div>\n" +
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"></span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language-\"></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
@@ -493,19 +523,17 @@ public class FencedCodeBlocksTests
     {
         var input = "````;\n````";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: the opening '````;' is read as '```' plus a language of '`;' (the
-        // spec strips the extra backtick from the info string), and the bare '````' line
-        // does not close the block (the spec requires at least the opening length of
-        // backticks), so the trailing '`' of '````' opens a second (empty) code block.
+        // Matches the CommonMark spec content (fence length matching): a '````' fence with
+        // info string ';' is closed by the bare '````' line, so the block is empty.
+        // Deviation: the decorated container wrapper.
         Assert.Equal(
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
-            "<span class=\"code-block-language\">`;</span>\n" +
+            "<span class=\"code-block-language\">;</span>\n" +
             "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
             "</div>\n" +
-            "<pre><code class=\"language-`;\"></code></pre>\n" +
-            "</div>\n" +
-            "<p>`</p>",
+            "<pre><code class=\"language-;\"></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
@@ -533,14 +561,18 @@ public class FencedCodeBlocksTests
     {
         var input = "~~~ aa ``` ~~~\nfoo\n~~~";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: '~~~' is not a fence; the runs of '~' parse as superscript markers,
-        // so the whole block is a plain paragraph (the spec treats it as an 'aa' code
-        // block).
+        // Matches the CommonMark spec content: a '~~~' tilde fence whose info string may
+        // contain backticks; the block is closed by the final '~~~'. Deviations: the
+        // decorated container wrapper, and the info string is not reduced to its first
+        // word, so the language keeps ' aa ``` ~~~'.
         Assert.Equal(
-            "<p><sup><span class=\"tok-superscript\"></span></sup>" +
-            "<sup><span class=\"tok-superscript\"> aa ``` </span></sup>" +
-            "<sup><span class=\"tok-superscript\"></span></sup><br/>foo<br/>" +
-            "<sup><span class=\"tok-superscript\"></span></sup>~</p>",
+            "<div class=\"code-block-container\">\n" +
+            "<div class=\"code-block-header\">\n" +
+            "<span class=\"code-block-language\"> aa ``` ~~~</span>\n" +
+            "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
+            "</div>\n" +
+            "<pre><code class=\"language- aa ``` ~~~\"><span class=\"tok-generic\">foo</span></code></pre>\n" +
+            "</div>\n",
             html);
     }
 
