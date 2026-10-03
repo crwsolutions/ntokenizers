@@ -7,7 +7,8 @@ namespace NTokenizers.Markdown.Metadata;
 /// <param name="Text">Optional link text or alt text.</param>
 /// <param name="Title">Optional title.</param>
 /// <param name="IsBracketed">True when the destination was enclosed in angle brackets.</param>
-public sealed class LinkMetadata(string Url, string? Text = null, string? Title = null, bool IsBracketed = false) : Core.Metadata
+/// <param name="IsAutolink">True when the link was an angle-bracketed autolink (URI or email).</param>
+public sealed class LinkMetadata(string Url, string? Text = null, string? Title = null, bool IsBracketed = false, bool IsAutolink = false) : Core.Metadata
 {
     /// <summary>
     /// Gets the URL associated with the link or image.
@@ -28,4 +29,9 @@ public sealed class LinkMetadata(string Url, string? Text = null, string? Title 
     /// Gets a value indicating whether the destination was enclosed in angle brackets.
     /// </summary>
     public bool IsBracketed { get; } = IsBracketed;
+
+    /// <summary>
+    /// Gets a value indicating whether the link was an angle-bracketed autolink (URI or email).
+    /// </summary>
+    public bool IsAutolink { get; } = IsAutolink;
 }

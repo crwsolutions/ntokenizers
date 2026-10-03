@@ -138,6 +138,11 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
     private string FormatLinkHref(LinkMetadata metadata)
     {
         var url = metadata.Url;
+        if (metadata.IsAutolink)
+        {
+            // Autolink hrefs percent-encode backslashes and bracket characters, then escape.
+            return FormatAutolinkHref(url);
+        }
         if (metadata.IsBracketed)
         {
             url = url.Replace(" ", "%20");
@@ -147,6 +152,28 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
             url = UnescapeBackslashes(url);
         }
         return EscapeHtml(url);
+    }
+
+    /// <summary>
+    /// Formats an autolink href: backslash, '[' and ']' are percent-encoded (per the
+    /// autolink rules), the remaining characters are HTML-escaped.
+    /// </summary>
+    private string FormatAutolinkHref(string url)
+    {
+        var result = new StringBuilder(url.Length);
+        for (int i = 0; i < url.Length; i++)
+        {
+            char c = url[i];
+            if (c == '\\' || c == '[' || c == ']')
+            {
+                result.Append('%').Append(((int)c).ToString("X2"));
+            }
+            else
+            {
+                result.Append(c);
+            }
+        }
+        return EscapeHtml(result.ToString());
     }
 
     /// <summary>

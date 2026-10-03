@@ -157,7 +157,7 @@ public class CodeSpansTests
     {
         var input = "<https://foo.bar.`baz>`";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><https://foo.bar.`baz>`</p>", html);
+        Assert.Equal("<p><a href=\"https://foo.bar.`baz\">https://foo.bar.`baz</a>`</p>", html);
     }
 
     [Fact]
@@ -181,6 +181,10 @@ public class CodeSpansTests
     {
         var input = "`foo``bar``";
         var html = MarkdownConverter.ToHtml(input);
-        Assert.Equal("<p>`foo``bar``</p>", html);
+        // Code spans parse left-to-right: the single opening backtick has no matching
+        // single-backtick close (the other runs are length two), so it is literal text, and
+        // the `` ``bar`` `` run forms the code span. (Previously the unmatched opener swallowed
+        // the rest of the line as one code span, which was incorrect.)
+        Assert.Equal("<p>`foo<code>bar</code></p>", html);
     }
 }

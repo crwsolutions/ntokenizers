@@ -177,8 +177,21 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             return true;
         }
 
-        // No closing found, treat as text
-        _buffer.Append('`', openLength).Append(code);
+        // No closing run was found, so this is not a real code span (the opening backtick(s)
+        // are unpaired). The backtick(s) are literal text and the scanned content must go
+        // through the normal inline pipeline (backslash escapes, raw HTML, etc.) rather than
+        // being swallowed raw to end of stream. Emit the backtick(s) and re-queue the content
+        // so the caller processes it character by character.
+        for (int i = 0; i < openLength; i++)
+        {
+            _buffer.Append('`');
+        }
+
+        for (int i = 0; i < code.Length; i++)
+        {
+            _lookaheadBuffer.Enqueue(code[i]);
+        }
+
         return true;
     }
 
@@ -540,7 +553,9 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
 
     /// <summary>
     /// Handles backslash-escaped ASCII punctuation. Consumes the backslash and the punctuation character,
-    /// emitting only the punctuation character as plain text.
+    /// emitting only the punctuation character as plain text. A backslash before any other
+    /// character (letters, digits, whitespace) is not an escape and is left for the caller to
+    /// emit as a literal character.
     /// </summary>
     private bool TryParseBackslashEscape()
     {
@@ -576,38 +591,133 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         _ => false
     };
 
+    /// <summary>
+    /// Parses an autolink or an inline HTML tag at an opening angle bracket.
+    /// </summary>
+    /// <remarks>
+    /// A '&lt;' is treated as an HTML span only when it is followed by a letter, a '/'
+    /// (closing tag), or '!' or '?' (declaration/comment/processing instruction); anything
+    /// else (e.g. '&lt;33&gt;', '&lt; a&gt;') is plain text. The span is read up to the
+    /// first closing '&gt;'. When it is a URI or email autolink a Link token is emitted;
+    /// otherwise the span is emitted verbatim as an HtmlTag token (inline raw HTML
+    /// pass-through: no tag structure is validated and no markdown is parsed inside the tag).
+    /// A run without a closing '&gt;' is plain text. Newlines may occur inside the tag.
+    /// </remarks>
     private bool TryParseHtmlTag()
     {
         if (Peek() != '<') return false;
 
-        // Check if it looks like an HTML tag
         char next = PeekAhead(1);
-
-        // Must start with letter or / for closing tags
-        if (!char.IsLetter(next) && next != '/')
+        if (!char.IsLetter(next) && next != '/' && next != '!' && next != '?')
+        {
             return false;
+        }
 
         EmitText();
         Read(); // Consume <
 
-        // Read tag content until >
-        var tagContent = new StringBuilder();
-        tagContent.Append('<');
-
-        while (Peek() != -1)
+        // Read the span up to the first closing angle bracket (or end of stream when absent).
+        var content = new StringBuilder();
+        while (Peek() != -1 && Peek() != '>')
         {
-            char c = (char)Read();
-            tagContent.Append(c);
+            content.Append((char)Read());
+        }
 
-            if (c == '>')
+        // An autolink is a bracketed URI or email address; consume the closing '>' as well.
+        if (TryParseAutolink(content.ToString()))
+        {
+            if (Peek() == '>')
             {
-                _onToken(new MarkdownToken(MarkdownTokenType.HtmlTag, tagContent.ToString()));
-                return true;
+                Read();
+            }
+            return true;
+        }
+
+        if (Peek() != '>')
+        {
+            // No closing found: treat the whole span as plain text.
+            _buffer.Append('<').Append(content);
+            return true;
+        }
+
+        Read(); // Consume >
+        _onToken(new MarkdownToken(MarkdownTokenType.HtmlTag, "<" + content + ">"));
+        return true;
+    }
+
+    /// <summary>
+    /// Checks whether the given span (the characters between the angle brackets of an
+    /// autolink candidate) is a URI or email autolink. When it is, a Link token is emitted
+    /// (the email gets a mailto: prefix) and true is returned.
+    /// </summary>
+    /// <remarks>
+    /// URI autolinks: a ':' whose scheme starts with a letter, contains only
+    /// [a-zA-Z0-9+.-], is at least two characters long, and whose part after the ':' is
+    /// non-empty. Email autolinks: exactly one '@' with a non-empty local part and a domain
+    /// part containing a '.'. Neither may contain spaces; a backslash disqualifies an
+    /// email but is allowed (and percent-encoded by the writer) in a URI.
+    /// </remarks>
+    private bool TryParseAutolink(string content)
+    {
+        if (content.Length == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < content.Length; i++)
+        {
+            if (char.IsWhiteSpace(content[i]) || content[i] == '<' || content[i] == '>')
+            {
+                return false;
             }
         }
 
-        // No closing found, treat as text
-        _buffer.Append(tagContent);
-        return true;
+        int at = content.IndexOf('@');
+        int colon = content.IndexOf(':');
+
+        // A ':' and no '@' is a URI autolink; an '@' and no ':' is an email autolink.
+        // (Both present means a URI autolink, as in MAILTO:FOO@BAR.BAZ.)
+        if (colon >= 0 && (at < 0 || colon < at))
+        {
+            bool schemeValid = colon >= 2
+                && char.IsLetter(content[0])
+                && content[colon + 1] != '\0';
+            for (int i = 1; schemeValid && i < colon; i++)
+            {
+                char ch = content[i];
+                if (!char.IsLetterOrDigit(ch) && ch is not ('+' or '.' or '-'))
+                {
+                    schemeValid = false;
+                }
+            }
+
+            if (!schemeValid)
+            {
+                return false;
+            }
+
+            EmitLinkToken($"<{content}>", content, content, true);
+            return true;
+        }
+
+        if (at > 0 && content.Substring(at + 1).Contains('.'))
+        {
+            if (content.Contains('\\'))
+            {
+                return false;
+            }
+
+            string email = content;
+            EmitLinkToken($"<{email}>", "mailto:" + email, email, true);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void EmitLinkToken(string value, string url, string text, bool isAutolink)
+    {
+        _onToken(new MarkdownToken(MarkdownTokenType.Link, value,
+            new LinkMetadata(url, text, null, IsBracketed: false, IsAutolink: isAutolink)));
     }
 }

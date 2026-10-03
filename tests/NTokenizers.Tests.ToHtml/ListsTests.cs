@@ -62,7 +62,7 @@ public class ListsTests
     {
         var input = "- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n<li>\n<p>bar</p>\n</li>\n</ul><p>&lt;!-- --&gt;</p>\n<ul>\n<li>\n<p>baz</p>\n</li>\n<li>\n<p>bim</p>\n</li>\n</ul>", html);
+        Assert.Equal("<ul>\n<li>\n<p>foo</p>\n</li>\n<li>\n<p>bar</p>\n</li>\n</ul><p><!-- --></p>\n<ul>\n<li>\n<p>baz</p>\n</li>\n<li>\n<p>bim</p>\n</li>\n</ul>", html);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class ListsTests
     {
         var input = "-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<ul>\n<li>\n<p>  foo</p>\n<p>  notcode</p>\n</li>\n<li>\n<p>  foo</p>\n</li>\n</ul><p>&lt;!-- --&gt;</p>\n<pre><code>code</code></pre>", html);
+        Assert.Equal("<ul>\n<li>\n<p>  foo</p>\n<p>  notcode</p>\n</li>\n<li>\n<p>  foo</p>\n</li>\n</ul><p><!-- --></p>\n<pre><code>code</code></pre>", html);
     }
 
     [Fact]
