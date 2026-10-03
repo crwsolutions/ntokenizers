@@ -82,8 +82,10 @@ if (token.Metadata is ICodeBlockMetadata codeBlock)
 #### Other markdown metadata
 - `HeadingMetadata`
 - `BlockquoteMetadata`
+- `ListMetadata`
 - `ListItemMetadata`
 - `OrderedListItemMetadata`
+- `IndentedCodeBlockMetadata`
 - `TableMetadata`
 - `LinkMetadata`
 - `FootnoteMetadata`
@@ -330,9 +332,11 @@ The Markdown Tokenizer produces tokens of type `MarkdownTokenType` with the foll
 - `HorizontalRule` - Represents a horizontal rule (`---` or `***`)
 - `TypographicReplacement` - Represents a typographic replacement (`(c)`, `(r)`, `(tm)`, `+-`)
 - `Emphasis` - Represents a generic emphasis marker
-- `Blockquote` - Represents a blockquote (value contains text without `>` marker)
-- `UnorderedListItem` - Represents an unordered list item (value contains leading whitespace/indentation; inline content is tokenized separately)
-- `OrderedListItem` - Represents an ordered list item (value contains leading whitespace/indentation; inline content is tokenized separately)
+- `Blockquote` - Represents a blockquote (value is empty; the content is streamed as tokens through the metadata's inline token handler, a full markdown sub-document including nested blockquotes)
+- `UnorderedListItem` - Represents an unordered list item (value contains the item text without `+`, `-`, `*` markers)
+- `OrderedListItem` - Represents an ordered list item (value contains the item text without number prefix, item number in Metadata)
+- `ListStart` - Represents the start of a list (value is empty; `ListMetadata` carries the list kind)
+- `ListEnd` - Represents the end of a list (value is empty; `ListMetadata` carries the list kind matching the corresponding `ListStart`)
 - `CodeInline` - Represents inline code (value contains code without `` ` `` markers)
 - `CodeBlock` - Represents a code block (value contains code without ``` markers, language in Metadata)
 - `Table` - Represents a table (value is empty, structure in Metadata)
@@ -353,8 +357,11 @@ The Markdown Tokenizer produces tokens of type `MarkdownTokenType` with the foll
 - `Abbreviation` - Represents an abbreviation (value contains definition)
 - `CustomContainer` - Represents a custom container (value contains container type/name without `:::` markers)
 - `HtmlTag` - Represents an HTML tag (value contains complete tag including `< >` markers)
+- `ParagraphBlockStart` - Represents the start of a paragraph block (value is empty; a sequence of non-blank lines that is not another block-level construct)
+- `ParagraphBlockEnd` - Represents the end of a paragraph block (value is empty; follows the last line of the paragraph)
+- `IndentedCodeBlock` - Represents an indented code block (value is empty; content is streamed as plain `Text` tokens through the metadata's inline token handler; four or more columns of indentation, no info string)
 
-More info: [MarkdownTokenType.cs](https://github.com/crwsolutions/ntokenizers/blob/main/src/NTokenizers/Markdown/MarkdownTokenType.cs)
+More info: [MarkdownTokenType.cs](https://github.com/crwsolutions/ntokenizers/blob/main/src/NTokenizers/Languages/Markdown/MarkdownTokenType.cs)
 
 ## Supported Code Block Languages
 
@@ -362,5 +369,6 @@ The Markdown Tokenizer supports code blocks for many languages. Code blocks usin
 
 ## See Also
 
+- [ToHtml API](/ntokenizers/tohtml)
 - [Json Tokenizer](/ntokenizers/json)
 - [Home](/ntokenizers/)

@@ -5,7 +5,7 @@ title: "ToHtml"
 
 # ToHtml API
 
-The ToHtml API provides a simple way to convert Markdown content to HTML output. It is built on top of the `MarkdownTokenizer` and is **fully stream-capable**, enabling real-time processing of large files or streaming data without loading everything into memory.
+The ToHtml API provides a simple way to convert Markdown content to HTML output. It is built on top of the `MarkdownTokenizer` and is **fully stream-capable**: it consumes a Markdown *stream* and writes the HTML *stream* incrementally — each token is written to the output `TextWriter` as soon as it is parsed, so a live AI chat response or a large file can be converted in real time without buffering the whole document.
 
 ## Overview
 
@@ -23,6 +23,7 @@ The `MarkdownConverter` class offers two conversion modes:
 | `ToHtml(string input)` | Synchronously converts a Markdown string to an HTML fragment. |
 | `ToHtmlAsync(Stream inputStream)` | Asynchronously converts a Markdown stream to an HTML fragment. |
 | `WriteHtmlAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream and writes the fragment directly to a `TextWriter`. |
+| `WriteHtmlAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader` and writes the fragment directly to a `TextWriter`. |
 
 ### Document Methods
 
@@ -31,6 +32,7 @@ The `MarkdownConverter` class offers two conversion modes:
 | `ToHtmlDocument(string input)` | Synchronously converts a Markdown string to a full HTML document. |
 | `ToHtmlDocumentAsync(Stream inputStream)` | Asynchronously converts a Markdown stream to a full HTML document. |
 | `WriteHtmlDocumentAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream and writes the full document directly to a `TextWriter`. |
+| `WriteHtmlDocumentAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader` and writes the full document directly to a `TextWriter`. |
 
 ### Utility Methods
 
@@ -86,10 +88,15 @@ string css = MarkdownConverter.GetCss();
 When using the document methods (`ToHtmlDocument*`), the output includes:
 
 - `<!DOCTYPE html>` declaration
+- `<html lang="en">` root element with a fixed `<title>Converted Markdown</title>`
 - `<head>` with charset, viewport meta tags
 - Embedded CSS styles for headings, code blocks, tables, blockquotes, and more
-- A JavaScript `copyCode()` function for copy-to-clipboard support on code blocks
+- A JavaScript `copyCode()` function for copy-to-clipboard support on code blocks; the button text switches to `Copied!` for 1.5 seconds after a successful copy
 - `<body>` wrapping the converted Markdown content
+
+## CommonMark Compliance
+
+The conversion follows the [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/) reference. The output differs from the reference implementation in a small number of documented places — the differences, and the features that are intentionally not supported, are listed on the [CommonMark Compliance](/ntokenizers/commonmark) page.
 
 ## See Also
 

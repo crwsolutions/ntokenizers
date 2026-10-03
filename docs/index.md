@@ -80,7 +80,7 @@ await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
 
 ## Overview
 
-NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, HTML, YAML, TOML, SQL, TypeScript, CSS, C#, C, C++, Go, Java, Kotlin, Rust, Swift and Python. The `Tokenize` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** — it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
+NTokenizers is a .NET library written in C# that provides tokenizers for processing structured text formats like Markdown, JSON, XML, HTML, YAML, TOML, SQL, TypeScript, CSS, C#, C, C++, Go, Java, Kotlin, Rust, Swift and Python. The `ParseAsync` method is the core functionality that breaks down structured text into meaningful components (tokens) for processing. Its key feature is **stream processing capability** — it can handle data as it arrives in real-time, making it ideal for processing large files or streaming data without loading everything into memory at once.
 
 <blockquote class="warning">
   <b>Warning</b><br/><br/>
@@ -94,6 +94,28 @@ var result = await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async 
 ```
 
 In addition to streaming tokens, the original input is returned for convenience.
+
+## Markdown to HTML
+
+The **ToHtml API** is feature complete and stream-capable: it converts a Markdown stream to an HTML stream incrementally, writing each token to the output writer as it is parsed. It works on live streams such as AI chat responses, and offers both fragment and full HTML document output.
+
+Quick start:
+
+```csharp
+using NTokenizers.ToHtml;
+
+string markdown = "# Hello\n\nThis is **bold** text.";
+
+// Fragment (body-only)
+string html = MarkdownConverter.ToHtml(markdown);
+
+// Full HTML document, stream-to-stream
+using var inputStream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
+using var writer = new StringWriter();
+await MarkdownConverter.WriteHtmlDocumentAsync(inputStream, writer);
+```
+
+See the [ToHtml API](/ntokenizers/tohtml) page for more details.
 
 ## Code specific Tokenizers
 
@@ -126,5 +148,6 @@ Individual tokenizers are available for each supported format:
 - **Real-time Parsing**: Processes tokens as they are encountered
 - **Flexible Input**: Supports various input sources including streams, readers, and strings
 - **Rich Token Information**: Provides detailed token type information for precise handling
+- **Markdown to HTML**: The ToHtml API converts a Markdown stream to an HTML stream incrementally, with both fragment and full HTML document output ([ToHtml API](/ntokenizers/tohtml))
 
 > **Especially suitable for parsing AI chat streams**, NTokenizers excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
