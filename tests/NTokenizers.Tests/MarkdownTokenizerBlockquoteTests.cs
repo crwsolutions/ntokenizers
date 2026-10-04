@@ -31,7 +31,7 @@ namespace Markdown;
 /// </summary>
 public class MarkdownTokenizerBlockquoteTests
 {
-    private static (List<MarkdownToken> tokens, string text) Tokenize(string markdown)
+    private static (List<MarkdownToken> tokens, string text, List<CssToken>? cssTokens) Tokenize(string markdown, List<CssToken>? cssTokens = null)
     {
         var tokens = new List<MarkdownToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
@@ -43,15 +43,16 @@ public class MarkdownTokenizerBlockquoteTests
         // token tree. Language code-block metadata streams non-markdown tokens; a no-op
         // handler at every level lets the parser stream and discard that content (and avoids
         // the parser waiting on an unhandled inline token when a code fence appears inside a
-        // quoted sub-document).
-        static void RegisterInlineHandlers(MarkdownToken token, List<MarkdownToken> tokens)
+        // quoted sub-document). When a cssTokens list is supplied, CSS sub-tokens are
+        // captured into it instead of being discarded.
+        static void RegisterInlineHandlers(MarkdownToken token, List<MarkdownToken> tokens, List<CssToken>? cssTokens)
         {
             if (token.Metadata is HeadingMetadata headingMeta)
             {
                 headingMeta.RegisterInlineTokenHandler(t =>
                 {
                     tokens.Add(t);
-                    RegisterInlineHandlers(t, tokens);
+                    RegisterInlineHandlers(t, tokens, cssTokens);
                 });
             }
             else if (token.Metadata is BlockquoteMetadata blockquoteMeta)
@@ -59,7 +60,7 @@ public class MarkdownTokenizerBlockquoteTests
                 blockquoteMeta.RegisterInlineTokenHandler(t =>
                 {
                     tokens.Add(t);
-                    RegisterInlineHandlers(t, tokens);
+                    RegisterInlineHandlers(t, tokens, cssTokens);
                 });
             }
             else if (token.Metadata is ListItemMetadata listMeta)
@@ -67,7 +68,7 @@ public class MarkdownTokenizerBlockquoteTests
                 listMeta.RegisterInlineTokenHandler(t =>
                 {
                     tokens.Add(t);
-                    RegisterInlineHandlers(t, tokens);
+                    RegisterInlineHandlers(t, tokens, cssTokens);
                 });
             }
             else if (token.Metadata is OrderedListItemMetadata orderedListMeta)
@@ -75,7 +76,7 @@ public class MarkdownTokenizerBlockquoteTests
                 orderedListMeta.RegisterInlineTokenHandler(t =>
                 {
                     tokens.Add(t);
-                    RegisterInlineHandlers(t, tokens);
+                    RegisterInlineHandlers(t, tokens, cssTokens);
                 });
             }
             else if (token.Metadata is IndentedCodeBlockMetadata indentedCodeMeta)
@@ -88,7 +89,7 @@ public class MarkdownTokenizerBlockquoteTests
                 tableMeta.RegisterInlineTokenHandler(t =>
                 {
                     tokens.Add(t);
-                    RegisterInlineHandlers(t, tokens);
+                    RegisterInlineHandlers(t, tokens, cssTokens);
                 });
             }
             else if (token.Metadata is CSharpCodeBlockMetadata csharpMeta)
@@ -137,7 +138,13 @@ public class MarkdownTokenizerBlockquoteTests
             }
             else if (token.Metadata is CssCodeBlockMetadata cssMeta)
             {
-                cssMeta.RegisterInlineTokenHandler(token => { });
+                cssMeta.RegisterInlineTokenHandler(token =>
+                {
+                    if (cssTokens is not null)
+                    {
+                        cssTokens.Add(token);
+                    }
+                });
             }
             else if (token.Metadata is SqlCodeBlockMetadata sqlMeta)
             {
@@ -164,9 +171,9 @@ public class MarkdownTokenizerBlockquoteTests
         var result = MarkdownTokenizer.Create().ParseAsync(stream, token =>
         {
             tokens.Add(token);
-            RegisterInlineHandlers(token, tokens);
+            RegisterInlineHandlers(token, tokens, cssTokens);
         }).GetAwaiter().GetResult();
-        return (tokens, result);
+        return (tokens, result, cssTokens);
     }
 
     private static void AssertToken(MarkdownToken token, MarkdownTokenType type, string? value = null)
@@ -184,7 +191,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestSingleLineBlockquoteIsParagraph()
     {
         var markdown = "> quoted text";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         // Blockquote wrapping a single-line paragraph.
         Assert.Equal(5, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
@@ -202,7 +209,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestMultiLineBlockquoteSingleParagraph()
     {
         var markdown = "> line1\n> line2";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -223,7 +230,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestIndentedPrefixIsSingleQuote()
     {
         var markdown = " > a\n > b\n > c";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Text, " "); // trigger line's leading space
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -246,7 +253,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestIndentedPrefixHeadingContent()
     {
         var markdown = "   > # Foo\n   > bar\n > baz";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Text, "   "); // trigger line's leading spaces
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -269,7 +276,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestFourColumnsIsNotAQuotePrefix()
     {
         var markdown = "> a\n    > b\n> c";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -290,7 +297,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestBlankQuotedLineSeparatesParagraphs()
     {
         var markdown = "> line1\n>\n> line2";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(7, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -308,7 +315,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestBareBlockquoteMarkerIsEmptyBlockquote()
     {
         var markdown = ">";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Single(tokens);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         Assert.Equal(markdown, text);
@@ -321,7 +328,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestBlankLineClosesQuoteAndNextLineReopens()
     {
         var markdown = "> foo\n\n> bar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -342,7 +349,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestBlankLineClosesQuoteAndPlainLineIsTopLevel()
     {
         var markdown = "> foo\n\nbar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -362,7 +369,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestLazyContinuationKeepsLineInsideQuote()
     {
         var markdown = "> foo\nbar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -380,7 +387,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestListMarkerBreaksQuote()
     {
         var markdown = "> foo\n- bar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(10, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -401,7 +408,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestHeadingBreaksQuote()
     {
         var markdown = "> foo\n# bar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -418,7 +425,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestCodeFenceBreaksQuote()
     {
         var markdown = "> foo\n```";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(5, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -434,7 +441,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestThematicBreakBreaksQuote()
     {
         var markdown = "> foo\n---";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(5, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -451,7 +458,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestIndentedLineIsLazyContinuationWhenParagraphOpen()
     {
         var markdown = "> foo\n    bar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -469,7 +476,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestIndentedLineBreaksQuoteWhenNoParagraphOpen()
     {
         var markdown = ">\n    bar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(4, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Text, "\n");
@@ -485,7 +492,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestPlainLineWithoutOpenParagraphEndsQuote()
     {
         var markdown = "> \nbar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(5, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Text, "\n");
@@ -503,7 +510,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestNestedBlockquote()
     {
         var markdown = "> a\n> > b\n> c";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         // Outer: closed paragraph 'a', then a nested blockquote holding the paragraph
         // 'b' and its lazy continuation 'c'.
         Assert.Equal(10, tokens.Count);
@@ -532,7 +539,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestNestedBlockquoteEndingOnBlankLineClosesOuterQuote()
     {
         var markdown = "> > # Hoi\n\nHallo";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -552,7 +559,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestNestedParagraphEndingOnBlankLineClosesOuterQuote()
     {
         var markdown = "> > foo\n\nHallo";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -573,7 +580,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestNestedListEndingOnBlankLineClosesOuterQuote()
     {
         var markdown = "> > - x\n\nHallo";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(10, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -595,7 +602,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestThreeMarkerColumnsOpenThreeNestedQuotes()
     {
         var markdown = "> > > x";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -610,7 +617,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestThreeConsecutiveMarkersOpenThreeNestedQuotes()
     {
         var markdown = ">>> x";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -627,7 +634,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestHeadingAndParagraphInQuote()
     {
         var markdown = "> # Foo\n> bar\n> baz";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Heading);
@@ -646,11 +653,65 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestListInQuote()
     {
         var markdown = "> - foo\n> - bar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Blockquote);
         Assert.Equal(2, tokens.Count(t => t.TokenType == MarkdownTokenType.UnorderedListItem));
         Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value == "foo");
         Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value == "bar");
+        Assert.Equal(markdown, text);
+    }
+
+    // A code fence inside a quote: the fence is parsed by the outer tokenizer (row 4 ends
+    // the quote), so the CodeBlock token sits at the top level, after the Blockquote token.
+    // The CSS sub-tokens are streamed through the CodeBlock's CssCodeBlockMetadata handler;
+    // the '>' markers on the fence content lines are stripped by the FilteredBlockquoteReader
+    // (the fence is parsed at depth 1, inside the quote). The blank line between the fence
+    // and the trailing paragraph is emitted as a faithful Text token; the trailing "A" opens
+    // and closes a paragraph.
+    [Fact]
+    public void TestCodeFenceInQuoteFollowedByParagraph()
+    {
+        var markdown = "> ```css\n> /* B */\n> ```\n\nA";
+        var cssTokens = new List<CssToken>();
+        var (tokens, text, _) = Tokenize(markdown, cssTokens);
+        Assert.Equal(6, tokens.Count);
+
+        // [0] The blockquote token: it opens on the trigger line and ends at the closing
+        // fence (row 4: a line-start construct ends the quote). Its inline content (the
+        // CSS code fence) is streamed through the CodeBlock metadata, not the blockquote
+        // metadata, so the blockquote's own inline handler receives no tokens.
+        AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
+        Assert.IsType<BlockquoteMetadata>(tokens[0].Metadata);
+
+        // [1] The code block token: parsed by the outer tokenizer, the fence content is
+        // read through the FilteredBlockquoteReader which strips the '>' markers. The token
+        // carries the CSS language metadata.
+        AssertToken(tokens[1], MarkdownTokenType.CodeBlock, string.Empty);
+        var cssMeta = Assert.IsType<CssCodeBlockMetadata>(tokens[1].Metadata);
+        Assert.Equal("css", cssMeta.Language);
+
+        // [2] The blank line between the closing fence and the trailing paragraph: the
+        // decision table row 2 emits it as a faithful Text token (the quote is already
+        // ended, so it is plain top-level text).
+        AssertToken(tokens[2], MarkdownTokenType.Text, "\n");
+
+        // [3] The trailing paragraph starts.
+        AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockStart, string.Empty);
+
+        // [4] The paragraph content.
+        AssertToken(tokens[4], MarkdownTokenType.Text, "A");
+
+        // [5] The paragraph ends at end of stream.
+        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockEnd, string.Empty);
+
+        // The CSS inline tokens: the fence content is "/* B */" (the '>' markers are
+        // stripped by the FilteredBlockquoteReader). The CSS tokenizer emits a single
+        // Comment token for the entire comment.
+        Assert.Single(cssTokens);
+        Assert.Equal(CssTokenType.Comment, cssTokens[0].TokenType);
+        Assert.Equal("/* B */", cssTokens[0].Value);
+
+        // The faithful text is identical to the input.
         Assert.Equal(markdown, text);
     }
 
@@ -662,7 +723,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestCodeFenceInQuoteCarriesLanguageMetadata()
     {
         var markdown = ">\n> ```python\n> def hallo():\n> ```";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         var codeBlock = tokens.SingleOrDefault(t => t.TokenType == MarkdownTokenType.CodeBlock);
         Assert.NotNull(codeBlock);
         var metadata = Assert.IsType<PythonCodeBlockMetadata>(codeBlock!.Metadata);
@@ -675,7 +736,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestCrlfMultiLineBlockquote()
     {
         var markdown = "> foo\r\n> bar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -692,7 +753,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestLazyContinuationIsFaithfulToInput()
     {
         var markdown = "> foo\nbar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(markdown, text);
         Assert.Single(tokens, t => t.TokenType == MarkdownTokenType.Blockquote);
         Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value == "bar");
@@ -706,7 +767,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestNestedLazyContinuationStaysInInnerQuote()
     {
         var markdown = "> > Dit is cool\n> Hoi";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -728,7 +789,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestNestedBlankQuotedLineClosesInnerParagraph()
     {
         var markdown = "> > Dit is cool\n> \n> Hoi";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(11, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -750,7 +811,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestNestedBlankQuotedLineNoTrailingSpaceClosesInnerParagraph()
     {
         var markdown = "> > Dit is cool\n>\n> Hoi";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(11, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -773,7 +834,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestDeeplyNestedLazyContinuation()
     {
         var markdown = "> > > foo\nbar";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -793,7 +854,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestThreeLevelsStayOpenWithLazyContinuations()
     {
         var markdown = ">>> foo\n> bar\n>>baz";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(10, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
@@ -816,7 +877,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestContinuationWithMoreMarkersOpensDeeperQuote()
     {
         var markdown = "> a\n> > b";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
@@ -836,7 +897,7 @@ public class MarkdownTokenizerBlockquoteTests
     public void TestContinuationWithConsecutiveExtraMarkerOpensDeeperQuote()
     {
         var markdown = "> a\n>> b";
-        var (tokens, text) = Tokenize(markdown);
+        var (tokens, text, _) = Tokenize(markdown);
         Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);

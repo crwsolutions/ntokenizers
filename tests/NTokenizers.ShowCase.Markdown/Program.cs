@@ -1,6 +1,9 @@
+using System.Diagnostics;
+using System.IO.Pipes;
+using System.Text;
 using NTokenizers.C;
-using NTokenizers.Cpp;
 using NTokenizers.Core;
+using NTokenizers.Cpp;
 using NTokenizers.Css;
 using NTokenizers.Go;
 using NTokenizers.Html;
@@ -16,18 +19,28 @@ using NTokenizers.Toml;
 using NTokenizers.Typescript;
 using NTokenizers.Xml;
 using Spectre.Console;
-using System.Diagnostics;
-using System.IO.Pipes;
-using System.Text;
+using Spectre.Console.Rendering;
 
 class Program
 {
+    private static int _trailingLineBreaks;
+    private static StringBuilder? _livePanelMarkup;
+    private static LiveDisplayContext? _livePanelContext;
+
     static async Task Main()
     {
         string markdown = """
         - Item 1
           * Nested item
         - Item 2
+
+        > ## Css example
+        > ```css
+        > .user {
+        >     color: #FFFFFF;
+        >     active: true;
+        > }
+        > ```
 
         Here is some **bold** text and some *italic* text.
 
@@ -36,14 +49,6 @@ class Program
         Here is some larger text: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
         # NTokenizers Showcase
-
-        ## Css example
-        ```css
-        .user {
-            color: #FFFFFF;
-            active: true;
-        }
-        ```
 
         ## XML example
         ```xml
@@ -180,36 +185,81 @@ class Program
         // Start slow writer
         var writerTask = EmitSlowlyAsync(markdown, pipe);
 
-        // Parse markup
-        await MarkdownTokenizer.Create().ParseAsync(reader, onToken: async token =>
+        async Task RenderTokenAsync(MarkdownToken token, int listDepth = 0)
         {
             if (token.Metadata is ICodeBlockMetadata codeBlock)
             {
-                AnsiConsole.WriteLine();
-                AnsiConsole.Write(new Markup($"[bold lime]{codeBlock.Language}:[/]"));
-                AnsiConsole.WriteLine();
+                WriteOutputLineBreak();
+                var markupText = $"[bold lime]{codeBlock.Language}:[/]";
+                WriteOutput(new Markup(markupText), $"{codeBlock.Language}:", markupText);
+                WriteOutputLineBreak();
             }
 
             if (token.Metadata is ListItemMetadata listMetadata)
             {
-                AnsiConsole.Write(new Markup($"{token.Value}[bold lime]{listMetadata.Marker} [/]"));
+                WriteOutput(new string(' ', listDepth * 2));
+                var markupText = $"{Markup.Escape(token.Value)}[bold lime]{listMetadata.Marker} [/ ]".Replace("[/ ]", "[/]");
+                WriteOutput(new Markup(markupText), $"{token.Value}{listMetadata.Marker} ", markupText);
                 await listMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
-                    var value = Markup.Escape(inlineToken.Value);
-                    AnsiConsole.Write(new Markup($"[bold red]{value}[/]"));
+                    _ = RenderTokenAsync(inlineToken, listDepth + 1);
                 });
                 Debug.WriteLine("Written listItem inlines");
 
+            }
+            else if (token.Metadata is BlockquoteMetadata blockquoteMetadata)
+            {
+                if (_livePanelMarkup is not null)
+                {
+                    // Nested quote inside an already-open panel: render the inlines into the
+                    // existing panel. No new panel is started, no panel is closed here (the
+                    // outermost quote's onInlinesCompleted owns that).
+                    WriteOutputLineBreak();
+                    WriteOutput(new Markup("[grey]> [/]"), "> ", "[grey]> [/]");
+                    await blockquoteMetadata.RegisterInlineTokenHandler(inlineToken =>
+                    {
+                        _ = RenderTokenAsync(inlineToken, listDepth);
+                    });
+                }
+                else
+                {
+                    if (listDepth == 0)
+                    {
+                        WriteOutputBlankLine();
+                    }
+                    else
+                    {
+                        WriteOutputLineBreak();
+                    }
+
+                    await AnsiConsole.Live(CreateQuotePanel(string.Empty)).StartAsync(async context =>
+                    {
+                        _livePanelMarkup = new StringBuilder();
+                        _livePanelContext = context;
+
+                        // The onInlinesCompleted callback fires after all of the quote's
+                        // inlines have been drained (the tokenizer calls CompleteProcessing
+                        // on the BlockquoteMetadata). That is the right moment to tear down
+                        // the panel: it spans the entire quote, not just the first inline.
+                        await blockquoteMetadata.RegisterInlineTokenHandler(
+                            inlineToken => _ = RenderTokenAsync(inlineToken, listDepth),
+                            onInlinesCompleted: () =>
+                            {
+                                _livePanelMarkup = null;
+                                _livePanelContext = null;
+                            });
+                    });
+                }
             }
             else if (token.Metadata is HeadingMetadata headingMetadata)
             {
                 await headingMetadata.RegisterInlineTokenHandler(inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
-                    var colored = headingMetadata.Level != 1 ?
-                        new Markup($"[bold GreenYellow]{value}[/]") :
-                        new Markup($"[bold yellow]** {value} **[/]");
-                    AnsiConsole.Write(colored);
+                    var markupText = headingMetadata.Level != 1 ?
+                        $"[bold GreenYellow]{value}[/]" :
+                        $"[bold yellow]** {value} **[/]";
+                    WriteOutput(new Markup(markupText), inlineToken.Value, markupText);
                 });
                 Debug.WriteLine("Written Heading inlines");
             }
@@ -232,7 +282,7 @@ class Program
                         XmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
@@ -257,7 +307,7 @@ class Program
                         JsonTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is HtmlCodeBlockMetadata htmlMetadata)
@@ -289,7 +339,7 @@ class Program
                         HtmlTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                     }
                 });
             }
@@ -323,7 +373,7 @@ class Program
                         TomlTokenType.Whitespace => new Markup($"[dim]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is CCodeBlockMetadata cMetadata)
@@ -342,7 +392,7 @@ class Program
                         CTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is CppCodeBlockMetadata cppMetadata)
@@ -361,7 +411,7 @@ class Program
                         CppTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is RustCodeBlockMetadata rustMetadata)
@@ -380,7 +430,7 @@ class Program
                         RustTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is KotlinCodeBlockMetadata kotlinMetadata)
@@ -399,7 +449,7 @@ class Program
                         KotlinTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is GoCodeBlockMetadata goMetadata)
@@ -418,7 +468,7 @@ class Program
                         GoTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is SwiftCodeBlockMetadata swiftMetadata)
@@ -437,7 +487,7 @@ class Program
                         SwiftTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is JavaCodeBlockMetadata javaMetadata)
@@ -456,7 +506,7 @@ class Program
                         JavaTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else if (token.Metadata is PythonCodeBlockMetadata pythonMetadata)
@@ -475,34 +525,110 @@ class Program
                         PythonTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                         _ => new Markup(value)
                     };
-                    AnsiConsole.Write(colored);
+                    WriteOutput(colored, inlineToken.Value);
                 });
             }
             else
             {
                 // Handle regular markup tokens
                 var value = Markup.Escape(token.Value);
-                var colored = token.TokenType switch
+                var markupText = token.TokenType switch
                 {
-                    MarkdownTokenType.Text => new Markup($"{value}"),
-                    MarkdownTokenType.Bold => new Markup($"[bold]{value}[/]"),
-                    MarkdownTokenType.Italic => new Markup($"[italic]{value}[/]"),
-                    _ => new Markup(value)
+                    MarkdownTokenType.Text => value,
+                    MarkdownTokenType.Bold => $"[bold]{value}[/]",
+                    MarkdownTokenType.Italic => $"[italic]{value}[/]",
+                    _ => value
                 };
 
-                AnsiConsole.Write(colored);
+                WriteOutput(new Markup(markupText), token.Value, markupText);
             }
 
             if (token.Metadata is InlineMetadata)
             {
-                AnsiConsole.WriteLine();
+                WriteOutputLineBreak();
             }
-        });
+        }
+
+        // Parse markup
+        await MarkdownTokenizer.Create().ParseAsync(reader, onToken: token => _ = RenderTokenAsync(token));
 
         await writerTask;
 
         Console.WriteLine();
         Console.WriteLine("Done.");
+    }
+
+    private static Panel CreateQuotePanel(string markup) =>
+        new Panel(new Markup(markup))
+            //.Header("Quote")
+            .Border(new LeftBoxBorder())
+            .BorderColor(Color.Grey);
+
+    private static void WriteOutput(Markup markup, string text, string? markupText = null)
+    {
+        if (_livePanelMarkup is null)
+        {
+            AnsiConsole.Write(markup);
+        }
+        else
+        {
+            _livePanelMarkup.Append(markupText ?? Markup.Escape(text));
+            _livePanelContext?.UpdateTarget(CreateQuotePanel(_livePanelMarkup.ToString()));
+        }
+        UpdateLineState(text);
+    }
+
+    private static void WriteOutput(string text)
+    {
+        if (_livePanelMarkup is null)
+        {
+            AnsiConsole.Write(text);
+        }
+        else
+        {
+            _livePanelMarkup.Append(Markup.Escape(text));
+            _livePanelContext?.UpdateTarget(CreateQuotePanel(_livePanelMarkup.ToString()));
+        }
+        UpdateLineState(text);
+    }
+
+    private static void WriteOutputLineBreak()
+    {
+        if (_trailingLineBreaks == 0)
+        {
+            WriteOutput("\n");
+        }
+    }
+
+    private static void WriteOutputBlankLine()
+    {
+        while (_trailingLineBreaks < 2)
+        {
+            WriteOutput("\n");
+        }
+    }
+
+    private static void UpdateLineState(string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '\r')
+            {
+                _trailingLineBreaks++;
+                if (i + 1 < text.Length && text[i + 1] == '\n')
+                {
+                    i++;
+                }
+            }
+            else if (text[i] == '\n')
+            {
+                _trailingLineBreaks++;
+            }
+            else
+            {
+                _trailingLineBreaks = 0;
+            }
+        }
     }
 
     private static async Task HandleScript(TypeScriptCodeBlockMetadata tsMetadata)
@@ -521,7 +647,7 @@ class Program
                 TypescriptTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                 _ => new Markup(value)
             };
-            AnsiConsole.Write(colored);
+            WriteOutput(colored, inlineToken.Value);
         });
     }
 
@@ -529,6 +655,8 @@ class Program
     {
         await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
         {
+            var escaped = inlineToken.Value.Replace("\r", "\\r").Replace("\n", "\\n");
+            Console.Error.WriteLine($"[CSS] type={inlineToken.TokenType} value={escaped}");
             var value = Markup.Escape(inlineToken.Value);
             var colored = inlineToken.TokenType switch
             {
@@ -540,7 +668,7 @@ class Program
                 CssTokenType.Whitespace => new Markup($"[grey]{value}[/]"),
                 _ => new Markup(value)
             };
-            AnsiConsole.Write(colored);
+            WriteOutput(colored, inlineToken.Value);
         });
     }
 
@@ -553,9 +681,20 @@ class Program
         {
             await output.WriteAsync(new[] { b }.AsMemory(0, 1));
             await output.FlushAsync();
-            await Task.Delay(rng.Next(0, 2));
+            //await Task.Delay(rng.Next(0, 2));
         }
 
         output.Close(); // EOF
     }
+}
+
+internal sealed class LeftBoxBorder : BoxBorder
+{
+    public override string GetPart(BoxBorderPart part) => part switch
+    {
+        BoxBorderPart.TopLeft => "│",
+        BoxBorderPart.Left => "│",
+        BoxBorderPart.BottomLeft => "│",
+        _ => " "
+    };
 }

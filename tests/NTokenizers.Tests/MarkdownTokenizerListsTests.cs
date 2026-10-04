@@ -403,6 +403,37 @@ public class MarkdownTokenizerListsTests
     }
 
     [Fact]
+    public void TestUnindentedBlockquoteAfterBlankLineEndsListAndPreservesWhitespace()
+    {
+        var markdown = "- Item 1\n  * Nested item\n- Item 2\n\n> ## Css example";
+        var (tokens, text) = Tokenize(markdown);
+        var blockquoteIndex = tokens.FindIndex(token => token.TokenType == MarkdownTokenType.Blockquote);
+
+        Assert.Equal(markdown, text);
+        Assert.True(blockquoteIndex > 0);
+
+        var listEndIndex = tokens.FindLastIndex(blockquoteIndex - 1, token => token.TokenType == MarkdownTokenType.ListEnd);
+        Assert.True(listEndIndex >= 0);
+        var itemTextIndex = tokens.FindLastIndex(listEndIndex - 1, token => token.TokenType == MarkdownTokenType.Text && token.Value == "2");
+        var separatorIndex = tokens.FindIndex(itemTextIndex + 1, token => token.TokenType == MarkdownTokenType.Text && token.Value == "\n");
+        Assert.True(itemTextIndex >= 0);
+        Assert.True(separatorIndex > itemTextIndex && separatorIndex < listEndIndex);
+    }
+
+    [Fact]
+    public void TestIndentedBlockquoteAfterBlankLineRemainsInListItem()
+    {
+        var markdown = "- Item 1\n\n  > Nested quote";
+        var (tokens, text) = Tokenize(markdown);
+        var blockquoteIndex = tokens.FindIndex(token => token.TokenType == MarkdownTokenType.Blockquote);
+        var listEndIndex = tokens.FindLastIndex(token => token.TokenType == MarkdownTokenType.ListEnd);
+
+        Assert.Equal(markdown, text);
+        Assert.True(blockquoteIndex >= 0);
+        Assert.True(blockquoteIndex < listEndIndex);
+    }
+
+    [Fact]
     public void TestTenDigitMarkerIsNotAListItem()
     {
         // Ten or more digits before the delimiter is not a list marker (deviation: capped at

@@ -187,7 +187,7 @@ internal sealed class ListContentReader : TextReader
             return;
         }
 
-        if (blankLines.Count > 0 && line.IndentColumns < _contentOffset && !line.IsLineStartConstruct)
+        if (blankLines.Count > 0 && line.IndentColumns < _contentOffset)
         {
             ScopeEnd(blankLines, line.Characters);
             return;
