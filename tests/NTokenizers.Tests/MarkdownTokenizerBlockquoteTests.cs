@@ -326,44 +326,44 @@ public class MarkdownTokenizerBlockquoteTests
         Assert.Equal(markdown, text);
     }
 
-    // Decision table, row 2 (blank line, no prefix): closes the quote; the line is emitted
-    // as a faithful Text token and the next quoted line opens a new blockquote.
+    // Decision table, row 2 (blank line, no prefix): closes the quote. The blank line is
+    // consumed but not emitted (a quote renders as a box that already closes on a fresh
+    // line, so the terminating line must not appear inside the box); the next quoted line
+    // opens a new blockquote.
 
     [Fact]
     public void TestBlankLineClosesQuoteAndNextLineReopens()
     {
         var markdown = "> foo\n\n> bar";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(9, tokens.Count);
+        Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // the blank line, faithful
-        AssertToken(tokens[5], MarkdownTokenType.Blockquote, string.Empty);
-        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[7], MarkdownTokenType.Text, "bar");
-        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[4], MarkdownTokenType.Blockquote, string.Empty);
+        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[6], MarkdownTokenType.Text, "bar");
+        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
-    // Decision table, row 2 (blank line, no prefix): closes the quote; the following plain
-    // line belongs to the outer scope.
+    // Decision table, row 2 (blank line, no prefix): closes the quote (the blank line is
+    // consumed but not emitted); the following plain line belongs to the outer scope.
 
     [Fact]
     public void TestBlankLineClosesQuoteAndPlainLineIsTopLevel()
     {
         var markdown = "> foo\n\nbar";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(8, tokens.Count);
+        Assert.Equal(7, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // the blank line, faithful
-        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[6], MarkdownTokenType.Text, "bar");
-        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[4], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[5], MarkdownTokenType.Text, "bar");
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -559,15 +559,14 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> > # Hoi\n\nHallo";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(8, tokens.Count);
+        Assert.Equal(7, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[2], MarkdownTokenType.Heading);
         AssertToken(tokens[3], MarkdownTokenType.Text, "Hoi");
-        AssertToken(tokens[4], MarkdownTokenType.Text, "\n");
-        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[6], MarkdownTokenType.Text, "Hallo");
-        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[4], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[5], MarkdownTokenType.Text, "Hallo");
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -579,16 +578,15 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> > foo\n\nHallo";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(9, tokens.Count);
+        Assert.Equal(8, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[2], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[3], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[4], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[5], MarkdownTokenType.Text, "\n");
-        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[7], MarkdownTokenType.Text, "Hallo");
-        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[6], MarkdownTokenType.Text, "Hallo");
+        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -600,17 +598,16 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> > - x\n\nHallo";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(10, tokens.Count);
+        Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[2], MarkdownTokenType.ListStart);
         AssertToken(tokens[3], MarkdownTokenType.UnorderedListItem);
         AssertToken(tokens[4], MarkdownTokenType.Text, "x");
-        AssertToken(tokens[5], MarkdownTokenType.Text, "\n");
-        AssertToken(tokens[6], MarkdownTokenType.ListEnd);
-        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[8], MarkdownTokenType.Text, "Hallo");
-        AssertToken(tokens[9], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[5], MarkdownTokenType.ListEnd);
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "Hallo");
+        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -685,15 +682,15 @@ public class MarkdownTokenizerBlockquoteTests
     // The CSS sub-tokens are streamed through the CodeBlock's CssCodeBlockMetadata handler;
     // the '>' markers on the fence content lines are stripped by the FilteredBlockquoteReader
     // (the fence is parsed at depth 1, inside the quote). The blank line between the fence
-    // and the trailing paragraph is emitted as a faithful Text token; the trailing "A" opens
-    // and closes a paragraph.
+    // and the trailing paragraph is consumed but not emitted (a quote renders as a box that
+    // already closes on a fresh line); the trailing "A" opens and closes a paragraph.
     [Fact]
     public void TestCodeFenceInQuoteFollowedByParagraph()
     {
         var markdown = "> ```css\n> /* B */\n> ```\n\nA";
         var cssTokens = new List<CssToken>();
         var (tokens, text, _) = Tokenize(markdown, cssTokens);
-        Assert.Equal(6, tokens.Count);
+        Assert.Equal(5, tokens.Count);
 
         // [0] The blockquote token: it opens on the trigger line and ends at the closing
         // fence (row 4: a line-start construct ends the quote). Its inline content (the
@@ -710,18 +707,18 @@ public class MarkdownTokenizerBlockquoteTests
         Assert.Equal("css", cssMeta.Language);
 
         // [2] The blank line between the closing fence and the trailing paragraph: the
-        // decision table row 2 emits it as a faithful Text token (the quote is already
-        // ended, so it is plain top-level text).
-        AssertToken(tokens[2], MarkdownTokenType.Text, "\n");
+        // decision table row 2 consumes it to advance the stream but does not emit it
+        // (a quote renders as a box that already closes on a fresh line, so the
+        // terminating line must not appear inside the box).
 
         // [3] The trailing paragraph starts.
-        AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockStart, string.Empty);
+        AssertToken(tokens[2], MarkdownTokenType.ParagraphBlockStart, string.Empty);
 
         // [4] The paragraph content.
-        AssertToken(tokens[4], MarkdownTokenType.Text, "A");
+        AssertToken(tokens[3], MarkdownTokenType.Text, "A");
 
         // [5] The paragraph ends at end of stream.
-        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockEnd, string.Empty);
+        AssertToken(tokens[4], MarkdownTokenType.ParagraphBlockEnd, string.Empty);
 
         // The CSS inline tokens: the fence content is "/* B */" (the '>' markers are
         // stripped by the FilteredBlockquoteReader). The CSS tokenizer emits a single

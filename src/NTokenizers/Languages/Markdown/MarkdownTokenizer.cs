@@ -431,8 +431,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     /// and opens deeper nested quotes. With fewer markers: a valid lazy continuation (a
     /// paragraph is open and the remainder is plain content) consumes them as decoration;
     /// otherwise this level ends and the line is left for the outer tokenizer.</item>
-    /// <item>A blank line (no prefix) closes the paragraph, emits the whitespace plus line
-    /// ending as a Text token and ends the quote.</item>
+    /// <item>A blank line (no prefix) closes the paragraph and ends the quote. The blank
+    /// line is consumed to advance the stream but not emitted: a quote renders as a box
+    /// that already closes on a fresh line, so the terminating line must not appear inside
+    /// the box.</item>
     /// <item>An indented line (four or more columns, no prefix) ends the quote when no
     /// paragraph is open, so the outer tokenizer can start an indented code block.</item>
     /// <item>A line starting a line-start construct ends the quote, leaving the line untouched.</item>
@@ -515,16 +517,17 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             return false;
         }
 
-        // Row 2: a blank line (no prefix) ends the quote. The paragraph is closed first and
-        // the line is emitted as a Text token so the stream stays faithful to the input.
+        // Row 2: a blank line (no prefix) ends the quote. The paragraph is closed first. The
+        // blank line is consumed to advance the stream but NOT emitted: a quote renders as a
+        // box that already closes on a fresh line, so the terminating blank line must not
+        // appear inside the box (it would show as a trailing blank line in console output).
         if (IndentedCodeBlockContentTokenizer.PeekCurrentLineKind(this) == IndentedCodeBlockContentTokenizer.LineStart.Blank)
         {
             _pendingSoftBreak = false;
             CloseParagraph();
 
-            (string line, bool hasLineEnding) = IndentedCodeBlockContentTokenizer.ReadLineText(this);
+            IndentedCodeBlockContentTokenizer.ReadLineText(this);
             EmitText();
-            _onToken(new MarkdownToken(MarkdownTokenType.Text, line + (hasLineEnding ? "\n" : string.Empty)));
             return false;
         }
 
