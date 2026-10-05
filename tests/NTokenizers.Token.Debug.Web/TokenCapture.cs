@@ -73,6 +73,22 @@ public static class TokenCapture
     }
 
     /// <summary>
+    /// Parses HTML (e.g. the ToHtml output fragment) with the Html tokenizer and returns
+    /// the full token tree, including nested script/style inline tokens.
+    /// </summary>
+    public static async Task<List<TokenEntry>> CaptureHtmlAsync(string input, CancellationToken ct = default)
+    {
+        var root = new List<TokenEntry>();
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(input));
+        await HtmlTokenizer.Create().ParseAsync(stream, ct, token =>
+        {
+            if (ct.IsCancellationRequested) return;
+            root.Add(ToEntry(token));
+        });
+        return root;
+    }
+
+    /// <summary>
     /// Converts a token to a TokenEntry and, when its metadata is an InlineMetadata&lt;T&gt;,
     /// registers an inline token handler that captures the sub tokens recursively.
     /// </summary>

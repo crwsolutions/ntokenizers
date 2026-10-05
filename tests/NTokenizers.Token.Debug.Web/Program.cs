@@ -18,11 +18,13 @@ app.MapPost("/convert", async (ConvertRequest request, HttpContext context) =>
 
     var tokens = await TokenCapture.CaptureAsync(markdown, context.RequestAborted);
     var htmlRaw = MarkdownConverter.ToHtml(markdown);
+    var htmlTokens = await TokenCapture.CaptureHtmlAsync(htmlRaw, context.RequestAborted);
 
     var response = new ConvertResponse
     {
         Tokens = tokens,
         HtmlRaw = htmlRaw,
+        HtmlTokens = htmlTokens,
     };
 
     context.Response.ContentType = "application/json; charset=utf-8";
@@ -46,6 +48,7 @@ public sealed class ConvertResponse
 {
     public List<TokenEntry> Tokens { get; set; } = [];
     public string HtmlRaw { get; set; } = string.Empty;
+    public List<TokenEntry> HtmlTokens { get; set; } = [];
 }
 
 /// <summary>

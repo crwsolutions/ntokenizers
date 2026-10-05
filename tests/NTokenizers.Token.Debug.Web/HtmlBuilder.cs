@@ -126,8 +126,24 @@ this is an unknown language
             font-family: Consolas, monospace;
             font-size: 12px;
             line-height: 1.5;
-            color: #a5d6ff;
+            color: #c9d1d9;
         }
+        /* Token colors for the ToHtml raw column (HtmlTokenizer output). */
+        #html-raw .raw-elementname { color: #7ee787; }
+        #html-raw .raw-attributename { color: #79c0ff; }
+        #html-raw .raw-attributevalue { color: #ffa657; }
+        #html-raw .raw-attributequote { color: #d29922; }
+        #html-raw .raw-attributeequals { color: #8b949e; }
+        #html-raw .raw-openinganglebracket, #html-raw .raw-closinganglebracket, #html-raw .raw-selfclosingslash { color: #8b949e; }
+        #html-raw .raw-comment { color: #8b949e; font-style: italic; }
+        #html-raw .raw-documenttypedeclaration { color: #ff7b72; }
+        #html-raw .raw-scriptelement, #html-raw .raw-styleelement { color: #ff7b72; }
+        #html-raw .raw-whitespace { color: #6e7681; }
+        #html-raw .raw-text { color: #c9d1d9; }
+        #html-raw .raw-keyword { color: #ff7b72; }
+        #html-raw .raw-string { color: #a5d6ff; }
+        #html-raw .raw-number { color: #ffa657; }
+        #html-raw .raw-operator, #html-raw .raw-punctuation { color: #8b949e; }
 
         #tokens, #tokens ul { list-style: none; }
         #tokens ul ul { margin-left: 2px; padding-left: 14px; border-left: 1px solid #2d3340; }
@@ -208,7 +224,12 @@ this is an unknown language
                 }
                 const result = await response.json();
                 tokensEl.innerHTML = renderTokenTree(result.tokens);
-                rawEl.textContent = result.htmlRaw;
+                if (result.htmlTokens && result.htmlTokens.length > 0) {
+                    rawEl.textContent = '';
+                    rawEl.appendChild(renderRawHtml(result.htmlTokens));
+                } else {
+                    rawEl.textContent = result.htmlRaw;
+                }
                 renderedEl.srcdoc = buildRenderedDocument(result.htmlRaw);
                 setStatus(countTokens(result.tokens) + ' token(s) captured');
             } catch (error) {
@@ -240,6 +261,24 @@ this is an unknown language
                 list.appendChild(renderTokenNode(token));
             }
             return list.outerHTML;
+        }
+
+        // Renders the ToHtml fragment tokens (HtmlTokenizer output) as colored spans.
+        // Nested script/style tokens are inlined, keeping the raw output readable.
+        function renderRawHtml(tokens) {
+            const frag = document.createDocumentFragment();
+            (function walk(list) {
+                for (const token of list) {
+                    const span = document.createElement('span');
+                    span.className = 'raw-' + token.type.toLowerCase();
+                    span.textContent = token.value;
+                    frag.appendChild(span);
+                    if (token.children && token.children.length > 0) {
+                        walk(token.children);
+                    }
+                }
+            })(tokens);
+            return frag;
         }
 
         function renderTokenNode(token) {
