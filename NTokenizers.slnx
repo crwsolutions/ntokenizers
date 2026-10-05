@@ -30,6 +30,7 @@
   <Project Path="tests/NTokenizers.ShowCase.Typescript/NTokenizers.ShowCase.Typescript.csproj" />
   <Project Path="tests/NTokenizers.ShowCase.Xml/NTokenizers.ShowCase.Xml.csproj" />
   <Project Path="tests/NTokenizers.ShowCase.Yaml/NTokenizers.ShowCase.Yaml.csproj" />
+  <Project Path="tests/NTokenizers.Token.Debug.Web/NTokenizers.Token.Debug.Web.csproj" />
   <Project Path="tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance/NTokenizers.Tests.ToHtml.CommonMark.Compliance.csproj" />
   <Project Path="tests/NTokenizers.Tests.ToHtml/NTokenizers.Tests.ToHtml.csproj" />
   <Project Path="tests/NTokenizers.Tests/NTokenizers.Tests.csproj" />
