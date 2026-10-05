@@ -584,7 +584,10 @@ public class FencedCodeBlocksTests
         // Deviation: the closing fence is a bare '```' line, so '``` aaa' is read as a
         // new opening fence (with an empty content block) rather than as code content
         // followed by a closing fence, and the remaining ' aaa' and final '```' form a
-        // second empty code block inside a paragraph.
+        // second empty code block inside a paragraph. Deviation: the newline after ' aaa'
+        // is faithfully emitted as a Text("\n") separator after the PEnd; the dispatcher
+        // writes its block separation before that following token, so the output ends with
+        // a trailing line break.
         Assert.Equal(
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
@@ -600,7 +603,7 @@ public class FencedCodeBlocksTests
             "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
             "</div>\n" +
             "<pre><code class=\"language-\"></code></pre>\n" +
-            "</div>\n</p>",
+            "</div>\n</p>\n",
             html);
     }
 }

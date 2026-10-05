@@ -295,7 +295,10 @@ public class MarkdownTokenizerListsTests
         var markdown = "- top\n  - nested\n   - deeper";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(markdown, text);
-        Assert.Equal(17, tokens.Count);
+        // The item paragraphs are closed as their sub-document ends; each closing newline is
+        // emitted as a Text("\n") separator after the PEnd (faithful whitespace), so the
+        // count is two more than a marker-only stream.
+        Assert.Equal(19, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
 
@@ -332,7 +335,9 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "1. a\n2. b";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(10, tokens.Count);
+        // The first item's paragraph is closed when the sibling begins; its closing newline
+        // is emitted as a Text("\n") separator after the PEnd (faithful whitespace).
+        Assert.Equal(11, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.True(Assert.IsType<ListMetadata>(tokens[0].Metadata).IsOrdered);
 
@@ -397,7 +402,9 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
 
         var whitespace = tokens.Where(t => t.TokenType == MarkdownTokenType.Text && t.Value == "\n").ToList();
-        Assert.Single(whitespace);
+        // Two blank-line newlines (handed back to the parent) plus the two item-paragraph
+        // closing newlines, each emitted as a Text("\n") separator after its PEnd.
+        Assert.Equal(4, whitespace.Count);
 
         Assert.Equal(markdown, text);
     }

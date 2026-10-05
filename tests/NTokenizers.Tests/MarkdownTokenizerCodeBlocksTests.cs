@@ -514,13 +514,17 @@ public class MarkdownTokenizerCodeBlocksTests
         // quote, the same as a backtick fence.
         var markdown = "> foo\n~~~";
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(5, tokens.Count);
+        // The code fence line ends the quote; the quoted paragraph's closing newline is
+        // emitted as a Text("\n") separator after the PEnd before the code block.
+        Assert.Equal(6, tokens.Count);
         Assert.Equal(MarkdownTokenType.Blockquote, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[1].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[2].TokenType);
         Assert.Equal("foo", tokens[2].Value);
         Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[3].TokenType);
-        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[4].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("\n", tokens[4].Value); // foo's closing newline
+        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[5].TokenType);
         Assert.Equal(markdown, text);
     }
 

@@ -248,6 +248,8 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     // paragraph. Close it after the construct; for headings the paragraph is
                     // already closed before the heading token is emitted (see
                     // TryParseHeadingAsync), so this is a no-op in that case.
+                    // CloseParagraph flushes the held soft break (the paragraph's closing
+                    // newline) as a Text("\n") separator after the PEnd.
                     CloseParagraph();
                     _pendingSoftBreak = false;
 
@@ -325,9 +327,13 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     var lineIsBlank = _atLineStart && AllWhiteSpace(_buffer.ToString());
                     if (lineIsBlank)
                     {
-                        // A blank line ends the paragraph; its own content is dropped.
-                        _pendingSoftBreak = false;
+                        // A blank line ends the paragraph. CloseParagraph flushes the held
+                        // soft break (the paragraph's closing newline) as a Text("\n")
+                        // separator, and the blank line's own line ending is emitted as
+                        // well: the newline count is preserved (no normalization).
                         CloseParagraph();
+                        _pendingSoftBreak = false;
+                        _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
                         _buffer.Clear();
                     }
                     else
@@ -355,15 +361,22 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         }
 
         // End of stream: emit any remaining text; a paragraph still open at EOF ends with
-        // the last line; an open list is closed as well.
+        // the last line (CloseParagraph flushes a held soft break, i.e. the document's
+        // trailing newline, as a Text("\n") separator after the PEnd); an open list is
+        // closed as well.
         EmitText();
         CloseParagraph();
+        _pendingSoftBreak = false;
         EmitListEnd();
     }
 
     /// <summary>
     /// Ends the open paragraph (if any) by emitting a ParagraphBlockEnd token.
     /// Called when a blank line, a line-start construct, or end of stream terminates the paragraph.
+    /// A held soft line break (the paragraph's closing newline) is flushed after the PEnd as
+    /// a Text("\n") separator: a newline at a paragraph boundary is emitted after the PEnd,
+    /// so it can never render as an in-paragraph soft break, and no newline of the input
+    /// is ever dropped from the stream.
     /// </summary>
     private void CloseParagraph()
     {
@@ -371,6 +384,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         {
             _block = BlockContext.None;
             _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockEnd, string.Empty));
+            if (_pendingSoftBreak)
+            {
+                _pendingSoftBreak = false;
+                _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
+            }
         }
     }
 

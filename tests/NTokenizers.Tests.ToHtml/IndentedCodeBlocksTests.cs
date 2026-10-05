@@ -67,10 +67,14 @@ public class IndentedCodeBlocksTests
         // An indented code block cannot interrupt a paragraph, so "bar" stays in the
         // paragraph. Deviations from the spec output (<p>Foo\nbar</p>): whitespace is
         // preserved (the four leading spaces are kept, not stripped) and the line break is
-        // rendered as a soft break (<br/>).
+        // rendered as a soft break (<br/>). Deviation: the document's trailing newline is
+        // faithfully emitted as a Text("\n") separator after the PEnd; the dispatcher writes
+        // its block separation before that following token, so the output ends with a
+        // trailing line break (byte-identical HTML for any content that does not end in a
+        // newline).
         var input = "Foo\n    bar\n";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>Foo<br/>    bar</p>", html);
+        Assert.Equal("<p>Foo<br/>    bar</p>\n", html);
     }
 
     [Fact]

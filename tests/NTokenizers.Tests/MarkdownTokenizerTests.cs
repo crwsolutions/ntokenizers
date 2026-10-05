@@ -169,6 +169,22 @@ public class MarkdownTokenizerTests
         return (tokens, result);
     }
 
+    /// <summary>
+    /// Concatenates the value of every token, including tokens delivered through inline
+    /// handlers (headings, blockquotes, list items, code blocks, tables) which <see cref="Tokenize"/>
+    /// flattens into the same list. For a prose-only document this equals the input (with the
+    /// house CRLF-to-LF line-ending normalization), which is the structural fidelity invariant.
+    /// </summary>
+    private static string TokenText(List<MarkdownToken> tokens)
+    {
+        var sb = new StringBuilder();
+        foreach (var token in tokens)
+        {
+            sb.Append(token.Value);
+        }
+        return sb.ToString();
+    }
+
     [Fact]
     public void TestPlainText()
     {
@@ -229,16 +245,25 @@ public class MarkdownTokenizerTests
         var markdown = "one\n\ntwo";
         var (tokens, text) = Tokenize(markdown);
         // Two paragraphs, each wrapped in its own PStart/PEnd (the blank line ends the first).
-        Assert.Equal(6, tokens.Count);
+        // Both newlines survive as plain Text("\n") separators after the first PEnd: the
+        // paragraph's closing newline and the blank line's own line ending. The newline count
+        // is preserved (no normalization), so a console renderer printing Text tokens
+        // reproduces the layout of the input.
+        Assert.Equal(8, tokens.Count);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
         Assert.Equal("one", tokens[1].Value);
         Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value); // the paragraph's closing newline, after the PEnd
         Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
-        Assert.Equal("two", tokens[4].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
+        Assert.Equal("\n", tokens[4].Value); // the blank line's own line ending
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[6].TokenType);
+        Assert.Equal("two", tokens[6].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[7].TokenType);
         Assert.Equal(markdown, text);
+        Assert.Equal(markdown, TokenText(tokens));
     }
 
     [Fact]
@@ -768,7 +793,9 @@ More text.";
         var markdown = "- Item 1\n- Item 2\n- Item 3";
 
         var (tokens, text) = Tokenize(markdown);
-        Assert.Equal(17, tokens.Count);
+        // The item paragraphs are closed when the sibling item begins; each item's closing
+        // newline is emitted as a Text("\n") separator after its PEnd (faithful whitespace).
+        Assert.Equal(19, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // List items have empty value
@@ -778,22 +805,26 @@ More text.";
         Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
         Assert.Equal("1", tokens[4].Value);
         Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[6].TokenType);
-        Assert.Equal(string.Empty, tokens[6].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[7].TokenType);
-        Assert.Equal(MarkdownTokenType.Text, tokens[8].TokenType);
-        Assert.Equal("Item ", tokens[8].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[6].TokenType);
+        Assert.Equal("\n", tokens[6].Value);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[7].TokenType);
+        Assert.Equal(string.Empty, tokens[7].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[8].TokenType);
         Assert.Equal(MarkdownTokenType.Text, tokens[9].TokenType);
-        Assert.Equal("2", tokens[9].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[10].TokenType);
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[11].TokenType);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[12].TokenType);
-        Assert.Equal(MarkdownTokenType.Text, tokens[13].TokenType);
-        Assert.Equal("Item ", tokens[13].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[14].TokenType);
-        Assert.Equal("3", tokens[14].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[15].TokenType);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[16].TokenType);
+        Assert.Equal("Item ", tokens[9].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[10].TokenType);
+        Assert.Equal("2", tokens[10].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[11].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[12].TokenType);
+        Assert.Equal("\n", tokens[12].Value);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[13].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[14].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[15].TokenType);
+        Assert.Equal("Item ", tokens[15].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[16].TokenType);
+        Assert.Equal("3", tokens[16].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[17].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[18].TokenType);
         Assert.Equal(markdown, text);
     }
 
@@ -852,6 +883,170 @@ Visit [Google](https://google.com) for more.";
         Assert.Equal(MarkdownTokenType.Text, tokens[0].TokenType);
         Assert.Equal("\n", tokens[0].Value);
         Assert.Equal(markdown, text);
+    }
+
+    // Whitespace fidelity: the token stream is a faithful representation of the input. A
+    // newline at a paragraph boundary is emitted after the PEnd as a plain Text("\n")
+    // separator, so no newline of the input is ever dropped and the blank-line count is
+    // preserved (no normalization). These tests are the guard that would have caught the
+    // "blank line drops newlines" regression.
+
+    [Fact]
+    public void TestTrailingNewlineIsPreserved()
+    {
+        var markdown = "A\n";
+        var (tokens, text) = Tokenize(markdown);
+        // The document's trailing newline survives as a Text("\n") separator after the PEnd.
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("A", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(markdown, text);
+        Assert.Equal(markdown, TokenText(tokens));
+    }
+
+    [Fact]
+    public void TestTripleBlankLinePreservesExactNewlineCount()
+    {
+        var markdown = "A\n\n\nB";
+        var (tokens, text) = Tokenize(markdown);
+        // Three newlines total (A's closing newline + two blank lines). The blank-line count
+        // is preserved exactly - no normalization - so ascii-art layout survives.
+        Assert.Equal(markdown, text);
+        Assert.Equal(markdown, TokenText(tokens));
+        var newlines = tokens.Where(t => t.TokenType == MarkdownTokenType.Text && t.Value == "\n").ToList();
+        Assert.Equal(3, newlines.Count);
+        // The three newline separators sit between the two paragraphs, after the first PEnd.
+        Assert.Equal(9, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[6].TokenType);
+    }
+
+    [Fact]
+    public void TestBlankLineBeforeHeading()
+    {
+        var markdown = "A\n\n# H";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(7, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("A", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value); // A's closing newline, after the PEnd
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("\n", tokens[4].Value); // the blank line
+        Assert.Equal(MarkdownTokenType.Heading, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[6].TokenType);
+        Assert.Equal("H", tokens[6].Value);
+        // The heading marker and the closing newline are consumed by the heading construct;
+        // the body text plus the separators equal the paragraph-and-blank portion.
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestBlankLineBeforeList()
+    {
+        var markdown = "A\n\n- item";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(11, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("A", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("\n", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.ListStart, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[6].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[7].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[8].TokenType);
+        Assert.Equal("item", tokens[8].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[9].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[10].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestBlankLineBeforeCodeFence()
+    {
+        var markdown = "A\n\n```";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(6, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("A", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("\n", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.CodeBlock, tokens[5].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestCrlfInputIsFaithfulAfterHouseNormalization()
+    {
+        // CRLF line endings are normalized to LF by the house rule; the newline count and
+        // the surrounding text are preserved, so the token text equals the LF-normalized input.
+        var markdown = "one\r\n\r\ntwo";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(8, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("one", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
+        Assert.Equal("\n", tokens[4].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[5].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[6].TokenType);
+        Assert.Equal("two", tokens[6].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[7].TokenType);
+        Assert.Equal(markdown.Replace("\r\n", "\n"), TokenText(tokens));
+    }
+
+    [Fact]
+    public void TestCrlfTrailingNewlineIsPreserved()
+    {
+        var markdown = "A\r\n";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal("A\n", TokenText(tokens));
+    }
+
+    // The structural fidelity invariant for prose-only documents (paragraphs + blank lines):
+    // the concatenation of every token value equals the (LF-normalized) input. This single
+    // invariant is the guard that would have caught the "blank line drops newlines" bug and
+    // protects all future tokenizer changes to prose. Marker constructs (lists, quotes,
+    // fences) consume their left-side syntax by design, so the strict invariant applies here
+    // only to prose; per-construct tests keep subtracting their consumed markers as before.
+
+    [Theory]
+    [InlineData("para one\n\npara two\n\npara three\n")]
+    [InlineData("para one\r\n\r\npara two\r\n\r\npara three")]
+    [InlineData("single line")]
+    [InlineData("line one\nline two\n\nline three\nline four")]
+    public void TestProseTokenTextEqualsInput(string markdown)
+    {
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown.Replace("\r\n", "\n"), TokenText(tokens));
+        // No Text("\n") separator may ever be produced inside an open paragraph: every newline
+        // separator sits after a PEnd. Verify the token stream is balanced and well-formed.
+        Assert.Equal(
+            tokens.Count(t => t.TokenType == MarkdownTokenType.ParagraphBlockStart),
+            tokens.Count(t => t.TokenType == MarkdownTokenType.ParagraphBlockEnd));
     }
 
     [Fact]

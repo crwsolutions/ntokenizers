@@ -281,10 +281,13 @@ public class MarkdownTokenizerIndentedCodeBlockTests
             (MarkdownTokenType.Text, "Foo"),
             (MarkdownTokenType.Text, "\n"),
             (MarkdownTokenType.Text, "    bar"),
-            (MarkdownTokenType.ParagraphBlockEnd, string.Empty));
+            (MarkdownTokenType.ParagraphBlockEnd, string.Empty),
+            (MarkdownTokenType.Text, "\n"));
         // The paragraph keeps its own whitespace/soft-break behavior; only the code block
-        // content has its indentation removed (here there is none, the line stays in the paragraph).
-        Assert.Equal("Foo\n    bar", TokenText(tokens));
+        // content has its indentation removed (here there is none, the line stays in the
+        // paragraph). The document's trailing newline survives as a Text("\n") separator
+        // after the PEnd.
+        Assert.Equal("Foo\n    bar\n", TokenText(tokens));
         Assert.Equal(markdown, text);
     }
 
@@ -428,6 +431,8 @@ public class MarkdownTokenizerIndentedCodeBlockTests
             (MarkdownTokenType.ParagraphBlockStart, string.Empty),
             (MarkdownTokenType.Text, "paragraph"),
             (MarkdownTokenType.ParagraphBlockEnd, string.Empty),
+            (MarkdownTokenType.Text, "\n"), // the paragraph's closing newline
+            (MarkdownTokenType.Text, "\n"), // the blank line before the second block
             (MarkdownTokenType.IndentedCodeBlock, string.Empty),
             (MarkdownTokenType.Text, "more "),
             (MarkdownTokenType.Text, "code"));
@@ -445,8 +450,10 @@ public class MarkdownTokenizerIndentedCodeBlockTests
             (MarkdownTokenType.Text, "foo\n"),
             (MarkdownTokenType.ParagraphBlockStart, string.Empty),
             (MarkdownTokenType.Text, "bar"),
-            (MarkdownTokenType.ParagraphBlockEnd, string.Empty));
-        Assert.Equal("foo\nbar", TokenText(tokens));
+            (MarkdownTokenType.ParagraphBlockEnd, string.Empty),
+            (MarkdownTokenType.Text, "\n"));
+        // The document's trailing CRLF survives as a Text("\n") separator after the PEnd.
+        Assert.Equal("foo\nbar\n", TokenText(tokens));
         Assert.Equal(markdown, text);
     }
 }

@@ -298,14 +298,19 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> line1\n>\n> line2";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(7, tokens.Count);
+        // The blank quoted line closes the first paragraph: its closing newline is emitted
+        // after the PEnd (separator) and the blank line's own line ending is emitted too, so
+        // both newlines survive as Text("\n") separators.
+        Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "line1");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[5], MarkdownTokenType.Text, "line2");
-        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // line1's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.Text, "\n"); // the blank quoted line
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "line2");
+        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -388,17 +393,20 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> foo\n- bar";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(10, tokens.Count);
+        // The list marker line ends the quote; the quoted paragraph's closing newline is
+        // emitted as a Text("\n") separator after the PEnd before the list begins.
+        Assert.Equal(11, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.ListStart);
-        AssertToken(tokens[5], MarkdownTokenType.UnorderedListItem);
-        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[7], MarkdownTokenType.Text, "bar");
-        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[9], MarkdownTokenType.ListEnd);
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // foo's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.ListStart);
+        AssertToken(tokens[6], MarkdownTokenType.UnorderedListItem);
+        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[8], MarkdownTokenType.Text, "bar");
+        AssertToken(tokens[9], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[10], MarkdownTokenType.ListEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -409,13 +417,16 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> foo\n# bar";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(6, tokens.Count);
+        // The heading line ends the quote; the quoted paragraph's closing newline is emitted
+        // as a Text("\n") separator after the PEnd before the heading.
+        Assert.Equal(7, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.Heading);
-        AssertToken(tokens[5], MarkdownTokenType.Text, "bar");
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // foo's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.Heading);
+        AssertToken(tokens[6], MarkdownTokenType.Text, "bar");
         Assert.Equal(markdown, text);
     }
 
@@ -426,12 +437,15 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> foo\n```";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(5, tokens.Count);
+        // The code fence line ends the quote; the quoted paragraph's closing newline is
+        // emitted as a Text("\n") separator after the PEnd before the code block.
+        Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.CodeBlock);
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // foo's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.CodeBlock);
         Assert.Equal(markdown, text);
     }
 
@@ -442,12 +456,15 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> foo\n---";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(5, tokens.Count);
+        // The thematic break line ends the quote; the quoted paragraph's closing newline is
+        // emitted as a Text("\n") separator after the PEnd before the horizontal rule.
+        Assert.Equal(6, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "foo");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.HorizontalRule, "---");
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // foo's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.HorizontalRule, "---");
         Assert.Equal(markdown, text);
     }
 
@@ -511,19 +528,21 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> a\n> > b\n> c";
         var (tokens, text, _) = Tokenize(markdown);
-        // Outer: closed paragraph 'a', then a nested blockquote holding the paragraph
-        // 'b' and its lazy continuation 'c'.
-        Assert.Equal(10, tokens.Count);
+        // Outer: closed paragraph 'a' (its closing newline is a Text("\n") separator after
+        // the PEnd), then a nested blockquote holding the paragraph 'b' and its lazy
+        // continuation 'c'.
+        Assert.Equal(11, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "a");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.Blockquote, string.Empty);
-        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[6], MarkdownTokenType.Text, "b");
-        AssertToken(tokens[7], MarkdownTokenType.Text, "\n"); // soft line break
-        AssertToken(tokens[8], MarkdownTokenType.Text, "c"); // lazy continuation
-        AssertToken(tokens[9], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // a's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.Blockquote, string.Empty);
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "b");
+        AssertToken(tokens[8], MarkdownTokenType.Text, "\n"); // soft line break
+        AssertToken(tokens[9], MarkdownTokenType.Text, "c"); // lazy continuation
+        AssertToken(tokens[10], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -790,7 +809,7 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> > Dit is cool\n> \n> Hoi";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(11, tokens.Count);
+        Assert.Equal(12, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[2], MarkdownTokenType.ParagraphBlockStart);
@@ -798,10 +817,11 @@ public class MarkdownTokenizerBlockquoteTests
         AssertToken(tokens[4], MarkdownTokenType.Text, "is ");
         AssertToken(tokens[5], MarkdownTokenType.Text, "cool");
         AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockEnd); // inner paragraph closed
-        AssertToken(tokens[7], MarkdownTokenType.Text, "\n"); // the blank quoted line
-        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockStart); // outer paragraph
-        AssertToken(tokens[9], MarkdownTokenType.Text, "Hoi"); // outer level, not nested
-        AssertToken(tokens[10], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "\n"); // inner paragraph's closing newline
+        AssertToken(tokens[8], MarkdownTokenType.Text, "\n"); // the blank quoted line
+        AssertToken(tokens[9], MarkdownTokenType.ParagraphBlockStart); // outer paragraph
+        AssertToken(tokens[10], MarkdownTokenType.Text, "Hoi"); // outer level, not nested
+        AssertToken(tokens[11], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -812,7 +832,7 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> > Dit is cool\n>\n> Hoi";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(11, tokens.Count);
+        Assert.Equal(12, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[2], MarkdownTokenType.ParagraphBlockStart);
@@ -820,10 +840,11 @@ public class MarkdownTokenizerBlockquoteTests
         AssertToken(tokens[4], MarkdownTokenType.Text, "is ");
         AssertToken(tokens[5], MarkdownTokenType.Text, "cool");
         AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[7], MarkdownTokenType.Text, "\n");
-        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[9], MarkdownTokenType.Text, "Hoi");
-        AssertToken(tokens[10], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "\n"); // inner paragraph's closing newline
+        AssertToken(tokens[8], MarkdownTokenType.Text, "\n"); // the blank quoted line
+        AssertToken(tokens[9], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[10], MarkdownTokenType.Text, "Hoi");
+        AssertToken(tokens[11], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -878,15 +899,16 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> a\n> > b";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(8, tokens.Count);
+        Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "a");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.Blockquote, string.Empty); // deeper quote
-        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[6], MarkdownTokenType.Text, "b");
-        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // a's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.Blockquote, string.Empty); // deeper quote
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "b");
+        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 
@@ -898,15 +920,16 @@ public class MarkdownTokenizerBlockquoteTests
     {
         var markdown = "> a\n>> b";
         var (tokens, text, _) = Tokenize(markdown);
-        Assert.Equal(8, tokens.Count);
+        Assert.Equal(9, tokens.Count);
         AssertToken(tokens[0], MarkdownTokenType.Blockquote, string.Empty);
         AssertToken(tokens[1], MarkdownTokenType.ParagraphBlockStart);
         AssertToken(tokens[2], MarkdownTokenType.Text, "a");
         AssertToken(tokens[3], MarkdownTokenType.ParagraphBlockEnd);
-        AssertToken(tokens[4], MarkdownTokenType.Blockquote, string.Empty);
-        AssertToken(tokens[5], MarkdownTokenType.ParagraphBlockStart);
-        AssertToken(tokens[6], MarkdownTokenType.Text, "b");
-        AssertToken(tokens[7], MarkdownTokenType.ParagraphBlockEnd);
+        AssertToken(tokens[4], MarkdownTokenType.Text, "\n"); // a's closing newline
+        AssertToken(tokens[5], MarkdownTokenType.Blockquote, string.Empty);
+        AssertToken(tokens[6], MarkdownTokenType.ParagraphBlockStart);
+        AssertToken(tokens[7], MarkdownTokenType.Text, "b");
+        AssertToken(tokens[8], MarkdownTokenType.ParagraphBlockEnd);
         Assert.Equal(markdown, text);
     }
 }
