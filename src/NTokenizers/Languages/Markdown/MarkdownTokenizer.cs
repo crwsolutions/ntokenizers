@@ -57,14 +57,24 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     /// the remaining content is parsed as a full markdown sub-document.
     /// </summary>
     /// <param name="depth">The blockquote nesting depth (0 for the top-level document).</param>
-    internal MarkdownTokenizer(int depth)
+    /// <param name="dropClosingNewline">When set, this instance runs as a list item's content
+    /// sub-document and drops the item's own closing line break: the paragraph's held soft break
+    /// at end of stream is consumed but not emitted. A list item renders as a box that already
+    /// closes on a fresh line, so the terminating line must not appear inside the box (it would
+    /// show as a trailing blank line in console output).</param>
+    internal MarkdownTokenizer(int depth, bool dropClosingNewline = false)
     {
         _depth = depth;
+        _dropClosingNewline = dropClosingNewline;
     }
 
     // The blockquote nesting depth: 0 for the top-level document, N for the content of the
     // N-th nested blockquote. Marker K of an input line belongs to nesting level K.
     private readonly int _depth;
+
+    // Set on a list item's content sub-document: the item's own closing line break is
+    // consumed but not emitted at end of stream (see ParseAsync end-of-stream flush).
+    private readonly bool _dropClosingNewline;
 
     // One marker chain is stripped per input line, at each nesting level. It starts true so
     // the trigger line's remainder goes straight to the normal line-start grammar, and it is
@@ -365,6 +375,18 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // trailing newline, as a Text("\n") separator after the PEnd); an open list is
         // closed as well.
         EmitText();
+        // A list item's content sub-document consumes the item's own closing line break
+        // without emitting it: a list item renders as a box that already closes on a fresh
+        // line, so the terminating line must not appear inside the box (it would show as a
+        // trailing blank line in console output). The held soft break at this point is the
+        // item's closing newline, so dropping it before CloseParagraph suppresses the
+        // trailing Text("\n") inside the item. In-item paragraph separators are unaffected:
+        // they are flushed by CloseParagraph at the blank line that precedes them, before
+        // end of stream.
+        if (_dropClosingNewline)
+        {
+            _pendingSoftBreak = false;
+        }
         CloseParagraph();
         _pendingSoftBreak = false;
         EmitListEnd();
@@ -1144,12 +1166,12 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             if (item.Kind == ListKind.Unordered)
             {
                 await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(item.Marker),
-                    handler => new MarkdownTokenizer(0).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+                    handler => new MarkdownTokenizer(0, dropClosingNewline: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
             }
             else
             {
                 await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(item.Number, item.Marker),
-                    handler => new MarkdownTokenizer(0).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+                    handler => new MarkdownTokenizer(0, dropClosingNewline: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
             }
 
             reader.Handoff(_lookaheadBuffer);

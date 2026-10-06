@@ -295,10 +295,10 @@ public class MarkdownTokenizerListsTests
         var markdown = "- top\n  - nested\n   - deeper";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(markdown, text);
-        // The item paragraphs are closed as their sub-document ends; each closing newline is
-        // emitted as a Text("\n") separator after the PEnd (faithful whitespace), so the
-        // count is two more than a marker-only stream.
-        Assert.Equal(19, tokens.Count);
+        // The item's own closing line break is consumed, not emitted (a list item is a box
+        // that already closes on a fresh line). In-item paragraph separators and the blank
+        // line before a sibling are still emitted as Text("\n") tokens.
+        Assert.Equal(18, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
 
@@ -335,9 +335,9 @@ public class MarkdownTokenizerListsTests
     {
         var markdown = "1. a\n2. b";
         var (tokens, text) = Tokenize(markdown);
-        // The first item's paragraph is closed when the sibling begins; its closing newline
-        // is emitted as a Text("\n") separator after the PEnd (faithful whitespace).
-        Assert.Equal(11, tokens.Count);
+        // Each item's own closing line break is consumed, not emitted (a list item is a box
+        // that already closes on a fresh line), so the stream is marker + paragraph only.
+        Assert.Equal(10, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.True(Assert.IsType<ListMetadata>(tokens[0].Metadata).IsOrdered);
 
@@ -402,9 +402,12 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
 
         var whitespace = tokens.Where(t => t.TokenType == MarkdownTokenType.Text && t.Value == "\n").ToList();
-        // Two blank-line newlines (handed back to the parent) plus the two item-paragraph
-        // closing newlines, each emitted as a Text("\n") separator after its PEnd.
-        Assert.Equal(4, whitespace.Count);
+        // Item 1's internal blank line is preserved as two Text("\n") tokens (the paragraph
+        // closing newline plus the blank line's own), and the blank line before the sibling
+        // item is preserved at the list level. Each item's own closing line break (the line
+        // ending of the item's final line) is consumed, not emitted: a list item is a box
+        // that already closes on a fresh line.
+        Assert.Equal(3, whitespace.Count);
 
         Assert.Equal(markdown, text);
     }

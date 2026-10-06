@@ -793,9 +793,10 @@ More text.";
         var markdown = "- Item 1\n- Item 2\n- Item 3";
 
         var (tokens, text) = Tokenize(markdown);
-        // The item paragraphs are closed when the sibling item begins; each item's closing
-        // newline is emitted as a Text("\n") separator after its PEnd (faithful whitespace).
-        Assert.Equal(19, tokens.Count);
+        // Each item's own closing line break is consumed, not emitted (a list item is a box
+        // that already closes on a fresh line): no Text("\n") separator between items.
+        // Stream: ListStart, [item, PStart, text, text, PEnd] x3, ListEnd = 17 tokens.
+        Assert.Equal(17, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[1].TokenType);
         Assert.Equal(string.Empty, tokens[1].Value); // List items have empty value
@@ -805,26 +806,22 @@ More text.";
         Assert.Equal(MarkdownTokenType.Text, tokens[4].TokenType);
         Assert.Equal("1", tokens[4].Value);
         Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[5].TokenType);
-        Assert.Equal(MarkdownTokenType.Text, tokens[6].TokenType);
-        Assert.Equal("\n", tokens[6].Value);
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[7].TokenType);
-        Assert.Equal(string.Empty, tokens[7].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[8].TokenType);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[6].TokenType);
+        Assert.Equal(string.Empty, tokens[6].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[7].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[8].TokenType);
+        Assert.Equal("Item ", tokens[8].Value);
         Assert.Equal(MarkdownTokenType.Text, tokens[9].TokenType);
-        Assert.Equal("Item ", tokens[9].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[10].TokenType);
-        Assert.Equal("2", tokens[10].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[11].TokenType);
-        Assert.Equal(MarkdownTokenType.Text, tokens[12].TokenType);
-        Assert.Equal("\n", tokens[12].Value);
-        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[13].TokenType);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[14].TokenType);
-        Assert.Equal(MarkdownTokenType.Text, tokens[15].TokenType);
-        Assert.Equal("Item ", tokens[15].Value);
-        Assert.Equal(MarkdownTokenType.Text, tokens[16].TokenType);
-        Assert.Equal("3", tokens[16].Value);
-        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[17].TokenType);
-        Assert.Equal(MarkdownTokenType.ListEnd, tokens[18].TokenType);
+        Assert.Equal("2", tokens[9].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[10].TokenType);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[11].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[12].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[13].TokenType);
+        Assert.Equal("Item ", tokens[13].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[14].TokenType);
+        Assert.Equal("3", tokens[14].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[15].TokenType);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[16].TokenType);
         Assert.Equal(markdown, text);
     }
 
