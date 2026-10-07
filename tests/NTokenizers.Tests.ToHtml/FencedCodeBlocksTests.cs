@@ -426,18 +426,18 @@ public class FencedCodeBlocksTests
     {
         var input = "foo\n```\nbar\n```\nbaz";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: the decorated container wrapper, and the open 'foo' paragraph is not
-        // closed before the code block (the spec closes the paragraph first), so the
-        // container is rendered inside the paragraph element.
+        // Matches the CommonMark spec: the 'foo' paragraph is closed before the code block
+        // (the fence interrupts it), so the code block is a sibling of the paragraph rather
+        // than nested inside it. Deviation: the decorated container wrapper.
         Assert.Equal(
-            "<p>foo" +
+            "<p>foo</p>\n" +
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
             "<span class=\"code-block-language\"></span>\n" +
             "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
             "</div>\n" +
             "<pre><code class=\"language-\"><span class=\"tok-generic\">bar</span></code></pre>\n" +
-            "</div>\n</p>\n" +
+            "</div>\n" +
             "<p>baz</p>",
             html);
     }
@@ -584,10 +584,9 @@ public class FencedCodeBlocksTests
         // Deviation: the closing fence is a bare '```' line, so '``` aaa' is read as a
         // new opening fence (with an empty content block) rather than as code content
         // followed by a closing fence, and the remaining ' aaa' and final '```' form a
-        // second empty code block inside a paragraph. Deviation: the newline after ' aaa'
-        // is faithfully emitted as a Text("\n") separator after the PEnd; the dispatcher
-        // writes its block separation before that following token, so the output ends with
-        // a trailing line break.
+        // second empty code block. The ' aaa' paragraph is closed before that second fence
+        // (the fence interrupts it), so the code block is a sibling rather than nested
+        // inside the paragraph.
         Assert.Equal(
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
@@ -596,14 +595,14 @@ public class FencedCodeBlocksTests
             "</div>\n" +
             "<pre><code class=\"language-\"></code></pre>\n" +
             "</div>\n" +
-            "<p> aaa" +
+            "<p> aaa</p>\n" +
             "<div class=\"code-block-container\">\n" +
             "<div class=\"code-block-header\">\n" +
             "<span class=\"code-block-language\"></span>\n" +
             "<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n" +
             "</div>\n" +
             "<pre><code class=\"language-\"></code></pre>\n" +
-            "</div>\n</p>\n",
+            "</div>\n",
             html);
     }
 }

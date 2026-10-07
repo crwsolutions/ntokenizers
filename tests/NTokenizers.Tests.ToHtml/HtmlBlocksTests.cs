@@ -142,11 +142,10 @@ public class HtmlBlocksTests
     {
         var input = "<div></div>\n``` c\nint x = 33;\n```";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        // Deviation: inline raw-HTML pass-through (no block HTML); the fenced block is a separate block.
-        // Deviation: the newline after the fenced block is faithfully emitted as a Text("\n")
-        // separator after the PEnd; the dispatcher writes its block separation before that
-        // following token, so the output ends with a trailing line break.
-        Assert.Equal("<p><div></div><div class=\"code-block-container\">\n<div class=\"code-block-header\">\n<span class=\"code-block-language\"> c</span>\n<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n</div>\n<pre><code class=\"language- c\"><span class=\"tok-keyword\">int</span> <span class=\"tok-identifier\">x</span> <span class=\"tok-operator\">=</span> <span class=\"tok-number\">33</span><span class=\"tok-punctuation\">;</span></code></pre>\n</div>\n</p>\n", html);
+        // Deviation: inline raw-HTML pass-through (no block HTML). The '<div></div>' stays
+        // inline in the paragraph; the fenced block interrupts that paragraph, which is
+        // closed before the code block, so the code block is a sibling of the paragraph.
+        Assert.Equal("<p><div></div></p>\n<div class=\"code-block-container\">\n<div class=\"code-block-header\">\n<span class=\"code-block-language\"> c</span>\n<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n</div>\n<pre><code class=\"language- c\"><span class=\"tok-keyword\">int</span> <span class=\"tok-identifier\">x</span> <span class=\"tok-operator\">=</span> <span class=\"tok-number\">33</span><span class=\"tok-punctuation\">;</span></code></pre>\n</div>\n", html);
     }
 
     [Fact]

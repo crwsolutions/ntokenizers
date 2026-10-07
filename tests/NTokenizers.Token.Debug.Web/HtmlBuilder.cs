@@ -315,7 +315,36 @@ internal static class HtmlBuilder
                     if (id === 'input') {
                         return el.value || '';
                     }
+                    if (id === 'tokens') {
+                        return renderTokensToText(el);
+                    }
                     return el.innerText || '';
+                }
+
+                // Walks the #tokens <ul> tree and produces an indented plain-text
+                // representation so nested block tokens stay attached to their block
+                // when copied (e.g. for pasting back to debug a problem).
+                function renderTokensToText(root) {
+                    const topUl = root.querySelector(':scope > ul');
+                    if (!topUl) return '';
+                    const lines = [];
+                    (function walk(ul, depth) {
+                        for (const li of ul.children) {
+                            if (li.tagName !== 'LI') continue;
+                            const indent = '  '.repeat(depth);
+                            const typeSpan = li.querySelector(':scope > .tok-type');
+                            const valueSpan = li.querySelector(':scope > .tok-value');
+                            const metaSpan = li.querySelector(':scope > .tok-meta');
+                            const parts = [];
+                            if (typeSpan) parts.push(typeSpan.textContent);
+                            if (valueSpan) parts.push(valueSpan.textContent);
+                            if (metaSpan) parts.push(metaSpan.textContent.trim());
+                            lines.push(indent + parts.join(' '));
+                            const childUl = li.querySelector(':scope > ul');
+                            if (childUl) walk(childUl, depth + 1);
+                        }
+                    })(topUl, 0);
+                    return lines.join('\n');
                 }
 
                 function countTokens(tokens) {

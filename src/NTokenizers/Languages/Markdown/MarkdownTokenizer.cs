@@ -914,8 +914,12 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             Read();
 
         // The content is a full markdown sub-document parsed by a nested tokenizer at one
-        // deeper level, so the quote it opens is level _depth + 1.
-        await ParseInlines(MarkdownTokenType.Blockquote, new BlockquoteMetadata(), new MarkdownTokenizer(_depth + 1));
+        // deeper level, so the quote it opens is level _depth + 1. The nested tokenizer
+        // consumes the block's own closing line break without emitting it: a blockquote
+        // renders as a box that already closes on a fresh line, so the terminating line
+        // must not appear inside the box (the renderer inserts its own separation via
+        // CompleteProcessing).
+        await ParseInlines(MarkdownTokenType.Blockquote, new BlockquoteMetadata(), new MarkdownTokenizer(_depth + 1, dropClosingNewline: true));
 
         return true;
     }
@@ -1211,6 +1215,16 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (fenceLength < 3)
             return false;
 
+        // A code fence interrupts a paragraph, the same as an ATX heading or a list marker.
+        // Close any open paragraph before the fence is emitted, so the paragraph's end token
+        // (and its held soft break, flushed as Text("\n")) precedes the CodeBlock token in
+        // the stream rather than wrapping it. This keeps the fence out of the paragraph
+        // region, which would otherwise render the code block inside the <p> (invalid HTML),
+        // and it places the paragraph's closing newline where it belongs: after the text it
+        // terminates, before the fence.
+        CloseParagraph();
+        _pendingSoftBreak = false;
+
         EmitText();
 
         // Consume the fence characters
@@ -1234,7 +1248,27 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         // The closing fence must use the same character and at least as many of it as
         // the opening fence, so the opening fence itself is the stop delimiter.
-        return await ParseCodeInlines(lang.ToString(), new string(fenceChar, fenceLength));
+        bool parsed = await ParseCodeInlines(lang.ToString(), new string(fenceChar, fenceLength));
+
+        // Consume the fence's own closing line break (if any): a code fence renders as a
+        // unit that closes on a fresh line, so its terminating line break must not appear
+        // in the token stream. A blank line that separates this fence from the next block
+        // is still emitted as Text("\n") by the main loop.
+        if (parsed)
+        {
+            if (Peek() == '\r')
+            {
+                Read();
+                if (Peek() == '\n')
+                    Read();
+            }
+            else if (Peek() == '\n')
+            {
+                Read();
+            }
+        }
+
+        return parsed;
     }
 
     private async Task<bool> ParseCodeInlines(string language, string fence) => language.Trim().ToLowerInvariant() switch

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -9,7 +9,7 @@
 
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
-		<Version>7.0-local.4</Version>
+		<Version>7.0-local.5</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
