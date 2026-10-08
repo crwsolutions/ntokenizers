@@ -507,8 +507,12 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
 
     internal bool TryParseMarkedText()
     {
-        if (PeekAhead(0) != '=' || PeekAhead(1) != '=')
+        if (PeekAhead(0) != '=' ||
+            PeekAhead(1) != '=' ||
+            char.IsWhiteSpace(PeekAhead(2)))
+        {
             return false;
+        }
 
         EmitText();
         Read(); // Consume first =
