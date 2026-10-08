@@ -1,4 +1,4 @@
-﻿using NTokenizers.Yaml;
+using NTokenizers.Yaml;
 using Spectre.Console;
 using System.Text;
 

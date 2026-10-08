@@ -9,22 +9,42 @@
 
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
-		<Version>6.2</Version>
+		<Version>7.0</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing. See README for usage and details.</Description>
-		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing. See README for usage and details.</PackageDescription>
-		<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;java;c;c++;cpp;rust;kotlin;go;swift;python;stream;streaming;parse;parsing;dotnet</PackageTags>
+		<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</Description>
+		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</PackageDescription>
+		<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;java;c;c++;cpp;rust;kotlin;go;swift;python;stream;streaming;parse;parsing;dotnet;tohtml;html</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>list item tokens now include leading indentation in their Value
+		<PackageReleaseNotes>This release is a substantial rewrite of the Markdown stack, adding a new ToHtml API, extending the Markdown token model, and a number of parsing fixes and small behavioral changes.
 
-- MarkdownTokenizer: backslash-escaped ASCII punctuation (e.g. \*, \_, \`) is now treated as plain text, emitting the punctuation character without the backslash
-- InlineMetadata: RegisterInlineTokenHandler now accepts an optional onInlinesCompleted callback that fires after inline parsing completes, before the parser continues</PackageReleaseNotes>
+## ToHtml API (new)
+
+The main new feature is the ToHtml API, which converts a Markdown stream directly to an HTML stream without buffering the entire document. The new MarkdownConverter class provides ToHtml and ToHtmlDocument methods for both fragments and complete documents, with overloads for strings, streams, and TextReader. It also provides GetCss() to access the embedded styles.
+
+Document output includes a DOCTYPE, a &lt;head&gt; containing the embedded CSS, and a copy-to-clipboard script for code blocks. The generated HTML follows the CommonMark 0.31.2 reference specification, with documented differences (see the CommonMark Compliance page). A read-only conformance monitor test project (tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance) tracks the remaining gaps against the full spec suite.
+
+## Markdown token model
+
+- Lists are now grouped using ListStart and ListEnd tokens, with ListMetadata describing the list kind (ordered/unordered).
+- List items are parsed as sub-documents, so quotes and lists can contain nested blocks.
+- Paragraphs are emitted as ParagraphBlockStart and ParagraphBlockEnd tokens around their content.
+- CommonMark indented code blocks are now supported through the new IndentedCodeBlock token, with their content streamed as inline tokens through IndentedCodeBlockMetadata.
+
+## Parsing fixes and behavioral changes
+
+- Handle tabs in Markdown lists
+- Support tilde fences and fence length matching
+- Inline raw HTML pass-through, autolink fall-through, and unclosed code spans
+- Resolve emphasis escapes and an unclosed-underscore bug; multiple backticks in code spans
+- Handle escaped characters in link URLs and titles; bracketed link destinations
+- Align thematic break marker detection (underscore and spaced variants)
+- Preserve every newline in the Markdown token stream</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>

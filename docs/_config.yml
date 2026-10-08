@@ -45,6 +45,10 @@ sidebar:
       url: "python"
     - title: "Encoding"
       url: "encoding"
+    - title: "ToHtml"
+      url: "tohtml"
+    - title: "CommonMark"
+      url: "commonmark"
 
 # Breadcrumb
 breadcrumb_home_label : "Home"

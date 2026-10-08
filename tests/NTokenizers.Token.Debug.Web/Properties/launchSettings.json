@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "NTokenizers.Token.Debug.Web": {
+        "commandName": "Project",
+        "launchBrowser": true,
+        "hotReloadEnabled": false,
+        "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+        },
+        "applicationUrl": "https://localhost:51780;http://localhost:51781"
+    }
+  }
+}

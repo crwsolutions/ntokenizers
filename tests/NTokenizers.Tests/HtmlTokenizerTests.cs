@@ -177,14 +177,14 @@ public class HtmlTokenizerTests
     }
 
     [Fact]
-    public void TestStopDelimiter()
+    public async Task TestStopDelimiter()
     {
         var html = "<div>content</div><div>more</div>";
         var tokens = new List<HtmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(html));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        HtmlTokenizer.Create().ParseAsync(reader, "</div>", tokens.Add).GetAwaiter().GetResult();
-        
+        await HtmlTokenizer.Create().ParseAsync(reader, "</div>", tokens.Add);
+
         // Should stop at first </div>
         Assert.Contains(tokens, t => t.Value.Contains("content"));
         Assert.DoesNotContain(tokens, t => t.Value.Contains("more"));

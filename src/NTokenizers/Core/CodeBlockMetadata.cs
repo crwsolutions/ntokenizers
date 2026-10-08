@@ -1,4 +1,4 @@
-﻿namespace NTokenizers.Core;
+namespace NTokenizers.Core;
 
 /// <summary>
 /// Metadata for code block tokens, containing the language identifier.

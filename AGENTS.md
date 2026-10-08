@@ -4,11 +4,54 @@ This file contains all the information needed to add a new language tokenizer to
 
 ## Overview
 
-NTokenizers is a .NET library that provides **stream-capable** tokenizers for syntax highlighting. These tokenizers are **not validation-based** and are primarily intended for **prettifying, formatting, or visualizing** structured text.
+NTokenizers is a .NET library that provides **stream-capable** tokenizers for syntax highlighting. These tokenizers are **not validation-based** and are primarily intended for **prettifying, formatting, or visualizing** structured text. The **ToHtml API** (`MarkdownConverter`) is feature complete and release-ready (package version 7.0): it converts a Markdown stream to HTML stream-to-stream (per-token writes to the caller's `TextWriter`, no whole-document buffering).
+
+## Deviations from the CommonMark Standard
+
+The NTokenizers and ToHtml libraries intentionally deviate from the CommonMark standard (0.31.2). The behavior is not identical to CommonMark: ToHtml is not the only handler of the token stream, and the processing is streaming.
+
+Design-level deviations (library-wide):
+
+- **Streaming with bounded lookahead.** Tokenizers process input character-by-character and must keep emitting tokens as a stream while input arrives. Lookahead (`PeekAhead`) is therefore limited to what the stream can buffer: in practice tokenizers look ahead 1-4 characters, at most ~20. This is not a fixed limit, but a tokenizer must never require unbounded future input to decide on a token.
+- **Whitespace is preserved.** CommonMark removes or normalizes some whitespace and newlines, but this library must keep whitespace in the token stream (almost always). Dropping whitespace breaks the layout, because the token stream is also used to generate console output.
+- **Paragraph tokens are not mandatory.** Emitting paragraph tokens is not a requirement of the tokenizer. For example, paragraph tokens are not emitted inside lists.
+
+ToHtml output deviations (each is annotated with a `// Deviation:` comment next to the assertion in `tests/NTokenizers.Tests.ToHtml`):
+
+- **Rendering**
+  - Fenced code blocks render as a decorated container (`<div class="code-block-container">` with a language header and Copy button) instead of a bare `<pre><code>`.
+  - Inline (soft) line breaks inside a paragraph render as `<br/>` instead of being folded.
+  - List item content is wrapped in `<p>` (loose/tight semantics differ from the spec).
+- **Content fidelity**
+  - Fenced code content keeps its full line indentation (the spec strips the common indent).
+  - The fence info string is not unescaped and not entity-decoded (leading space and backslashes are kept).
+  - An unclosed fence reads its content raw to the end of the stream.
+  - Indented closing fences (`  ````, `    ```) are not recognized as closing the block.
+  - Code spans preserve surrounding whitespace (no leading/trailing space trim).
+- **Raw HTML**
+  - Inline pass-through only: `<` + letter/`/`/`!`/`?` is emitted verbatim up to the first `>`; no tag validation, Markdown inside attribute text still parses, and newlines inside a paragraph become `<br/>`.
+  - Angle-bracketed spans that are not a valid URI (scheme ≥ 2 chars + non-empty remainder) or email are left raw (autolink fall-through).
+- **Entity and character references**
+  - Named, decimal and hex references are not decoded; they render as literal text with `&` escaped to `&amp;` (body text, code blocks, indented code, and href/title attributes — the latter double-escaped).
+- **Links**
+  - Newlines inside link URLs are not rejected.
+  - Some bracketed-URL edge cases (embedded `)`, escaped `]`, nested parens) are not fully supported.
+- **Blockquotes**
+  - Four leading spaces at top level are an indented code block, not a blockquote.
+  - Indented code inside quotes holds more/fewer lines than the spec in a few cases.
+
+### Unsupported CommonMark features
+
+The following CommonMark features are intentionally not supported due to the streaming architecture:
+
+- **Link reference definitions.** `[foo]: /url "title"` definitions and their resolution to `[foo]` / `[foo][bar]` / `![foo]` references require buffering the entire document to build a lookup table, which is incompatible with streaming. Such definitions render as plain paragraphs.
+- **HTML blocks** (spec block types 1-7). Block-level raw HTML requires deciding from following lines where a block starts and ends; raw HTML is handled as inline pass-through only.
+
+The public documentation of these differences lives on the [CommonMark Compliance](docs/commonmark.md) page.
 
 ## Quick Checklist for New Language
 
-- [ ] Create 4 source files in `src/NTokenizers/[Language]/`
+- [ ] Create 4 source files in `src/NTokenizers/Languages/[Language]/`
 - [ ] Create 1 test file in `tests/NTokenizers.Tests/`
 - [ ] Create 1 showcase project in `tests/NTokenizers.ShowCase.[Language]/`
 - [ ] Create 1 doc file in `docs/`
@@ -88,7 +131,7 @@ private sealed class State
 
 ### 1. Create Source Files
 
-Create these 4 files in `src/NTokenizers/[Language]/`:
+Create these 4 files in `src/NTokenizers/Languages/[Language]/`:
 
 1. `[Language]TokenType.cs` - Enum with token types
 2. `[Language]Token.cs` - Token class
@@ -128,7 +171,7 @@ Update `docs/_config.yml`:
 
 ### 5. Update MarkdownTokenizer
 
-Update `ParseCodeInlines(string language)` in `src/NTokenizers/Markdown/MarkdownTokenizer.cs`:
+Update `ParseCodeInlines(string language)` in `src/NTokenizers/Languages/Markdown/MarkdownTokenizer.cs`:
 
 ```csharp
 "[language]" => await ParseCodeInlines(new [Language]CodeBlockMetadata(language)),
@@ -175,10 +218,18 @@ Add `/// <summary>` comments to:
 
 ## Reference Files
 
-- Best existing tokenizer: `CSharpTokenizer` in `src/NTokenizers/CSharp/`
+- Best existing tokenizer: `CSharpTokenizer` in `src/NTokenizers/Languages/CSharp/`
 - Base class: `BaseSubTokenizer<TToken>` in `src/NTokenizers/Core/`
 - Pattern: state machine + `TokenizeCharacters()` + `EmitPending()`
 - Showcase example: `tests/NTokenizers.ShowCase.CSharp/`
+
+## Test Projects
+
+The repository has three distinct test projects with different purposes and rules:
+
+- **`tests/NTokenizers.Tests`** — Core tokenization. Verifies the token stream each tokenizer produces (token types, values, metadata, order). Update these when tokenizer behavior changes.
+- **`tests/NTokenizers.Tests.ToHtml`** — Desired HTML output. Verifies `MarkdownConverter.ToHtml()` against the *intended* output. These tests define the expected behavior and are updated as that behavior changes (for example, when new tokens are introduced).
+- **`tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance`** — CommonMark spec 0.31.2 compliance monitor. **Read-only: must never be modified.** It tracks how far the converter is from full CommonMark conformance; failing tests here are expected until the corresponding feature is implemented. As of this release, 176 of the 652 spec examples produce byte-identical output.
 
 ## Testing
 

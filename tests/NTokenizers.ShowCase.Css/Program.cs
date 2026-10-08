@@ -1,4 +1,4 @@
-﻿using NTokenizers.Css;
+using NTokenizers.Css;
 using Spectre.Console;
 using System.Text;
 
