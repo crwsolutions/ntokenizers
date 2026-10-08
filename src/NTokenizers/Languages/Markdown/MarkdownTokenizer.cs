@@ -63,9 +63,21 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     /// closes on a fresh line, so the terminating line must not appear inside the box (it would
     /// show as a trailing blank line in console output).</param>
     internal MarkdownTokenizer(int depth, bool dropClosingNewline = false)
+        : this(depth, dropClosingNewline, inListItemContent: false)
+    {
+    }
+
+    // Runs this instance as a list item's content sub-document. In addition to dropping the
+    // item's closing line break, this relaxes the "only a 1. marker interrupts a paragraph"
+    // rule: inside a list item there is no ambiguity that an indented ordered marker opens a
+    // nested list (a lazy continuation would instead be indented code), so any start number
+    // starts a nested list, and the soft break that a nested list interrupts the item's
+    // paragraph with is dropped instead of emitted.
+    internal MarkdownTokenizer(int depth, bool dropClosingNewline, bool inListItemContent)
     {
         _depth = depth;
         _dropClosingNewline = dropClosingNewline;
+        _inListItemContent = inListItemContent;
     }
 
     // The blockquote nesting depth: 0 for the top-level document, N for the content of the
@@ -75,6 +87,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     // Set on a list item's content sub-document: the item's own closing line break is
     // consumed but not emitted at end of stream (see ParseAsync end-of-stream flush).
     private readonly bool _dropClosingNewline;
+
+    // Set on a list item's content sub-document: relaxes ordered-marker paragraph
+    // interruption inside the item (see the constructor) so any start number opens a nested
+    // list, and drops the soft break a nested list interrupts the item's paragraph with.
+    private readonly bool _inListItemContent;
 
     // One marker chain is stripped per input line, at each nesting level. It starts true so
     // the trigger line's remainder goes straight to the normal line-start grammar, and it is
@@ -984,7 +1001,13 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 char after = PeekAhead(pos + 1);
                 if (after == ' ' || after == '\t' || after == '\r' || after == '\n' || after == '\0')
                 {
-                    if (_block == BlockContext.Paragraph && (number != 1 || after is '\r' or '\n' or '\0'))
+                    // CommonMark: only a "1." marker may interrupt an open paragraph. Inside a
+                    // list item this rule is relaxed: an indented ordered marker there
+                    // unambiguously opens a nested list (a lazy continuation would instead be
+                    // indented code), so any start number starts a nested list.
+                    bool interruptsParagraph = _block == BlockContext.Paragraph
+                        && (number != 1 || after is '\r' or '\n' or '\0');
+                    if (interruptsParagraph && !(_inListItemContent && after == ' '))
                     {
                         return ListClassification.None;
                     }
@@ -1054,6 +1077,15 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         // A list is a block construct: it terminates an open paragraph. Close it before
         // emitting the list so the token order is ParagraphBlockEnd → ListStart → items.
+        // A nested list (ordered or unordered) interrupts the item's paragraph the same way
+        // a sibling item does: the newline the nested marker sits on is consumed, not emitted
+        // as a separator, so the item's paragraph flows directly into the nested list (a list
+        // item renders as a box that already closes on a fresh line). Drop the held soft break
+        // before closing so CloseParagraph does not flush it as a Text("\n") separator.
+        if (_inListItemContent && _block == BlockContext.Paragraph)
+        {
+            _pendingSoftBreak = false;
+        }
         CloseParagraph();
         _pendingSoftBreak = false;
 
@@ -1170,12 +1202,12 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             if (item.Kind == ListKind.Unordered)
             {
                 await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(item.Marker),
-                    handler => new MarkdownTokenizer(0, dropClosingNewline: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+                    handler => new MarkdownTokenizer(0, dropClosingNewline: true, inListItemContent: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
             }
             else
             {
                 await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(item.Number, item.Marker),
-                    handler => new MarkdownTokenizer(0, dropClosingNewline: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+                    handler => new MarkdownTokenizer(0, dropClosingNewline: true, inListItemContent: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
             }
 
             reader.Handoff(_lookaheadBuffer);

@@ -295,10 +295,9 @@ public class MarkdownTokenizerListsTests
         var markdown = "- top\n  - nested\n   - deeper";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(markdown, text);
-        // The item's own closing line break is consumed, not emitted (a list item is a box
-        // that already closes on a fresh line). In-item paragraph separators and the blank
-        // line before a sibling are still emitted as Text("\n") tokens.
-        Assert.Equal(18, tokens.Count);
+        // A nested list interrupts the item's paragraph the same way a sibling item does: the
+        // newline the nested marker sits on is consumed, not emitted as a Text("\n") separator.
+        Assert.Equal(17, tokens.Count);
         Assert.Equal(MarkdownTokenType.ListStart, tokens[0].TokenType);
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
 
@@ -497,5 +496,95 @@ public class MarkdownTokenizerListsTests
         Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
         Assert.Equal(MarkdownTokenType.ListEnd, tokens[5].TokenType);
         Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestNestedOrderedListWithDifferentNumber()
+    {
+        // A nested ordered marker with a start number other than 1 opens a nested list
+        // inside the item. This deviates from CommonMark (where only "1." interrupts an
+        // open paragraph): inside a list item an indented ordered marker unambiguously
+        // starts a nested list, so any start number is accepted.
+        var markdown = "1. AA\n   2. AA";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown, text);
+
+        // Two balanced, ordered list groups (outer + nested) and two items numbered 1 and 2.
+        Assert.Equal(2, tokens.Count(t => t.TokenType == MarkdownTokenType.ListStart));
+        Assert.Equal(2, tokens.Count(t => t.TokenType == MarkdownTokenType.ListEnd));
+        Assert.All(tokens.Where(t => t.TokenType == MarkdownTokenType.ListStart),
+            t => Assert.True(Assert.IsType<ListMetadata>(t.Metadata).IsOrdered));
+        var items = tokens.Where(t => t.TokenType == MarkdownTokenType.OrderedListItem).ToList();
+        Assert.Equal(2, items.Count);
+        Assert.Equal(1, Assert.IsType<OrderedListItemMetadata>(items[0].Metadata).Number);
+        Assert.Equal(2, Assert.IsType<OrderedListItemMetadata>(items[1].Metadata).Number);
+    }
+
+    [Fact]
+    public void TestNestedOrderedListHasNoSeparatorNewline()
+    {
+        // The newline between the item's paragraph and the nested ordered list is consumed,
+        // not emitted as a Text("\n") separator (a list item renders as a box that already
+        // closes on a fresh line). The stream carries the two content lines and no bare
+        // newline.
+        var markdown = "1. AA\n   2. AA";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown, text);
+        Assert.DoesNotContain(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value == "\n");
+        Assert.Equal(new[] { "AA", "AA" },
+            tokens.Where(t => t.TokenType == MarkdownTokenType.Text).Select(t => t.Value).ToArray());
+    }
+
+    [Fact]
+    public void TestNestedOrderedListKeepsTopLevelSiblingSeparate()
+    {
+        // A nested ordered list closes when a shallower sibling marker follows, so the
+        // sibling belongs to the outer list, not the nested one.
+        var markdown = "1. AA\n   2. BB\n3. CC";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown, text);
+
+        Assert.Equal(2, tokens.Count(t => t.TokenType == MarkdownTokenType.ListStart));
+        var items = tokens.Where(t => t.TokenType == MarkdownTokenType.OrderedListItem).ToList();
+        Assert.Equal(3, items.Count);
+        Assert.Equal(new[] { 1, 2, 3 },
+            items.Select(i => Assert.IsType<OrderedListItemMetadata>(i.Metadata).Number).ToArray());
+        Assert.DoesNotContain(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value == "\n");
+    }
+
+    [Fact]
+    public void TestTopLevelOrderedMarkerDoesNotInterruptParagraph()
+    {
+        // Outside a list item, only a "1." marker interrupts an open paragraph (CommonMark
+        // example 303); the relaxation to any start number applies only inside list items.
+        // So "2." here stays a lazy continuation line and the whole input is one paragraph.
+        var markdown = "AA\n2. BB";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown, text);
+        Assert.DoesNotContain(tokens, t => t.TokenType == MarkdownTokenType.ListStart);
+        Assert.DoesNotContain(tokens, t => t.TokenType == MarkdownTokenType.OrderedListItem);
+        Assert.Equal(1, tokens.Count(t => t.TokenType == MarkdownTokenType.ParagraphBlockStart));
+        Assert.Equal(1, tokens.Count(t => t.TokenType == MarkdownTokenType.ParagraphBlockEnd));
+    }
+
+    [Fact]
+    public void TestNestedUnorderedListHasNoSeparatorNewline()
+    {
+        // A nested unordered list after a sibling item interrupts the item's paragraph the
+        // same way a sibling does: the newline the nested marker sits on is consumed, not
+        // emitted as a Text("\n") separator (a list item renders as a box that already
+        // closes on a fresh line). The nested "- C" list belongs inside item "B", and the
+        // stream carries no bare newline.
+        var markdown = "+ A\n+ B\n  - C";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown, text);
+
+        Assert.Equal(2, tokens.Count(t => t.TokenType == MarkdownTokenType.ListStart));
+        Assert.Equal(2, tokens.Count(t => t.TokenType == MarkdownTokenType.ListEnd));
+        var items = tokens.Where(t => t.TokenType == MarkdownTokenType.UnorderedListItem).ToList();
+        Assert.Equal(3, items.Count);
+        Assert.DoesNotContain(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value == "\n");
+        Assert.Equal(new[] { "A", "B", "C" },
+            tokens.Where(t => t.TokenType == MarkdownTokenType.Text).Select(t => t.Value).ToArray());
     }
 }
