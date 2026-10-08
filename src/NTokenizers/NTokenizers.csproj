@@ -9,7 +9,7 @@
 
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
-		<Version>7.0-local.5</Version>
+		<Version>7.0</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -21,17 +21,30 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>ToHtml API: converts a Markdown stream to HTML stream-to-stream (no whole-document buffering).
+		<PackageReleaseNotes>This release is a substantial rewrite of the Markdown stack, adding a new ToHtml API, extending the Markdown token model, and a number of parsing fixes and small behavioral changes.
 
-- New MarkdownConverter class: ToHtml/ToHtmlDocument fragment and document methods (string, Stream, and TextReader overloads) plus GetCss() for the embedded styles
-- Document output includes DOCTYPE, head with embedded CSS, and a copy-to-clipboard script for code blocks
-- Output follows the CommonMark 0.31.2 reference with documented differences (see docs/commonmark.md); a read-only conformance monitor test project tracks the remaining gap
+## ToHtml API (new)
 
-New Markdown token types:
+The main new feature is the ToHtml API, which converts a Markdown stream directly to an HTML stream without buffering the entire document. The new MarkdownConverter class provides ToHtml and ToHtmlDocument methods for both fragments and complete documents, with overloads for strings, streams, and TextReader. It also provides GetCss() to access the embedded styles.
 
-- ListStart / ListEnd: flat Markdown lists are now grouped with start/end tokens (ListMetadata carries the list kind)
-- ParagraphBlockStart / ParagraphBlockEnd: paragraphs are now emitted as block tokens around their content
-- IndentedCodeBlock: CommonMark indented code blocks, content streamed as inline tokens through IndentedCodeBlockMetadata</PackageReleaseNotes>
+Document output includes a DOCTYPE, a &lt;head&gt; containing the embedded CSS, and a copy-to-clipboard script for code blocks. The generated HTML follows the CommonMark 0.31.2 reference specification, with documented differences (see the CommonMark Compliance page). A read-only conformance monitor test project (tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance) tracks the remaining gaps against the full spec suite.
+
+## Markdown token model
+
+- Lists are now grouped using ListStart and ListEnd tokens, with ListMetadata describing the list kind (ordered/unordered).
+- List items are parsed as sub-documents, so quotes and lists can contain nested blocks.
+- Paragraphs are emitted as ParagraphBlockStart and ParagraphBlockEnd tokens around their content.
+- CommonMark indented code blocks are now supported through the new IndentedCodeBlock token, with their content streamed as inline tokens through IndentedCodeBlockMetadata.
+
+## Parsing fixes and behavioral changes
+
+- Handle tabs in Markdown lists
+- Support tilde fences and fence length matching
+- Inline raw HTML pass-through, autolink fall-through, and unclosed code spans
+- Resolve emphasis escapes and an unclosed-underscore bug; multiple backticks in code spans
+- Handle escaped characters in link URLs and titles; bracketed link destinations
+- Align thematic break marker detection (underscore and spaced variants)
+- Preserve every newline in the Markdown token stream</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
