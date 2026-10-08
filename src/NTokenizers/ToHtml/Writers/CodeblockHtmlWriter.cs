@@ -248,7 +248,8 @@ internal class CodeblockHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
         bob.AppendLine();
 
         bob.AppendLine("/* === Document layout === */");
-        bob.AppendLine("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; color: #24292E; max-width: 800px; margin: 0 auto; padding: 20px; }");
+        bob.AppendLine("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; color: #24292E; }");
+        bob.AppendLine(".markdown-document { max-width: 800px; margin: 0 auto; padding: 20px; }");
         bob.AppendLine("pre { background-color: #F6F8FA; padding: 16px; overflow: auto; line-height: 1.45; border-radius: 6px; }");
         bob.AppendLine("code { font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-size: 85%; }");
         bob.AppendLine("pre code { background: none; padding: 0; font-size: 100%; }");

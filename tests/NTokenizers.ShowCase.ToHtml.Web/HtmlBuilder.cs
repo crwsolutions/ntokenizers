@@ -12,19 +12,21 @@ internal static class HtmlBuilder
     <title>NTokenizers — Streaming HTML Showcase</title>
     <style>" + injectedCss + @"
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 2rem;
+            padding: 1rem;
+            overflow: hidden;
         }
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            height: calc(100vh - 4rem);
+            gap: 1rem;
+            height: 100%;
+            width: 100%;
         }
         .panel {
             background: white;
@@ -139,8 +141,7 @@ internal static class HtmlBuilder
             color: #666;
         }
         @media (max-width: 1024px) {
-            .container { grid-template-columns: 1fr; height: auto; }
-            .panel { min-height: 300px; }
+            .container { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -165,7 +166,7 @@ internal static class HtmlBuilder
                 <p>Real-time streaming output</p>
             </div>
             <div id='streaming-status' class='streaming-indicator'></div>
-            <iframe id='output' style='width: 100%; height: calc(100% - 60px); border: none; background: white;'></iframe>
+            <iframe id='output' style='width: 100%; flex: 1; min-height: 0; border: none; background: white;'></iframe>
         </div>
     </div>
 

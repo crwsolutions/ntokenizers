@@ -127,11 +127,13 @@ public sealed class MarkdownConverter
         await writer.WriteLineAsync("  </script>");
         await writer.WriteLineAsync("</head>");
         await writer.WriteLineAsync("<body>");
+        await writer.WriteLineAsync("<div class=\"markdown-document\">");
 
         // Process markdown through the fragment writer
         await WriteHtmlAsync(reader, writer);
 
         // Close HTML skeleton
+        await writer.WriteLineAsync("</div>");
         await writer.WriteLineAsync("</body>");
         await writer.WriteLineAsync("</html>");
     }
