@@ -42,9 +42,9 @@ public static class EncodingResolver
             return null;
         }
 
-        long originalPosition = stream.Position;
-        byte[] header = new byte[3];
-        int bytesRead = stream.Read(header, 0, header.Length);
+        var originalPosition = stream.Position;
+        var header = new byte[3];
+        var bytesRead = stream.Read(header, 0, header.Length);
         stream.Position = originalPosition;
 
         if (bytesRead == 3 && header[0] == 0xEF && header[1] == 0xBB && header[2] == 0xBF)
@@ -74,11 +74,11 @@ public static class EncodingResolver
                 : new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
         }
 
-        long originalPosition = stream.Position;
+        var originalPosition = stream.Position;
         var strictUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
         Decoder decoder = strictUtf8.GetDecoder();
-        byte[] buffer = new byte[DetectChunkSize];
-        char[] chars = new char[DetectChunkSize];
+        var buffer = new byte[DetectChunkSize];
+        var chars = new char[DetectChunkSize];
 
         try
         {

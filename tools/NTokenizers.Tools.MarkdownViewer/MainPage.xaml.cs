@@ -202,7 +202,7 @@ public sealed partial class MainPage : Page
             if (!Path.IsPathRooted(filePath))
             {
                 // Het is een relatief pad, plak de map van de .exe er direct voor
-                string exeFolder = AppDomain.CurrentDomain.BaseDirectory;
+                var exeFolder = AppDomain.CurrentDomain.BaseDirectory;
                 filePath = Path.Combine(exeFolder, filePath);
             }
 
