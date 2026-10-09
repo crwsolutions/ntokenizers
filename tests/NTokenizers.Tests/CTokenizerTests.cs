@@ -1,6 +1,6 @@
+using System.Text;
 using NTokenizers.C;
 using NTokenizers.Markdown;
-using System.Text;
 
 namespace NTokenizers.Tests;
 
@@ -277,7 +277,7 @@ public class CTokenizerTests
             }
             ```
             """;
-        
+
         var cTokens = new List<CToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
         await MarkdownTokenizer.Create().ParseAsync(stream, token =>
@@ -287,7 +287,7 @@ public class CTokenizerTests
                 cMeta.RegisterInlineTokenHandler(t => cTokens.Add((CToken)t));
             }
         });
-        
+
         Assert.NotEmpty(cTokens);
         Assert.Contains(cTokens, t => t.TokenType == CTokenType.Keyword && t.Value == "int");
         Assert.Contains(cTokens, t => t.TokenType == CTokenType.Keyword && t.Value == "return");

@@ -1,5 +1,5 @@
-using NTokenizers.CSharp;
 using System.Text;
+using NTokenizers.CSharp;
 
 namespace CSharp;
 
@@ -476,7 +476,7 @@ public class CSharpTokenizerTests
         var tokens = Tokenize("x >= 10 && x <= 20");
         var identifiers = tokens.Where(t => t.TokenType == CSharpTokenType.Identifier).ToList();
         Assert.Equal(2, identifiers.Count);
-        var operators = tokens.Where(t => t.TokenType == CSharpTokenType.GreaterThanOrEqual || 
+        var operators = tokens.Where(t => t.TokenType == CSharpTokenType.GreaterThanOrEqual ||
                                           t.TokenType == CSharpTokenType.LessThanOrEqual ||
                                           t.TokenType == CSharpTokenType.And).ToList();
         Assert.Equal(3, operators.Count);
@@ -562,7 +562,7 @@ public class CSharpTokenizerTests
     return result.Value ?? 0;
 }";
         var tokens = Tokenize(code);
-        
+
         // Verify we have various token types
         Assert.Contains(tokens, t => t.TokenType == CSharpTokenType.Keyword && t.Value.ToLower() == "public");
         Assert.Contains(tokens, t => t.TokenType == CSharpTokenType.Keyword && t.Value.ToLower() == "async");
@@ -578,7 +578,7 @@ public class CSharpTokenizerTests
         var code = @"// Line comment
 int x = 5; /* Block comment */ int y = 10;";
         var tokens = Tokenize(code);
-        
+
         var comments = tokens.Where(t => t.TokenType == CSharpTokenType.Comment).ToList();
         Assert.Equal(2, comments.Count);
         Assert.Equal("// Line comment", comments[0].Value);
@@ -609,7 +609,7 @@ int x = 5; /* Block comment */ int y = 10;";
     public void TestTernaryOperator()
     {
         var tokens = Tokenize("condition ? trueValue : falseValue");
-        var operators = tokens.Where(t => t.TokenType == CSharpTokenType.Operator && 
+        var operators = tokens.Where(t => t.TokenType == CSharpTokenType.Operator &&
                                           (t.Value == "?" || t.Value == ":")).ToList();
         Assert.Equal(2, operators.Count);
     }
@@ -640,7 +640,7 @@ int x = 5; /* Block comment */ int y = 10;";
     public void TestIncrementDecrement()
     {
         var tokens = Tokenize("i++; j--;");
-        var operators = tokens.Where(t => t.TokenType == CSharpTokenType.Operator && 
+        var operators = tokens.Where(t => t.TokenType == CSharpTokenType.Operator &&
                                           (t.Value == "++" || t.Value == "--")).ToList();
         Assert.Equal(2, operators.Count);
     }
@@ -668,13 +668,13 @@ int x = 5; /* Block comment */ int y = 10;";
     {
         // Create a large C# code to parse
         var largeCode = string.Join("\n", Enumerable.Range(1, 1000).Select(i => $"int var{i} = {i};"));
-        
+
         using var cts = new CancellationTokenSource();
         var tokens = new List<CSharpToken>();
         int tokenCount = 0;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeCode));
-        
+
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
@@ -688,9 +688,9 @@ int x = 5; /* Block comment */ int y = 10;";
                 }
             });
         }, TestContext.Current.CancellationToken);
-        
+
         await parseTask;
-        
+
         // Should have stopped early
         Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
     }

@@ -1,5 +1,5 @@
-using NTokenizers.Json;
 using System.Text;
+using NTokenizers.Json;
 
 namespace Json;
 
@@ -361,13 +361,13 @@ public class JsonTokenizerTests
     {
         // Create a large JSON to parse
         var largeJson = "{" + string.Join(",", Enumerable.Range(1, 10000).Select(i => $"\"prop{i}\":{i}")) + "}";
-        
+
         using var cts = new CancellationTokenSource();
         var tokens = new List<JsonToken>();
         int tokenCount = 0;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeJson));
-        
+
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
@@ -381,9 +381,9 @@ public class JsonTokenizerTests
                 }
             });
         }, TestContext.Current.CancellationToken);
-        
+
         await parseTask;
-        
+
         // Should have stopped early
         Assert.True(tokenCount < 10000, "Tokenization should have been cancelled");
     }

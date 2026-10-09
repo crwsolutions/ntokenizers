@@ -1,6 +1,6 @@
+using System.Text;
 using NTokenizers.Markdown;
 using NTokenizers.Python;
-using System.Text;
 
 namespace NTokenizers.Tests;
 

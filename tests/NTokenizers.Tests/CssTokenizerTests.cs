@@ -322,7 +322,7 @@ public class CssTokenizerTests
     [Fact]
     public void TestDistinguishColorValuesFromSelectors()
     {
-        string css = 
+        string css =
             """
             #target {
             --primary-color: #3498db;

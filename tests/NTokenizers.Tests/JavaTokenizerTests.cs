@@ -1,6 +1,6 @@
+using System.Text;
 using NTokenizers.Java;
 using NTokenizers.Markdown;
-using System.Text;
 
 namespace NTokenizers.Tests;
 
@@ -249,21 +249,21 @@ public class JavaTokenizerTests
     }
 
     [Fact]
-        public void TestComplexLambdaWithStreams()
-        {
-            var code = """
+    public void TestComplexLambdaWithStreams()
+    {
+        var code = """
                 List<String> result = list.stream()
                     .filter(x -> x != null)
                     .map(x -> x.toUpperCase())
                     .sorted((a, b) -> a.compareTo(b))
                     .toList();
                 """;
-            var tokens = Tokenize(code);
-            Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Operator && t.Value == "->");
-            Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Operator && t.Value == "!=");
-            Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Dot && t.Value == ".");
-            Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Null && t.Value == "null");
-        }
+        var tokens = Tokenize(code);
+        Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Operator && t.Value == "->");
+        Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Operator && t.Value == "!=");
+        Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Dot && t.Value == ".");
+        Assert.Contains(tokens, t => t.TokenType == JavaTokenType.Null && t.Value == "null");
+    }
 
     [Fact]
     public async Task TestMarkdownJavaCodeBlock()
@@ -279,7 +279,7 @@ public class JavaTokenizerTests
             }
             ```
             """;
-        
+
         var javaTokens = new List<JavaToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
         await MarkdownTokenizer.Create().ParseAsync(stream, token =>
@@ -289,7 +289,7 @@ public class JavaTokenizerTests
                 javaMeta.RegisterInlineTokenHandler(t => javaTokens.Add((JavaToken)t));
             }
         });
-        
+
         Assert.NotEmpty(javaTokens);
         Assert.Contains(javaTokens, t => t.TokenType == JavaTokenType.Keyword && t.Value == "public");
         Assert.Contains(javaTokens, t => t.TokenType == JavaTokenType.Keyword && t.Value == "class");
