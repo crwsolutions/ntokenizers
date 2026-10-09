@@ -30,9 +30,15 @@
   <Project Path="tests/NTokenizers.ShowCase.Typescript/NTokenizers.ShowCase.Typescript.csproj" />
   <Project Path="tests/NTokenizers.ShowCase.Xml/NTokenizers.ShowCase.Xml.csproj" />
   <Project Path="tests/NTokenizers.ShowCase.Yaml/NTokenizers.ShowCase.Yaml.csproj" />
-  <Project Path="tests/NTokenizers.Token.Debug.Web/NTokenizers.Token.Debug.Web.csproj" />
   <Project Path="tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance/NTokenizers.Tests.ToHtml.CommonMark.Compliance.csproj" />
   <Project Path="tests/NTokenizers.Tests.ToHtml/NTokenizers.Tests.ToHtml.csproj" />
   <Project Path="tests/NTokenizers.Tests/NTokenizers.Tests.csproj" />
+  <Project Path="tests/NTokenizers.Token.Debug.Web/NTokenizers.Token.Debug.Web.csproj" />
   <Project Path="tools/NTokenizers.Tools.MarkdownToHtml/NTokenizers.Tools.MarkdownToHtml.csproj" />
+  <Project Path="tools/NTokenizers.Tools.MarkdownViewer/NTokenizers.Tools.MarkdownViewer.csproj" Id="82eaf8c0-1e71-47b6-8bf1-9b6be2214b9f">
+    <Platform Solution="*|Any CPU" Project="x64" />
+    <Platform Solution="*|x64" Project="x64" />
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
 </Solution>

@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "MarkdownViewer example.md (Package)": {
+      "commandName": "MsixPackage",
+      "commandLineArgs": "example.md"
+    },
+    "MarkdownViewer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "MarkdownViewer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
