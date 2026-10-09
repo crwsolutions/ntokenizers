@@ -28,8 +28,40 @@ public sealed partial class MainWindow : Window
             // Icon not found - not critical
         }
 
+        CenterOnWorkArea();
+
         RootFrame.Navigate(typeof(MainPage));
         _mainPage = (MainPage)RootFrame.Content;
+    }
+
+    private void CenterOnWorkArea()
+    {
+        const int width = 1024;
+        const int height = 1024;
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
+
+        // Get the actual work area (excluding taskbar) using Win32 API
+        var rect = new RECT();
+        SystemParametersInfo(48, 0, ref rect, 0); // SPI_GETWORKAREA
+
+        var x = (rect.Right - rect.Left - width) / 2 + rect.Left;
+        var y = (rect.Bottom - rect.Top - height) / 2 + rect.Top;
+
+        AppWindow.Move(new Windows.Graphics.PointInt32(x, y));
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+    private static extern bool SystemParametersInfo(int uiAction, int uiParam, ref RECT pvParam, int fWinIni);
+
+    private struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
     }
 
     /// <summary>
