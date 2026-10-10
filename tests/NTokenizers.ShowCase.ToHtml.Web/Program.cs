@@ -118,7 +118,7 @@ class StreamingTextWriter : TextWriter
                     await _responseBody.FlushAsync();
                 }
                 // Small delay between chunks for streaming effect
-                await Task.Delay(_rng.Next(125, 200));
+                await Task.Delay(_rng.Next(50, 100));
             }
         });
         return _drainTask;

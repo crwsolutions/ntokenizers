@@ -81,6 +81,16 @@ async function streamHtml() {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        const iframeWin = iframe.contentWindow;
+
+        // Pin the preview to the bottom: scroll the iframe's documentElement
+        // (the first child of the iframe) and the window on every chunk + rAF.
+        const scrollIframeToBottom = () => {
+            const docEl = iframeDoc.documentElement;
+            docEl.scrollTop = docEl.scrollHeight;
+            docEl.scrollLeft = 0;
+            iframeWin.scrollTo(0, docEl.scrollHeight);
+        };
 
         while (true) {
             const { done, value } = await reader.read();
@@ -88,6 +98,11 @@ async function streamHtml() {
 
             const chunk = decoder.decode(value, { stream: true });
             iframeDoc.write(chunk);
+
+            // The browser may defer layout after writing HTML; pin the preview
+            // to the bottom on both the current frame and the next animation frame.
+            scrollIframeToBottom();
+            iframeWin.requestAnimationFrame(scrollIframeToBottom);
         }
 
         iframeDoc.close();
@@ -108,6 +123,15 @@ async function streamHtml() {
     } finally {
         submitBtn.disabled = false;
     }
+}
+
+function clearPreview() {
+    const iframe = document.getElementById('output');
+    const statusIndicator = document.getElementById('streaming-status');
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.close();
+    statusIndicator.className = 'streaming-indicator';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
