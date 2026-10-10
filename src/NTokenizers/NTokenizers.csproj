@@ -9,7 +9,7 @@
 
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
-		<Version>7.0</Version>
+		<Version>7.0.1</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -21,30 +21,21 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>This release is a substantial rewrite of the Markdown stack, adding a new ToHtml API, extending the Markdown token model, and a number of parsing fixes and small behavioral changes.
+		<PackageReleaseNotes>This is a patch release with a list-parsing behavioral change, a CSS fix for embedded usage (ToHtml).
 
-## ToHtml API (new)
+## Markdown list parsing (behavioral change)
 
-The main new feature is the ToHtml API, which converts a Markdown stream directly to an HTML stream without buffering the entire document. The new MarkdownConverter class provides ToHtml and ToHtmlDocument methods for both fragments and complete documents, with overloads for strings, streams, and TextReader. It also provides GetCss() to access the embedded styles.
+List markers now always interrupt a paragraph, matching the CommonMark spec in practice:
 
-Document output includes a DOCTYPE, a &lt;head&gt; containing the embedded CSS, and a copy-to-clipboard script for code blocks. The generated HTML follows the CommonMark 0.31.2 reference specification, with documented differences (see the CommonMark Compliance page). A read-only conformance monitor test project (tests/NTokenizers.Tests.ToHtml.CommonMark.Compliance) tracks the remaining gaps against the full spec suite.
+- Any ordered list marker may interrupt a paragraph: any start number (not only 1.) starts a list, instead of lazy-continuing the open paragraph (documented deviation, spec example 303).
+- Unordered list markers may interrupt a paragraph as well, including a marker without content.
+- A list marker line ends a blockquote: the marker interrupts the quoted paragraph, so the quote closes and the list is parsed in the outer scope.
+- The redundant in-list relaxation of the paragraph-interruption rule has been removed.
+- WouldStartBlockquoteBreakingConstruct now accepts the ')' ordered delimiter in addition to '.'.
 
-## Markdown token model
+## ToHtml CSS fix
 
-- Lists are now grouped using ListStart and ListEnd tokens, with ListMetadata describing the list kind (ordered/unordered).
-- List items are parsed as sub-documents, so quotes and lists can contain nested blocks.
-- Paragraphs are emitted as ParagraphBlockStart and ParagraphBlockEnd tokens around their content.
-- CommonMark indented code blocks are now supported through the new IndentedCodeBlock token, with their content streamed as inline tokens through IndentedCodeBlockMetadata.
-
-## Parsing fixes and behavioral changes
-
-- Handle tabs in Markdown lists
-- Support tilde fences and fence length matching
-- Inline raw HTML pass-through, autolink fall-through, and unclosed code spans
-- Resolve emphasis escapes and an unclosed-underscore bug; multiple backticks in code spans
-- Handle escaped characters in link URLs and titles; bracketed link destinations
-- Align thematic break marker detection (underscore and spaced variants)
-- Preserve every newline in the Markdown token stream</PackageReleaseNotes>
+The document layout (max-width, margin, padding) moved from the body element to a .markdown-document wrapper div, so the shared CSS no longer constrains embedded or iframe usage. ToHtmlDocument output now includes a .markdown-document wrapper around the content.</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
