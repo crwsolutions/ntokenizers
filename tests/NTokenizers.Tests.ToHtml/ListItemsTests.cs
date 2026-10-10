@@ -270,7 +270,10 @@ public class ListItemsTests
     {
         var input = "foo\n*\n\nfoo\n1.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>foo<br/>*<br/><br/>foo<br/>1.</p>", html);
+        // Deviation: a list marker is a valid paragraph-interrupting line-start construct,
+        // so the marker-only lines ('*' and '1.') start list items instead of lazy-
+        // continuing the paragraph (spec: one paragraph).
+        Assert.Equal("<p>foo</p>\n<ul>\n<li></li>\n</ul><p>foo</p>\n<ol>\n<li></li>\n</ol>", html);
     }
 
     [Fact]
