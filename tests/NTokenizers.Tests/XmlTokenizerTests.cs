@@ -1,5 +1,5 @@
-using NTokenizers.Xml;
 using System.Text;
+using NTokenizers.Xml;
 
 namespace Xml;
 
@@ -359,26 +359,26 @@ public class XmlTokenizerTests
         var openingBrackets = tokens.Count(t => t.TokenType == XmlTokenType.OpeningAngleBracket);
         var closingBrackets = tokens.Count(t => t.TokenType == XmlTokenType.ClosingAngleBracket);
         var elementNames = tokens.Count(t => t.TokenType == XmlTokenType.ElementName);
-        
+
         // We should have opening brackets (excluding self-closing which have different structure)
         // user(1) + name(2) + addresses(2) + address(4) + street(4) + city(4) + postalCode(4) + coordinates(1) = 22 opening brackets
         Assert.True(openingBrackets > 0, "Should have opening angle brackets");
-        
+
         // Verify element names are properly tokenized (not as AttributeName)
         Assert.True(elementNames > 0, "Should have element names");
-        
+
         // Ensure that "name" appears as ElementName, not AttributeName
-        var nameElementTokens = tokens.Where(t => 
+        var nameElementTokens = tokens.Where(t =>
             t.TokenType == XmlTokenType.ElementName && t.Value == "name").ToList();
         Assert.Equal(2, nameElementTokens.Count); // Opening and closing tag
-        
+
         // Ensure "Laura Smith" is tokenized as Text, not as AttributeName
         var textTokens = tokens.Where(t => t.TokenType == XmlTokenType.Text).ToList();
         Assert.Contains(textTokens, t => t.Value.Contains("Laura Smith"));
-        
+
         // Ensure we don't have incorrect AttributeName tokens for element text
-        var incorrectAttrTokens = tokens.Where(t => 
-            t.TokenType == XmlTokenType.AttributeName && 
+        var incorrectAttrTokens = tokens.Where(t =>
+            t.TokenType == XmlTokenType.AttributeName &&
             (t.Value == "Laura" || t.Value == "Smith" || t.Value == "London")).ToList();
         Assert.Empty(incorrectAttrTokens);
     }
@@ -507,13 +507,13 @@ public class XmlTokenizerTests
     {
         // Create a large XML to parse
         var largeXml = "<root>" + string.Join("", Enumerable.Range(1, 1000).Select(i => $"<item{i}>value{i}</item{i}>")) + "</root>";
-        
+
         using var cts = new CancellationTokenSource();
         var tokens = new List<XmlToken>();
         int tokenCount = 0;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeXml));
-        
+
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
@@ -527,9 +527,9 @@ public class XmlTokenizerTests
                 }
             });
         }, TestContext.Current.CancellationToken);
-        
+
         await parseTask;
-        
+
         // Should have stopped early
         Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
     }

@@ -1,5 +1,5 @@
-using NTokenizers.Typescript;
 using System.Text;
+using NTokenizers.Typescript;
 
 namespace Typescript;
 
@@ -182,7 +182,7 @@ public class TypescriptTokenizerTests
         var tokens = Tokenize("let letVariable = 5; const constant = 10;");
         var keywords = tokens.Where(t => t.TokenType == TypescriptTokenType.Keyword).Select(t => t.Value).ToList();
         var identifiers = tokens.Where(t => t.TokenType == TypescriptTokenType.Identifier).Select(t => t.Value).ToList();
-        
+
         Assert.Contains("let", keywords);
         Assert.Contains("const", keywords);
         Assert.Contains("letVariable", identifiers);
@@ -192,9 +192,9 @@ public class TypescriptTokenizerTests
     [Fact]
     public void TestCommonKeywords()
     {
-        var keywords = new[] { "if", "else", "for", "while", "return", "function", "class", "interface", 
+        var keywords = new[] { "if", "else", "for", "while", "return", "function", "class", "interface",
                               "type", "import", "export", "async", "await", "new", "this", "super" };
-        
+
         foreach (var keyword in keywords)
         {
             var tokens = Tokenize($"{keyword} test");
@@ -206,9 +206,9 @@ public class TypescriptTokenizerTests
     [Fact]
     public void TestTypeScriptSpecificKeywords()
     {
-        var keywords = new[] { "interface", "type", "readonly", "keyof", "infer", "unknown", "never", 
+        var keywords = new[] { "interface", "type", "readonly", "keyof", "infer", "unknown", "never",
                               "satisfies", "asserts", "declare", "namespace", "module" };
-        
+
         foreach (var keyword in keywords)
         {
             var tokens = Tokenize($"{keyword} test");
@@ -549,7 +549,7 @@ public class TypescriptTokenizerTests
     {
         var tokens = Tokenize("let arr = [...oldArray, newItem];");
         // Note: ... may be tokenized as multiple dots or a single operator depending on implementation
-        var dots = tokens.Where(t => t.TokenType == TypescriptTokenType.Dot || 
+        var dots = tokens.Where(t => t.TokenType == TypescriptTokenType.Dot ||
                                      (t.TokenType == TypescriptTokenType.Operator && t.Value.Contains('.'))).ToList();
         Assert.True(dots.Count >= 1);
     }
@@ -570,13 +570,13 @@ public class TypescriptTokenizerTests
     {
         // Create a large TypeScript code to parse
         var largeCode = string.Join("\n", Enumerable.Range(1, 1000).Select(i => $"let var{i}: number = {i};"));
-        
+
         using var cts = new CancellationTokenSource();
         var tokens = new List<TypescriptToken>();
         int tokenCount = 0;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeCode));
-        
+
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
@@ -590,9 +590,9 @@ public class TypescriptTokenizerTests
                 }
             });
         }, TestContext.Current.CancellationToken);
-        
+
         await parseTask;
-        
+
         // Should have stopped early
         Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
     }

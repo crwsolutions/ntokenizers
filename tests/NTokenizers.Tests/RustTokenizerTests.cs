@@ -1,6 +1,6 @@
+using System.Text;
 using NTokenizers.Markdown;
 using NTokenizers.Rust;
-using System.Text;
 
 namespace NTokenizers.Tests;
 

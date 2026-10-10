@@ -1,5 +1,5 @@
-using NTokenizers.Toml;
 using System.Text;
+using NTokenizers.Toml;
 
 namespace Toml;
 

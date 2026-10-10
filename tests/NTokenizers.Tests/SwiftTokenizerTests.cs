@@ -1,6 +1,6 @@
-using NTokenizers.Swift;
-using NTokenizers.Markdown;
 using System.Text;
+using NTokenizers.Markdown;
+using NTokenizers.Swift;
 
 namespace NTokenizers.Tests;
 

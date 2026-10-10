@@ -1,5 +1,5 @@
-using NTokenizers.Sql;
 using System.Text;
+using NTokenizers.Sql;
 
 namespace Sql;
 
@@ -321,7 +321,7 @@ public class SqlTokenizerTests
                     WHERE u.age > 18 AND o.amount > 100 
                     ORDER BY u.name ASC";
         var tokens = TokenizeWithoutWhitespace(sql);
-        
+
         // Check for key elements
         var keywords = tokens.Where(t => t.TokenType == SqlTokenType.Keyword).Select(t => t.Value.ToUpper()).ToList();
         Assert.Contains("SELECT", keywords);
@@ -419,7 +419,7 @@ public class SqlTokenizerTests
     {
         var sql = "CREATE TABLE users (id INT, name VARCHAR(100))";
         var tokens = TokenizeWithoutWhitespace(sql);
-        
+
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
         Assert.Equal("CREATE", tokens[0].Value);
         Assert.Equal(SqlTokenType.Keyword, tokens[1].TokenType);
@@ -441,7 +441,7 @@ public class SqlTokenizerTests
         multiline comment */
         FROM users";
         var tokens = TokenizeWithoutWhitespace(sql);
-        
+
         var comments = tokens.Where(t => t.TokenType == SqlTokenType.Comment).ToList();
         Assert.Single(comments);
         Assert.Contains("multiline", comments[0].Value);
@@ -462,11 +462,11 @@ public class SqlTokenizerTests
     public void TestWhitespaceTokens()
     {
         var tokens = Tokenize("SELECT * FROM users");
-        
+
         // Should have whitespace tokens between keywords/operators
         var whitespaceTokens = tokens.Where(t => t.TokenType == SqlTokenType.Whitespace).ToList();
         Assert.Equal(3, whitespaceTokens.Count);
-        
+
         // Verify structure: SELECT <ws> * <ws> FROM <ws> users
         Assert.Equal(7, tokens.Count);
         Assert.Equal(SqlTokenType.Keyword, tokens[0].TokenType);
@@ -489,7 +489,7 @@ public class SqlTokenizerTests
     public void TestMultipleWhitespaceCharacters()
     {
         var tokens = Tokenize("SELECT  \t\n id");
-        
+
         // Should have one whitespace token with multiple chars
         var whitespaceTokens = tokens.Where(t => t.TokenType == SqlTokenType.Whitespace).ToList();
         Assert.Single(whitespaceTokens);
@@ -524,13 +524,13 @@ public class SqlTokenizerTests
     {
         // Create a large SQL to parse
         var largeSql = "SELECT * FROM users WHERE " + string.Join(" OR ", Enumerable.Range(1, 1000).Select(i => $"id = {i}"));
-        
+
         using var cts = new CancellationTokenSource();
         var tokens = new List<SqlToken>();
         int tokenCount = 0;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeSql));
-        
+
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
@@ -544,9 +544,9 @@ public class SqlTokenizerTests
                 }
             });
         }, TestContext.Current.CancellationToken);
-        
+
         await parseTask;
-        
+
         // Should have stopped early
         Assert.True(tokenCount < 1000, "Tokenization should have been cancelled");
     }

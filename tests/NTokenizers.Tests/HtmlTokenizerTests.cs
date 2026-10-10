@@ -1,7 +1,7 @@
+using System.Text;
 using NTokenizers.Css;
 using NTokenizers.Html;
 using NTokenizers.Typescript;
-using System.Text;
 
 namespace Html;
 
@@ -195,7 +195,7 @@ public class HtmlTokenizerTests
     {
         var html = "<style>body { color: red; }</style>";
         var tokens = Tokenize(html);
-        
+
         // Should have opening style tag, CSS content, and closing style tag
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "style");
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.StyleElement && t.Value == string.Empty);
@@ -206,7 +206,7 @@ public class HtmlTokenizerTests
     {
         var html = "<script>console.log('Hello');</script>";
         var tokens = Tokenize(html);
-        
+
         // Should have opening script tag, JS content, and closing script tag
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "script");
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ScriptElement && t.Value == string.Empty);
@@ -229,9 +229,9 @@ public class HtmlTokenizerTests
     </script>
 </body>
 </html>";
-        
+
         var tokens = Tokenize(html);
-        
+
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.DocumentTypeDeclaration);
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "html");
         Assert.Contains(tokens, t => t.TokenType == HtmlTokenType.ElementName && t.Value == "style");
@@ -247,9 +247,9 @@ public class HtmlTokenizerTests
         var html = "<div>content</div><div>more</div>";
         var cts = new CancellationTokenSource();
         var tokenCount = 0;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(html));
-        
+
         // Cancel after receiving 5 tokens
         HtmlTokenizer.Create().Parse(stream, cts.Token, token =>
         {
@@ -259,7 +259,7 @@ public class HtmlTokenizerTests
                 cts.Cancel();
             }
         });
-        
+
         // Should have stopped early - not all tokens should be processed
         Assert.InRange(tokenCount, 5, 7); // Allow some tolerance for the cancellation timing
     }

@@ -1,5 +1,5 @@
-using NTokenizers.Yaml;
 using System.Text;
+using NTokenizers.Yaml;
 
 namespace Yaml;
 
@@ -65,7 +65,7 @@ public class YamlTokenizerTests
         var input = "  name  :  Alice  ";
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
-        
+
         // Check that we have whitespace, key, colon, and value tokens
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Whitespace);
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Key && t.Value == "name");
@@ -248,7 +248,7 @@ public class YamlTokenizerTests
         var input = "name: &p Alice";
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
-        
+
         // Check that we have the key, colon, and anchor tokens
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Key && t.Value == "name");
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Colon);
@@ -318,13 +318,13 @@ age: 30
         var input = yaml;
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
-        
+
         // Find key tokens
         var keyTokens = tokens.Where(t => t.TokenType == YamlTokenType.Key).ToList();
         Assert.Equal(2, keyTokens.Count);
         Assert.Equal("name", keyTokens[0].Value);
         Assert.Equal("age", keyTokens[1].Value);
-        
+
         // Check document markers
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.DocumentStart && t.Value == "---");
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.DocumentEnd && t.Value == "...");
@@ -352,18 +352,18 @@ manager: *p";
         var input = yaml;
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
-        
+
         // Verify we have key tokens
         var keyTokens = tokens.Where(t => t.TokenType == YamlTokenType.Key).ToList();
         Assert.Contains(keyTokens, k => k.Value == "person");
         Assert.Contains(keyTokens, k => k.Value.Trim() == "name");
         Assert.Contains(keyTokens, k => k.Value.Trim() == "age");
         Assert.Contains(keyTokens, k => k.Value == "manager");
-        
+
         // Verify anchor and alias
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Anchor && t.Value == "&p");
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.Alias && t.Value == "*p");
-        
+
         // Verify quoted string
         Assert.Contains(tokens, t => t.TokenType == YamlTokenType.String && t.Value == "Alice");
     }
@@ -375,12 +375,12 @@ manager: *p";
 ---STOP---
 name: Bob";
         var tokens = Tokenize(yaml, "---STOP---");
-        
+
         // Should only parse until the delimiter
         var keyTokens = tokens.Where(t => t.TokenType == YamlTokenType.Key).ToList();
         Assert.Single(keyTokens);
         Assert.Equal("name", keyTokens[0].Value);
-        
+
         // Should not contain Bob
         Assert.DoesNotContain(tokens, t => t.Value.Contains("Bob"));
     }
@@ -390,21 +390,21 @@ name: Bob";
     {
         // Create a very long YAML document
         var yaml = string.Join("\n", Enumerable.Range(0, 10000).Select(i => $"key{i}: value{i}"));
-        
+
         using var cts = new CancellationTokenSource();
         var tokens = new List<YamlToken>();
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(yaml));
-        
+
         // Cancel after a short delay
         _ = Task.Run(async () =>
         {
             await Task.Delay(10);
             cts.Cancel();
         }, TestContext.Current.CancellationToken);
-        
+
         await YamlTokenizer.Create().ParseAsync(stream, cts.Token, tokens.Add);
-        
+
         // Should have been cancelled and not parsed all 10000 keys
         var keyCount = tokens.Count(t => t.TokenType == YamlTokenType.Key);
         Assert.True(keyCount < 10000, $"Expected less than 10000 keys due to cancellation, but got {keyCount}");
@@ -431,12 +431,12 @@ name: Bob";
         var input = "{name: Alice, age: 30}";
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
-        
+
         var keyTokens = tokens.Where(t => t.TokenType == YamlTokenType.Key).ToList();
         Assert.Equal(2, keyTokens.Count);
         Assert.Equal("name", keyTokens[0].Value);
         Assert.Equal("age", keyTokens[1].Value);
-        
+
         var commaTokens = tokens.Where(t => t.TokenType == YamlTokenType.FlowEntry).ToList();
         Assert.Single(commaTokens);
     }
@@ -478,10 +478,10 @@ name: Bob
         var input = yaml;
         var (tokens, text) = Tokenize(input);
         Assert.Equal(input, text);
-        
+
         var docStarts = tokens.Where(t => t.TokenType == YamlTokenType.DocumentStart).ToList();
         Assert.Equal(2, docStarts.Count);
-        
+
         var docEnds = tokens.Where(t => t.TokenType == YamlTokenType.DocumentEnd).ToList();
         Assert.Single(docEnds);
     }
