@@ -137,7 +137,7 @@ The library supports the following formats:
 
 ## Tools
 
-The repository ships a few sample applications and tools that showcase the library in action:
+The repository ships a lot of sample applications and tools that showcase the library in action. I would like to highlight some:
 
 | **Tool** | **What it does** |
 |---|---|
