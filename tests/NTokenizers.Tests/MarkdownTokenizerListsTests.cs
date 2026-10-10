@@ -394,18 +394,74 @@ public class MarkdownTokenizerListsTests : MarkdownTokenizerTestBase
     }
 
     [Fact]
-    public void TestTopLevelOrderedMarkerDoesNotInterruptParagraph()
+    public void TestTopLevelOrderedMarkerInterruptsParagraph()
     {
-        // Outside a list item, only a "1." marker interrupts an open paragraph (CommonMark
-        // example 303); the relaxation to any start number applies only inside list items.
-        // So "2." here stays a lazy continuation line and the whole input is one paragraph.
-        var markdown = "AA\n2. BB";
+        // Deviation from CommonMark (example 303): a list marker is a valid
+        // paragraph-interrupting line-start construct, so any start number (not only
+        // "1.") interrupts an open paragraph instead of lazy-continuing it.
+        var markdown = "B\n4. A";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(markdown, text);
-        Assert.DoesNotContain(tokens, t => t.TokenType == MarkdownTokenType.ListStart);
-        Assert.DoesNotContain(tokens, t => t.TokenType == MarkdownTokenType.OrderedListItem);
-        Assert.Equal(1, tokens.Count(t => t.TokenType == MarkdownTokenType.ParagraphBlockStart));
-        Assert.Equal(1, tokens.Count(t => t.TokenType == MarkdownTokenType.ParagraphBlockEnd));
+
+        // The paragraph's held soft break (its closing newline) is flushed as a Text("\n")
+        // separator after the ParagraphBlockEnd — the house paragraph-boundary rule, same as
+        // for a heading or blockquote after a paragraph.
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("B", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ListStart, tokens[4].TokenType);
+        Assert.True(Assert.IsType<ListMetadata>(tokens[4].Metadata).IsOrdered);
+
+        var item = Assert.Single(tokens, t => t.TokenType == MarkdownTokenType.OrderedListItem);
+        Assert.Equal(4, Assert.IsType<OrderedListItemMetadata>(item.Metadata).Number);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
+    }
+
+    [Fact]
+    public void TestTopLevelUnorderedMarkerInterruptsParagraph()
+    {
+        // A list marker is a valid paragraph-interrupting line-start construct, so an
+        // unordered marker interrupts an open paragraph the same way an ordered one does.
+        var markdown = "B\n- A";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown, text);
+
+        // The paragraph's closing newline is flushed as a Text("\n") separator after the
+        // ParagraphBlockEnd (house paragraph-boundary rule).
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ListStart, tokens[4].TokenType);
+        Assert.False(Assert.IsType<ListMetadata>(tokens[4].Metadata).IsOrdered);
+
+        var item = Assert.Single(tokens, t => t.TokenType == MarkdownTokenType.UnorderedListItem);
+        Assert.Equal('-', Assert.IsType<ListItemMetadata>(item.Metadata).Marker);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[^1].TokenType);
+    }
+
+    [Fact]
+    public void TestTopLevelUnorderedMarkerWithoutContentInterruptsParagraph()
+    {
+        // Deviation from CommonMark: a marker without content (no space follows it) is
+        // still a list marker and interrupts an open paragraph; the item has no content.
+        var markdown = "B\n-";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(markdown, text);
+
+        // The paragraph's closing newline is flushed as a Text("\n") separator after the
+        // ParagraphBlockEnd (house paragraph-boundary rule); the item itself has no content.
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal("\n", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ListStart, tokens[4].TokenType);
+        Assert.Equal(MarkdownTokenType.UnorderedListItem, tokens[5].TokenType);
+        Assert.Equal('-', Assert.IsType<ListItemMetadata>(tokens[5].Metadata).Marker);
+        Assert.Equal(MarkdownTokenType.ListEnd, tokens[6].TokenType);
     }
 
     [Fact]

@@ -54,6 +54,11 @@ The tokenizer preserves content exactly as it appears in the input:
 - **Four leading spaces at top level are an indented code block, not a blockquote.**
 - **Indented code inside quotes** can hold more or fewer lines than the spec in a few edge cases.
 
+### Lists
+
+- **Any ordered list marker may interrupt a paragraph.** Any start number (not only `1.`) starts a list instead of lazy-continuing the open paragraph (spec example 303).
+- **A list marker line ends a blockquote.** The marker interrupts the quoted paragraph, so the quote closes and the list is parsed in the outer scope.
+
 ## Unsupported CommonMark features
 
 The following CommonMark features are intentionally not supported due to the streaming architecture:

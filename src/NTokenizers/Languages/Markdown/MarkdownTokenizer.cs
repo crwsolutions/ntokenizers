@@ -68,11 +68,9 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     }
 
     // Runs this instance as a list item's content sub-document. In addition to dropping the
-    // item's closing line break, this relaxes the "only a 1. marker interrupts a paragraph"
-    // rule: inside a list item there is no ambiguity that an indented ordered marker opens a
-    // nested list (a lazy continuation would instead be indented code), so any start number
-    // starts a nested list, and the soft break that a nested list interrupts the item's
-    // paragraph with is dropped instead of emitted.
+    // item's closing line break, this drops the soft break that a nested list interrupts the
+    // item's paragraph with: a list item renders as a box that already closes on a fresh line,
+    // so the item's paragraph flows directly into the nested list without a separator.
     internal MarkdownTokenizer(int depth, bool dropClosingNewline, bool inListItemContent)
     {
         _depth = depth;
@@ -88,9 +86,9 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     // consumed but not emitted at end of stream (see ParseAsync end-of-stream flush).
     private readonly bool _dropClosingNewline;
 
-    // Set on a list item's content sub-document: relaxes ordered-marker paragraph
-    // interruption inside the item (see the constructor) so any start number opens a nested
-    // list, and drops the soft break a nested list interrupts the item's paragraph with.
+    // Set on a list item's content sub-document: drops the soft break a nested list
+    // interrupts the item's paragraph with (see the constructor), so the item's paragraph
+    // flows directly into the nested list.
     private readonly bool _inListItemContent;
 
     // One marker chain is stripped per input line, at each nesting level. It starts true so
@@ -466,10 +464,13 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     /// <item>Markers are assigned by depth: marker K belongs to nesting level K, so this
     /// level (depth <c>_depth</c>) continues only when the line carries at least <c>_depth</c>
     /// markers (each: up to three columns of spaces or tabs, then <c>&gt;</c> plus an optional
-    /// single space). This level's markers are consumed; any excess stays in the remainder
-    /// and opens deeper nested quotes. With fewer markers: a valid lazy continuation (a
-    /// paragraph is open and the remainder is plain content) consumes them as decoration;
-    /// otherwise this level ends and the line is left for the outer tokenizer.</item>
+    /// single space). A remainder that would start a list marker ends the quote instead
+    /// (a list marker is a valid paragraph-interrupting construct, so it cannot be a lazy
+    /// continuation); otherwise this level's markers are consumed and any excess stays in
+    /// the remainder and opens deeper nested quotes. With fewer markers: a valid lazy
+    /// continuation (a paragraph is open and the remainder is plain content) consumes them
+    /// as decoration; otherwise this level ends and the line is left for the outer
+    /// tokenizer.</item>
     /// <item>A blank line (no prefix) closes the paragraph and ends the quote. The blank
     /// line is consumed to advance the stream but not emitted: a quote renders as a box
     /// that already closes on a fresh line, so the terminating line must not appear inside
@@ -520,6 +521,16 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         if (markers >= _depth)
         {
+            // The remainder would start a list marker: the same row-4 decision (deviation
+            // from CommonMark, see PeekListItem) — a list marker is a valid
+            // paragraph-interrupting line-start construct, so it cannot be a lazy
+            // continuation and the quote ends, leaving the line untouched for the outer
+            // scope.
+            if (WouldStartBlockquoteBreakingConstruct(stop))
+            {
+                return false;
+            }
+
             // The line belongs to this level: strip only its _depth markers; any excess
             // stays in the remainder to open deeper nested quotes.
             EmitText();
@@ -646,14 +657,14 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         if (char.IsDigit(first))
         {
-            // An ordered list marker: digits, a dot, then a space.
+            // An ordered list marker: digits, a delimiter ('.' or ')'), then a space.
             int pos = 0;
             while (char.IsDigit(PeekAhead(pos + offset)))
             {
                 pos++;
             }
 
-            return PeekAhead(pos + offset) == '.' && PeekAhead(pos + 1 + offset) == ' ';
+            return (PeekAhead(pos + offset) == '.' || PeekAhead(pos + offset) == ')') && PeekAhead(pos + 1 + offset) == ' ';
         }
 
         if (first is '`' or '~')
@@ -976,8 +987,9 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             // A tab-separated run of asterisks is inline emphasis, not nested list markers.
             if (c == '*' && afterMarker == '\t' && PeekAhead(pos + 2) == '*')
                 return ListClassification.None;
-            if (_block == BlockContext.Paragraph && afterMarker is '\r' or '\n' or '\0')
-                return ListClassification.None;
+            // A list marker is a valid paragraph-interrupting line-start construct
+            // (deviation from CommonMark: every unordered marker may interrupt a paragraph,
+            // even one without content).
             return new ListClassification(ListKind.Unordered, marker: c, markerStart: markerStart, markerColumn: column);
         }
 
@@ -1001,16 +1013,9 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 char after = PeekAhead(pos + 1);
                 if (after == ' ' || after == '\t' || after == '\r' || after == '\n' || after == '\0')
                 {
-                    // CommonMark: only a "1." marker may interrupt an open paragraph. Inside a
-                    // list item this rule is relaxed: an indented ordered marker there
-                    // unambiguously opens a nested list (a lazy continuation would instead be
-                    // indented code), so any start number starts a nested list.
-                    bool interruptsParagraph = _block == BlockContext.Paragraph
-                        && (number != 1 || after is '\r' or '\n' or '\0');
-                    if (interruptsParagraph && !(_inListItemContent && after == ' '))
-                    {
-                        return ListClassification.None;
-                    }
+                    // A list marker is a valid paragraph-interrupting line-start construct
+                    // (deviation from CommonMark: every start number may interrupt a
+                    // paragraph, not only "1.").
                     return new ListClassification(ListKind.Ordered, marker: delimiter, number: number, digits: digits, markerStart: markerStart, markerColumn: column);
                 }
             }

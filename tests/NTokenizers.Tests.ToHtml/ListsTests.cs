@@ -30,7 +30,9 @@ public class ListsTests
     {
         var input = "The number of windows in my house is\n14.  The number of doors is 6.";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p>The number of windows in my house is<br/>14.  The number of doors is 6.</p>", html);
+        // Deviation: a list marker is a valid paragraph-interrupting line-start construct,
+        // so any start number interrupts the paragraph (spec: one paragraph).
+        Assert.Equal("<p>The number of windows in my house is</p>\n<ol>\n<li value=\"14\">\n<p> The number of doors is 6.</p>\n</li>\n</ol>", html);
     }
 
     [Fact]
@@ -244,6 +246,34 @@ public class ListsTests
         var input = "1. A\n2. B\n6. C\n7. D";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
         Assert.Equal("<ol>\n<li>\n<p>A</p>\n</li>\n<li>\n<p>B</p>\n</li>\n<li value=\"6\">\n<p>C</p>\n</li>\n<li>\n<p>D</p>\n</li>\n</ol>", html);
+    }
+
+    [Fact]
+    public void OrderedMarkerWithAnyStartNumberInterruptsParagraph()
+    {
+        // Deviation: any start number interrupts a paragraph, not only "1.".
+        var input = "B\n4. A";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p>B</p>\n<ol>\n<li value=\"4\">\n<p>A</p>\n</li>\n</ol>", html);
+    }
+
+    [Fact]
+    public void UnorderedMarkerInterruptsParagraph()
+    {
+        // A list marker is a valid paragraph-interrupting line-start construct.
+        var input = "B\n- A";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p>B</p>\n<ul>\n<li>\n<p>A</p>\n</li>\n</ul>", html);
+    }
+
+    [Fact]
+    public void ListMarkerAfterQuotedParagraphBreaksQuote()
+    {
+        // Deviation: a quoted paragraph cannot lazy-continue into a list marker line; the
+        // marker is a valid paragraph-interrupting construct, so the quote ends first.
+        var input = "> B\n4. A";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<blockquote>\n<p>B</p>\n</blockquote>\n<ol>\n<li value=\"4\">\n<p>A</p>\n</li>\n</ol>", html);
     }
 
 }

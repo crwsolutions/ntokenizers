@@ -39,6 +39,9 @@ ToHtml output deviations (each is annotated with a `// Deviation:` comment next 
 - **Blockquotes**
   - Four leading spaces at top level are an indented code block, not a blockquote.
   - Indented code inside quotes holds more/fewer lines than the spec in a few cases.
+- **Lists**
+  - Any ordered list marker may interrupt a paragraph: any start number (not only `1.`) starts a list, instead of lazy-continuing the open paragraph (spec example 303).
+  - A list marker line ends a blockquote: the marker interrupts the quoted paragraph, so the quote closes and the list is parsed in the outer scope.
 
 ### Unsupported CommonMark features
 
