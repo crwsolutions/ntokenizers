@@ -119,28 +119,11 @@ See the [ToHtml API](/ntokenizers/tohtml) page for more details.
 
 ## Code specific Tokenizers
 
-Individual tokenizers are available for each supported format:
+The library supports the following formats:
 
-| **Language** | **Page** |
-|---|---|
-| Markdown | [Markdown Tokenizer](/ntokenizers/markdown) |
-| HTML | [HTML Tokenizer](/ntokenizers/html) |
-| JSON | [JSON Tokenizer](/ntokenizers/json) |
-| YAML | [YAML Tokenizer](/ntokenizers/yaml) |
-| TOML | [TOML Tokenizer](/ntokenizers/toml) |
-| XML | [XML Tokenizer](/ntokenizers/xml) |
-| C# | [CSharp Tokenizer](/ntokenizers/csharp) |
-| C | [C Tokenizer](/ntokenizers/c) |
-| C++ | [C++ Tokenizer](/ntokenizers/cpp) |
-| Go | [Go Tokenizer](/ntokenizers/go) |
-| Java | [Java Tokenizer](/ntokenizers/java) |
-| Kotlin | [Kotlin Tokenizer](/ntokenizers/kotlin) |
-| Python | [Python Tokenizer](/ntokenizers/python) |
-| Rust | [Rust Tokenizer](/ntokenizers/rust) |
-| SQL | [SQL Tokenizer](/ntokenizers/sql) |
-| Swift | [Swift Tokenizer](/ntokenizers/swift) |
-| TypeScript | [TypeScript Tokenizer](/ntokenizers/typescript) |
-| CSS | [CSS Tokenizer](/ntokenizers/css) |
+- **Markup languages:** [Markdown](/ntokenizers/markdown), [HTML](/ntokenizers/html)
+- **Data formats:** [JSON](/ntokenizers/json), [YAML](/ntokenizers/yaml), [TOML](/ntokenizers/toml), [XML](/ntokenizers/xml)
+- **Programming languages:** [C#](/ntokenizers/csharp), [C](/ntokenizers/c), [C++](/ntokenizers/cpp), [Go](/ntokenizers/go), [Java](/ntokenizers/java), [Kotlin](/ntokenizers/kotlin), [Python](/ntokenizers/python), [Rust](/ntokenizers/rust), [SQL](/ntokenizers/sql), [Swift](/ntokenizers/swift), [TypeScript](/ntokenizers/typescript), [CSS](/ntokenizers/css)
 
 ## Features
 
@@ -151,3 +134,14 @@ Individual tokenizers are available for each supported format:
 - **Markdown to HTML**: The ToHtml API converts a Markdown stream to an HTML stream incrementally, with both fragment and full HTML document output ([ToHtml API](/ntokenizers/tohtml))
 
 > **Especially suitable for parsing AI chat streams**, NTokenizers excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
+
+## Tools
+
+The repository ships a few sample applications and tools that showcase the library in action:
+
+| **Tool** | **What it does** |
+|---|---|
+| [NTokenizers.Token.Debug.Web](https://github.com/crwsolutions/ntokenizers/tree/main/tests/NTokenizers.Token.Debug.Web) | Web app with four side-by-side columns — Input, Tokens, ToHtml raw and ToHtml rendered — that shows the token stream of a Markdown document in real time. |
+| [NTokenizers.ShowCase.ToHtml.Web](https://github.com/crwsolutions/ntokenizers/tree/main/tests/NTokenizers.ShowCase.ToHtml.Web) | Streaming Markdown showcase: edit Markdown in one pane and press Convert — the HTML fragment is streamed back and rendered live in the other pane, showing the ToHtml API in action. |
+| [NTokenizers.Tools.MarkdownToHtml](https://github.com/crwsolutions/ntokenizers/tree/main/tools/NTokenizers.Tools.MarkdownToHtml) | CLI tool that reads a Markdown file as a stream and writes a styled HTML file, with encoding detection and timing output. |
+| [NTokenizers.Tools.MarkdownViewer](https://github.com/crwsolutions/ntokenizers/tree/main/tools/NTokenizers.Tools.MarkdownViewer) | Windows WinUI 3 desktop app for reading `.md` files with ToHtml rendering. |
