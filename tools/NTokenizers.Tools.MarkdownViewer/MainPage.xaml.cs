@@ -152,7 +152,7 @@ public sealed partial class MainPage : Page
     public void OpenInExplorer()
     {
         if (_currentFilePath is null) return;
-        Process.Start("explorer.exe", $"/select \"{_currentFilePath}\"");
+        Process.Start("explorer.exe", $"/select,\"{_currentFilePath}\"");
     }
 
     public void ShowOpenDialog()
@@ -179,7 +179,7 @@ public sealed partial class MainPage : Page
         if (_currentFilePath is null) return;
         try
         {
-            Process.Start(new ProcessStartInfo { FileName = _currentFilePath, UseShellExecute = true });
+            Process.Start("notepad.exe", $"\"{_currentFilePath}\"");
         }
         catch { }
     }
