@@ -23,15 +23,18 @@
                 <ImageIconSource ImageSource="Assets/AppIcon.ico" />
             </TitleBar.IconSource>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="2">
+                <Button x:Name="BtnOpen" Content="&#x1F4C1;" ToolTipService.ToolTip="Open other Markdown file"
+                        Width="40" Height="30"
+                        Click="BtnOpen_Click" />
                 <Button x:Name="BtnExplorer" Content="&#x1F4C2;" ToolTipService.ToolTip="Open in File Explorer"
                         Width="40" Height="30" IsEnabled="False"
                         Click="BtnExplorer_Click" />
-                <Button x:Name="BtnOpen" Content="&#x1F4C1;" ToolTipService.ToolTip="Open Markdown file"
-                        Width="40" Height="30"
-                        Click="BtnOpen_Click" />
-                <Button x:Name="BtnEditor" Content="&#x270F;&#xFE0F;" ToolTipService.ToolTip="Open in system editor"
+                <Button x:Name="BtnEditor" Content="🗒️" ToolTipService.ToolTip="Open in system editor"
                         Width="40" Height="30" IsEnabled="False"
                         Click="BtnEditor_Click" />
+                <Button x:Name="BtnCopy" Content="&#x1F4CB;" ToolTipService.ToolTip="Copy Markdown source to clipboard"
+                        Width="40" Height="30" IsEnabled="False"
+                        Click="BtnCopy_Click" />
                 <Button x:Name="BtnRefresh" Content="&#x1F504;" ToolTipService.ToolTip="Refresh (F5)"
                         Width="40" Height="30" IsEnabled="False"
                         Click="BtnRefresh_Click" />

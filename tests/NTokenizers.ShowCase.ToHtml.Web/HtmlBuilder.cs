@@ -52,8 +52,17 @@ internal static class HtmlBuilder
         }
         .panel-content {
             flex: 1;
-            overflow: auto;
+            overflow: hidden;
             padding: 1.5rem;
+        }
+        .iframe-host {
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+            padding: 0;
+        }
+        #output {
+            display: block;
         }
         textarea {
             width: 100%;
@@ -166,7 +175,12 @@ internal static class HtmlBuilder
                 <p>Real-time streaming output</p>
             </div>
             <div id='streaming-status' class='streaming-indicator'></div>
-            <iframe id='output' style='width: 100%; flex: 1; min-height: 0; border: none; background: white;'></iframe>
+            <div class='iframe-host'>
+                <iframe id='output' style='width: 100%; height: 100%; border: none; background: white;'></iframe>
+            </div>
+            <div class='controls'>
+                <button id='clear-btn' onclick='clearPreview()'>🧹 Clear</button>
+            </div>
         </div>
     </div>
 

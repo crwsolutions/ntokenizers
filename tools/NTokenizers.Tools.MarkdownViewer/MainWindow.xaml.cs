@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -104,6 +105,37 @@ public sealed partial class MainWindow : Window
         _mainPage?.Refresh();
     }
 
+    private async void BtnCopy_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || _mainPage is null) return;
+
+        var originalContent = button.Content;
+        var originalTooltip = Microsoft.UI.Xaml.Controls.ToolTipService.GetToolTip(button);
+        try
+        {
+            await _mainPage.CopyMarkdownToClipboardAsync();
+            button.Content = "✓";
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(button, null);
+        }
+        catch (Exception)
+        {
+            button.Content = "✗";
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(button, null);
+        }
+        finally
+        {
+            // Restore the icon after a short confirmation
+            _ = Task.Delay(1200).ContinueWith(_ =>
+            {
+                App.DispatcherQueue.TryEnqueue(() =>
+                {
+                    button.Content = originalContent;
+                    Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(button, originalTooltip);
+                });
+            });
+        }
+    }
+
     /// <summary>
     /// Updates the title bar state (title, button enabled states, encoding label).
     /// </summary>
@@ -113,6 +145,7 @@ public sealed partial class MainWindow : Window
         AppTitleBar.Title = fileName;
         BtnExplorer.IsEnabled = hasFile;
         BtnEditor.IsEnabled = hasFile;
+        BtnCopy.IsEnabled = hasFile;
         BtnRefresh.IsEnabled = hasFile;
         LblEncoding.Text = encoding;
     }

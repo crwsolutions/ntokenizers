@@ -152,7 +152,7 @@ public sealed partial class MainPage : Page
     public void OpenInExplorer()
     {
         if (_currentFilePath is null) return;
-        Process.Start("explorer.exe", $"/select \"{_currentFilePath}\"");
+        Process.Start("explorer.exe", $"/select,\"{_currentFilePath}\"");
     }
 
     public void ShowOpenDialog()
@@ -179,9 +179,25 @@ public sealed partial class MainPage : Page
         if (_currentFilePath is null) return;
         try
         {
-            Process.Start(new ProcessStartInfo { FileName = _currentFilePath, UseShellExecute = true });
+            Process.Start("notepad.exe", $"\"{_currentFilePath}\"");
         }
         catch { }
+    }
+
+    public async Task CopyMarkdownToClipboardAsync()
+    {
+        if (_currentFilePath is null) return;
+
+        using var stream = new FileStream(_currentFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+        var resolved = EncodingResolver.Resolve(stream);
+        stream.Position = 0;
+
+        using var reader = new StreamReader(stream, resolved.Encoding, detectEncodingFromByteOrderMarks: true, bufferSize: 4096);
+        var text = await reader.ReadToEndAsync();
+
+        var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+        dataPackage.SetText(text);
+        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
     }
 
     private void OnFileChanged(object sender, FileSystemEventArgs e)
