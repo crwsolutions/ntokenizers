@@ -184,6 +184,22 @@ public sealed partial class MainPage : Page
         catch { }
     }
 
+    public async Task CopyMarkdownToClipboardAsync()
+    {
+        if (_currentFilePath is null) return;
+
+        using var stream = new FileStream(_currentFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+        var resolved = EncodingResolver.Resolve(stream);
+        stream.Position = 0;
+
+        using var reader = new StreamReader(stream, resolved.Encoding, detectEncodingFromByteOrderMarks: true, bufferSize: 4096);
+        var text = await reader.ReadToEndAsync();
+
+        var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+        dataPackage.SetText(text);
+        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+    }
+
     private void OnFileChanged(object sender, FileSystemEventArgs e)
     {
         _debounceTimer.Stop();

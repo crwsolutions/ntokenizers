@@ -32,6 +32,9 @@
                 <Button x:Name="BtnEditor" Content="🗒️" ToolTipService.ToolTip="Open in system editor"
                         Width="40" Height="30" IsEnabled="False"
                         Click="BtnEditor_Click" />
+                <Button x:Name="BtnCopy" Content="&#x1F4CB;" ToolTipService.ToolTip="Copy Markdown source to clipboard"
+                        Width="40" Height="30" IsEnabled="False"
+                        Click="BtnCopy_Click" />
                 <Button x:Name="BtnRefresh" Content="&#x1F504;" ToolTipService.ToolTip="Refresh (F5)"
                         Width="40" Height="30" IsEnabled="False"
                         Click="BtnRefresh_Click" />
