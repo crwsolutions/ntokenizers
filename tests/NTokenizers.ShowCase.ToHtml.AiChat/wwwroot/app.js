@@ -39,7 +39,10 @@ function addMessage(role, html) {
 
 function scrollToBottom() {
     const chat = document.getElementById('chat');
-    chat.scrollTop = chat.scrollHeight;
+    const messages = chat.querySelectorAll('.message');
+    if (messages.length > 0) {
+        messages[messages.length - 1].scrollIntoView({ behavior: 'auto', block: 'end' });
+    }
 }
 
 function showTypingIndicator() {
