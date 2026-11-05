@@ -51,7 +51,7 @@ internal static class HtmlBuilder
         }
         body.initial-state .welcome-message {
             position: absolute;
-            top: 15%;
+            top: 30%;
             left: 0;
             right: 0;
         }
