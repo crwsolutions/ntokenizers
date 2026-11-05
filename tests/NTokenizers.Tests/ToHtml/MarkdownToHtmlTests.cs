@@ -144,6 +144,71 @@ public class MarkdownToHtmlTests
         Assert.Contains("<h1", html);
     }
 
+    // --- WriteHtml* returns the consumed Markdown ---
+
+    [Fact]
+    public async Task WriteHtmlAsync_Stream_ReturnsConsumedMarkdown()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(RoundTripInput));
+        using var writer = new StringWriter();
+
+        var consumed = await MarkdownConverter.WriteHtmlAsync(stream, writer);
+
+        Assert.Equal(RoundTripInput, consumed);
+    }
+
+    [Fact]
+    public async Task WriteHtmlAsync_TextReader_ReturnsConsumedMarkdown()
+    {
+        using var reader = new StringReader(RoundTripInput);
+        using var writer = new StringWriter();
+
+        var consumed = await MarkdownConverter.WriteHtmlAsync(reader, writer);
+
+        Assert.Equal(RoundTripInput, consumed);
+    }
+
+    [Fact]
+    public async Task WriteHtmlDocumentAsync_Stream_ReturnsConsumedMarkdown()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(RoundTripInput));
+        using var writer = new StringWriter();
+
+        var consumed = await MarkdownConverter.WriteHtmlDocumentAsync(stream, writer);
+
+        Assert.Equal(RoundTripInput, consumed);
+    }
+
+    [Fact]
+    public async Task WriteHtmlDocumentAsync_TextReader_ReturnsConsumedMarkdown()
+    {
+        using var reader = new StringReader(RoundTripInput);
+        using var writer = new StringWriter();
+
+        var consumed = await MarkdownConverter.WriteHtmlDocumentAsync(reader, writer);
+
+        Assert.Equal(RoundTripInput, consumed);
+    }
+
+    /// <summary>
+    /// Realistic multi-line Markdown shared by the consumed-Markdown round-trip tests:
+    /// heading, paragraph, list, fenced code block with a language, and special characters.
+    /// </summary>
+    private const string RoundTripInput = @"# Title
+
+Some text with **bold**, *italic* and `inline code`.
+
+- item 1
+- item 2
+
+```csharp
+var x = 1;
+var y = 2;
+```
+
+> A blockquote with special characters: <tag> & ampersand
+";
+
     // --- Consistency: fragment + css vs document ---
 
     [Fact]

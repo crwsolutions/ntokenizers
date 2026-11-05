@@ -4,7 +4,7 @@ This file contains all the information needed to add a new language tokenizer to
 
 ## Overview
 
-NTokenizers is a .NET library that provides **stream-capable** tokenizers for syntax highlighting. These tokenizers are **not validation-based** and are primarily intended for **prettifying, formatting, or visualizing** structured text. The **ToHtml API** (`MarkdownConverter`) is feature complete and release-ready (package version 7.0): it converts a Markdown stream to HTML stream-to-stream (per-token writes to the caller's `TextWriter`, no whole-document buffering).
+NTokenizers is a .NET library that provides **stream-capable** tokenizers for syntax highlighting. These tokenizers are **not validation-based** and are primarily intended for **prettifying, formatting, or visualizing** structured text. The **ToHtml API** (`MarkdownConverter`) is feature complete and release-ready (package version 8.0): it converts a Markdown stream to HTML stream-to-stream (per-token writes to the caller's `TextWriter`, no whole-document buffering).
 
 ## Deviations from the CommonMark Standard
 

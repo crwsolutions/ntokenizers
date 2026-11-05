@@ -16,14 +16,17 @@ The `MarkdownConverter` class offers two conversion modes:
 
 ## Public API
 
+> [!NOTE]
+> **Naming:** the `ToHtml*` methods return the **HTML** string, while the `WriteHtml*` methods write the HTML to your `TextWriter` and return the **consumed Markdown** source text (the raw input exactly as read — for the `Stream` overloads, decoded with any BOM detected and stripped).
+
 ### Fragment Methods
 
 | Method | Description |
 |--------|-------------|
 | `ToHtml(string input)` | Synchronously converts a Markdown string to an HTML fragment. |
 | `ToHtmlAsync(Stream inputStream)` | Asynchronously converts a Markdown stream to an HTML fragment. |
-| `WriteHtmlAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream and writes the fragment directly to a `TextWriter`. |
-| `WriteHtmlAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader` and writes the fragment directly to a `TextWriter`. |
+| `WriteHtmlAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream, writes the fragment directly to a `TextWriter`, and returns the consumed Markdown source text. |
+| `WriteHtmlAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader`, writes the fragment directly to a `TextWriter`, and returns the consumed Markdown source text. |
 
 ### Document Methods
 
@@ -31,8 +34,8 @@ The `MarkdownConverter` class offers two conversion modes:
 |--------|-------------|
 | `ToHtmlDocument(string input)` | Synchronously converts a Markdown string to a full HTML document. |
 | `ToHtmlDocumentAsync(Stream inputStream)` | Asynchronously converts a Markdown stream to a full HTML document. |
-| `WriteHtmlDocumentAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream and writes the full document directly to a `TextWriter`. |
-| `WriteHtmlDocumentAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader` and writes the full document directly to a `TextWriter`. |
+| `WriteHtmlDocumentAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream, writes the full document directly to a `TextWriter`, and returns the consumed Markdown source text. |
+| `WriteHtmlDocumentAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader`, writes the full document directly to a `TextWriter`, and returns the consumed Markdown source text. |
 
 ### Utility Methods
 
@@ -70,7 +73,21 @@ using var inputStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read
 using var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
 using var writer = new StreamWriter(outputStream, leaveOpen: false);
 
-await MarkdownConverter.WriteHtmlDocumentAsync(inputStream, writer);
+string consumedMarkdown = await MarkdownConverter.WriteHtmlDocumentAsync(inputStream, writer);
+```
+
+### Capturing the Consumed Markdown
+
+The `WriteHtml*` methods return the Markdown source text they consumed, so a caller that renders a live stream — for example an AI chat response — can keep the exact text it just rendered. This is useful for storing assistant replies in a chat history:
+
+```csharp
+using NTokenizers.ToHtml;
+
+// markdownStream produces the Markdown as it arrives (for example, an AI chat stream)
+using var writer = new StringWriter();
+string markdown = await MarkdownConverter.WriteHtmlAsync(markdownStream, writer);
+// writer.ToString() holds the rendered HTML fragment;
+// markdown holds the same Markdown source text that was consumed.
 ```
 
 ### Getting the Default CSS

@@ -43,23 +43,25 @@ public sealed class MarkdownConverter
     /// <summary>
     /// Converts a Markdown stream to an HTML fragment and writes it directly to the provided writer.
     /// </summary>
-    public static async Task WriteHtmlAsync(Stream inputStream, TextWriter writer)
+    /// <returns>The consumed Markdown source text, as decoded from the stream (with any BOM detected and stripped).</returns>
+    public static async Task<string> WriteHtmlAsync(Stream inputStream, TextWriter writer)
     {
         using var reader = new StreamReader(inputStream);
-        await WriteHtmlAsync(reader, writer);
+        return await WriteHtmlAsync(reader, writer);
     }
 
     /// <summary>
     /// Converts a Markdown text reader to an HTML fragment and writes it directly to the provided writer.
     /// </summary>
-    public static async Task WriteHtmlAsync(TextReader reader, TextWriter writer)
+    /// <returns>The consumed Markdown source text, exactly as read from the reader.</returns>
+    public static async Task<string> WriteHtmlAsync(TextReader reader, TextWriter writer)
     {
         var markdownWriter = new MarkdownHtmlWriter();
         var stringBuilder = new StringBuilder();
         var lookaheadBuffer = new Queue<char>();
         using var cts = new CancellationTokenSource();
 
-        await MarkdownTokenizer.Create().ParseAsync(reader, stringBuilder, lookaheadBuffer, cts.Token, async token =>
+        return await MarkdownTokenizer.Create().ParseAsync(reader, stringBuilder, lookaheadBuffer, cts.Token, async token =>
         {
             await markdownWriter.WriteTokenAsync(token, writer);
         });
@@ -87,16 +89,18 @@ public sealed class MarkdownConverter
     /// <summary>
     /// Converts a Markdown stream to a complete HTML document and writes it directly to the provided writer.
     /// </summary>
-    public static async Task WriteHtmlDocumentAsync(Stream inputStream, TextWriter writer)
+    /// <returns>The consumed Markdown source text, as decoded from the stream (with any BOM detected and stripped).</returns>
+    public static async Task<string> WriteHtmlDocumentAsync(Stream inputStream, TextWriter writer)
     {
         using var reader = new StreamReader(inputStream);
-        await WriteHtmlDocumentAsync(reader, writer);
+        return await WriteHtmlDocumentAsync(reader, writer);
     }
 
     /// <summary>
     /// Converts a Markdown text reader to a complete HTML document and writes it directly to the provided writer.
     /// </summary>
-    public static async Task WriteHtmlDocumentAsync(TextReader reader, TextWriter writer)
+    /// <returns>The consumed Markdown source text, exactly as read from the reader.</returns>
+    public static async Task<string> WriteHtmlDocumentAsync(TextReader reader, TextWriter writer)
     {
         var css = GetCss();
 
@@ -130,11 +134,13 @@ public sealed class MarkdownConverter
         await writer.WriteLineAsync("<div class=\"markdown-document\">");
 
         // Process markdown through the fragment writer
-        await WriteHtmlAsync(reader, writer);
+        var markdown = await WriteHtmlAsync(reader, writer);
 
         // Close HTML skeleton
         await writer.WriteLineAsync("</div>");
         await writer.WriteLineAsync("</body>");
         await writer.WriteLineAsync("</html>");
+
+        return markdown;
     }
 }
