@@ -38,11 +38,7 @@ function addMessage(role, html) {
 }
 
 function scrollToBottom() {
-    const chat = document.getElementById('chat');
-    const messages = chat.querySelectorAll('.message');
-    if (messages.length > 0) {
-        messages[messages.length - 1].scrollIntoView({ behavior: 'auto', block: 'end' });
-    }
+    window.scrollTo(0, document.documentElement.scrollHeight);
 }
 
 function showTypingIndicator() {

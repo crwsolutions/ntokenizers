@@ -12,26 +12,25 @@ internal static class HtmlBuilder
     <title>CRW | NTokenizers | AI Chat Showcase</title>
     <style>" + injectedCss + @"
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            min-height: 100%;
-        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #f6f9f5;
             display: flex;
             flex-direction: column;
+            min-height: 100vh;
         }
         .header {
+            flex: none;
             background: #2E803E;
             color: white;
             padding: 1.25rem 1.5rem;
             /* text-align: center; */
             font-family: Calibri, sans-serif;
-            //font-weight: 600;
             font-size: 2rem;
-            //box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .chat-container {
+            flex: 1 1 auto;
+            min-height: 0;
             padding: 1.5rem;
             position: relative;
             display: flex;
@@ -40,8 +39,6 @@ internal static class HtmlBuilder
             max-width: 900px;
             width: 100%;
             margin: 0 auto;
-            overflow-y: auto;
-            height: calc(100vh - 180px);
         }
         .welcome-message {
             flex: 1;
@@ -94,10 +91,10 @@ internal static class HtmlBuilder
         }
         /* Code block container from ToHtml */
         .input-container {
-            position: fixed;
+            position: sticky;
             bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
+            z-index: 10;
+            flex: none;
             background: white;
             border-top: 1px solid #e0e0e0;
             border-radius: 16px;
@@ -106,6 +103,7 @@ internal static class HtmlBuilder
             gap: 0.75rem;
             max-width: 900px;
             width: 100%;
+            margin: 0 auto 2rem;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
         .input-container.centered {
