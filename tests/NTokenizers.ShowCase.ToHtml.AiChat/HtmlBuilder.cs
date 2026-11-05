@@ -9,7 +9,7 @@ internal static class HtmlBuilder
 <head>
     <meta charset='UTF-8' />
     <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-    <title>NTokenizers — AI Chat Showcase</title>
+    <title>CRW | NTokenizers | AI Chat Showcase</title>
     <style>" + injectedCss + @"
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -25,10 +25,11 @@ internal static class HtmlBuilder
             background: #2E803E;
             color: white;
             padding: 1.25rem 1.5rem;
-            text-align: center;
-            font-weight: 600;
-            font-size: 1.1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            /* text-align: center; */
+            font-family: Calibri, sans-serif;
+            //font-weight: 600;
+            font-size: 2rem;
+            //box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .chat-container {
             flex: 1;
@@ -162,7 +163,7 @@ internal static class HtmlBuilder
 </head>
 <body>
     <div class='header'>
-        NTokenizers — AI Chat Showcase
+        <strong>CRW</strong> | NTokenizers | AI Chat Showcase
     </div>
     <div class='chat-container' id='chat'>
         <div class='welcome-message' id='welcome'>
