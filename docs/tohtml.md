@@ -5,6 +5,10 @@ title: "ToHtml"
 
 # ToHtml API
 
+```csharp
+string html = MarkdownConverter.ToHtml(markdown);
+```
+
 The ToHtml API provides a simple way to convert Markdown content to HTML output. It is built on top of the `MarkdownTokenizer` and is **fully stream-capable**: it consumes a Markdown *stream* and writes the HTML *stream* incrementally — each token is written to the output `TextWriter` as soon as it is parsed, so a live AI chat response or a large file can be converted in real time without buffering the whole document.
 
 ## Overview
