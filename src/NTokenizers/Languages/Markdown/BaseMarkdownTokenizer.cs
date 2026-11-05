@@ -512,17 +512,17 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
 
     internal bool TryParseSubscript()
     {
-        if (Peek() != '^') return false;
+        if (Peek() != '~') return false;
 
         EmitText();
-        Read(); // Consume opening ^
+        Read(); // Consume opening ~
 
-        // Read subscript text until closing ^
+        // Read subscript text until closing ~
         var subText = new StringBuilder();
         while (Peek() != -1 && Peek() != '\n')
         {
             char c = (char)Read();
-            if (c == '^')
+            if (c == '~')
             {
                 _onToken(new MarkdownToken(MarkdownTokenType.Subscript, subText.ToString()));
                 return true;
@@ -531,23 +531,23 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         }
 
         // No closing found, treat as text
-        _buffer.Append('^').Append(subText);
+        _buffer.Append('~').Append(subText);
         return true;
     }
 
     internal bool TryParseSuperscript()
     {
-        if (Peek() != '~') return false;
+        if (Peek() != '^') return false;
 
         EmitText();
-        Read(); // Consume opening ~
+        Read(); // Consume opening ^
 
-        // Read superscript text until closing ~
+        // Read superscript text until closing ^
         var supText = new StringBuilder();
         while (Peek() != -1 && Peek() != '\n')
         {
             char c = (char)Read();
-            if (c == '~')
+            if (c == '^')
             {
                 _onToken(new MarkdownToken(MarkdownTokenType.Superscript, supText.ToString()));
                 return true;
@@ -556,7 +556,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         }
 
         // No closing found, treat as text
-        _buffer.Append('~').Append(supText);
+        _buffer.Append('^').Append(supText);
         return true;
     }
 
@@ -704,9 +704,9 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         '[' when TryParseLink() => true,
         '!' when PeekAhead(1) == '[' && TryParseImage() => true,
         ':' when TryParseEmoji() => true,
-        '^' when TryParseSubscript() => true,
+        '^' when TryParseSuperscript() => true,
         '~' when PeekAhead(1) == '~' && TryParseStrikethrough() => true,
-        '~' when TryParseSuperscript() => true,
+        '~' when TryParseSubscript() => true,
         '+' when PeekAhead(1) == '+' && TryParseInsertedText() => true,
         '=' when PeekAhead(1) == '=' && TryParseMarkedText() => true,
         '<' when TryParseHtmlTag() => true,

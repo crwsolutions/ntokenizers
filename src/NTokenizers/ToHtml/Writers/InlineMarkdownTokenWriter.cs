@@ -17,30 +17,30 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
         switch (token.TokenType)
         {
             case MarkdownTokenType.Text:
-                WriteValue(writer, value, null);
+                WriteValue(writer, value);
                 break;
 
             case MarkdownTokenType.Bold:
                 writer.Write("<strong>");
-                WriteValue(writer, value, null);
+                WriteValue(writer, value);
                 writer.Write("</strong>");
                 break;
 
             case MarkdownTokenType.Italic:
                 writer.Write("<em>");
-                WriteValue(writer, value, null);
+                WriteValue(writer, value);
                 writer.Write("</em>");
                 break;
 
             case MarkdownTokenType.BoldItalic:
                 writer.Write("<strong><em>");
-                WriteValue(writer, value, null);
+                WriteValue(writer, value);
                 writer.Write("</em></strong>");
                 break;
 
             case MarkdownTokenType.Emphasis:
                 writer.Write("<em>");
-                WriteValue(writer, value, null);
+                WriteValue(writer, value);
                 writer.Write("</em>");
                 break;
 
@@ -71,7 +71,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 }
                 else
                 {
-                    WriteValue(writer, value, null);
+                    WriteValue(writer, value);
                 }
                 break;
 
@@ -87,7 +87,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 }
                 else
                 {
-                    WriteValue(writer, value, null);
+                    WriteValue(writer, value);
                 }
                 break;
 
@@ -97,31 +97,31 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
 
             case MarkdownTokenType.Subscript:
                 writer.Write("<sub>");
-                WriteValue(writer, value, "tok-subscript");
+                WriteValue(writer, value);
                 writer.Write("</sub>");
                 break;
 
             case MarkdownTokenType.Superscript:
                 writer.Write("<sup>");
-                WriteValue(writer, value, "tok-superscript");
+                WriteValue(writer, value);
                 writer.Write("</sup>");
                 break;
 
             case MarkdownTokenType.InsertedText:
                 writer.Write("<ins>");
-                WriteValue(writer, value, "tok-inserted");
+                WriteValue(writer, value);
                 writer.Write("</ins>");
                 break;
 
             case MarkdownTokenType.MarkedText:
                 writer.Write("<mark>");
-                WriteValue(writer, value, "tok-marked");
+                WriteValue(writer, value);
                 writer.Write("</mark>");
                 break;
 
             case MarkdownTokenType.Strikethrough:
                 writer.Write("<del>");
-                WriteValue(writer, value, null);
+                WriteValue(writer, value);
                 writer.Write("</del>");
                 break;
 
@@ -132,7 +132,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 }
                 else
                 {
-                    WriteValue(writer, value, null);
+                    WriteValue(writer, value);
                 }
                 break;
 
@@ -142,7 +142,7 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
 
             // Fallback for any inline token not explicitly handled
             default:
-                WriteValue(writer, value, null);
+                WriteValue(writer, value);
                 break;
         }
     }
