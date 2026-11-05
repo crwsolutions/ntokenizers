@@ -62,6 +62,7 @@ internal class TableMarkdownTokenizer : BaseMarkdownTokenizer
                     if (TryParseImage()) continue;
                     if (TryParseEmoji()) continue;
                     if (TryParseSubscript()) continue;
+                    if (TryParseStrikethrough()) continue;
                     if (TryParseSuperscript()) continue;
                     if (TryParseInsertedText()) continue;
                     if (TryParseMarkedText()) continue;

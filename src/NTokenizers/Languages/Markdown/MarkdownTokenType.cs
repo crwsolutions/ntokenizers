@@ -141,6 +141,11 @@ public enum MarkdownTokenType
     MarkedText,
 
     /// <summary>
+    /// Represents strikethrough text. Value contains only the content without ~~ markers.
+    /// </summary>
+    Strikethrough,
+
+    /// <summary>
     /// Represents a footnote reference. Value contains the reference ID without [^ ] markers.
     /// </summary>
     FootnoteReference,

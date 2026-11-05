@@ -94,6 +94,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
             case MarkdownTokenType.Superscript:
             case MarkdownTokenType.InsertedText:
             case MarkdownTokenType.MarkedText:
+            case MarkdownTokenType.Strikethrough:
             case MarkdownTokenType.FootnoteReference:
             case MarkdownTokenType.TypographicReplacement:
                 _inlineWriter.WriteToken(token, writer);
