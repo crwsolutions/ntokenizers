@@ -92,8 +92,7 @@ internal static class HtmlBuilder
         .input-container {
             background: white;
             border-top: 1px solid #e0e0e0;
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
+            border-radius: 16px;
             padding: 1rem 1.5rem;
             display: flex;
             gap: 0.75rem;
@@ -108,9 +107,6 @@ internal static class HtmlBuilder
             bottom: 45%;
             left: 50%;
             transform: translateX(-50%);
-            border-radius: 16px;
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         textarea {
