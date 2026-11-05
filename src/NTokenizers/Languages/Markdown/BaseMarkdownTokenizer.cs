@@ -560,6 +560,34 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
+    internal bool TryParseStrikethrough()
+    {
+        if (PeekAhead(0) != '~' || PeekAhead(1) != '~')
+            return false;
+
+        EmitText();
+        Read(); // Consume first ~
+        Read(); // Consume second ~
+
+        // Read strikethrough text until closing ~~
+        var delText = new StringBuilder();
+        while (Peek() != -1)
+        {
+            if (PeekAhead(0) == '~' && PeekAhead(1) == '~')
+            {
+                Read();
+                Read();
+                _onToken(new MarkdownToken(MarkdownTokenType.Strikethrough, delText.ToString()));
+                return true;
+            }
+            delText.Append((char)Read());
+        }
+
+        // No closing found, treat as text
+        _buffer.Append("~~").Append(delText);
+        return true;
+    }
+
     internal bool TryParseInsertedText()
     {
         if (PeekAhead(0) != '+' || PeekAhead(1) != '+')
@@ -677,6 +705,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         '!' when PeekAhead(1) == '[' && TryParseImage() => true,
         ':' when TryParseEmoji() => true,
         '^' when TryParseSubscript() => true,
+        '~' when PeekAhead(1) == '~' && TryParseStrikethrough() => true,
         '~' when TryParseSuperscript() => true,
         '+' when PeekAhead(1) == '+' && TryParseInsertedText() => true,
         '=' when PeekAhead(1) == '=' && TryParseMarkedText() => true,

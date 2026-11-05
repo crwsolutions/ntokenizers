@@ -562,6 +562,46 @@ public class MarkdownTokenizerTests : MarkdownTokenizerTestBase
     }
 
     [Fact]
+    public void TestStrikethrough()
+    {
+        var markdown = "~~deleted~~";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Strikethrough, tokens[1].TokenType);
+        Assert.Equal("deleted", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestStrikethroughWithTextBeforeAndAfter()
+    {
+        var markdown = "Some ~~deleted~~ text";
+        var (tokens, text) = Tokenize(markdown);
+        // ParagraphStart, Text("Some "), Strikethrough("deleted"), Text(" text"), ParagraphEnd
+        Assert.Equal(5, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("Some ", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.Strikethrough, tokens[2].TokenType);
+        Assert.Equal("deleted", tokens[2].Value);
+        Assert.Equal(MarkdownTokenType.Text, tokens[3].TokenType);
+        Assert.Equal(" text", tokens[3].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[4].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestStrikethroughWithBoldInside()
+    {
+        var markdown = "~~bold and **bold** text~~";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Strikethrough);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
     public void TestHtmlTag()
     {
         var markdown = "<div>";

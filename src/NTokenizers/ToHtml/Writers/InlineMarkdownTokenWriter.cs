@@ -119,6 +119,12 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 writer.Write("</mark>");
                 break;
 
+            case MarkdownTokenType.Strikethrough:
+                writer.Write("<del>");
+                WriteValue(writer, value, null);
+                writer.Write("</del>");
+                break;
+
             case MarkdownTokenType.FootnoteReference:
                 if (token.Metadata is FootnoteMetadata fnMeta)
                 {
