@@ -56,7 +56,7 @@ using var inputStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read
 using var outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
 using var writer = new StreamWriter(outputStream, leaveOpen: false);
 
-await MarkdownConverter.WriteHtmlDocumentAsync(inputStream, writer);
+string markdown = await MarkdownConverter.WriteHtmlDocumentAsync(inputStream, writer); // the consumed Markdown source text
 ```
 
 The output follows the CommonMark 0.31.2 reference with a small number of documented differences — see the [CommonMark Compliance](https://crwsolutions.github.io/ntokenizers/commonmark) page for the full list.
