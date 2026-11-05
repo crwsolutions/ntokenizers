@@ -13,7 +13,7 @@ internal static class HtmlBuilder
     <style>" + injectedCss + @"
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            height: 100%;
+            min-height: 100%;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -33,7 +33,6 @@ internal static class HtmlBuilder
         }
         .chat-container {
             flex: 1;
-            overflow-y: auto;
             padding: 1.5rem;
             position: relative;
             display: flex;
