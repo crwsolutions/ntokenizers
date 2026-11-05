@@ -84,6 +84,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
 
             case MarkdownTokenType.Bold:
             case MarkdownTokenType.Italic:
+            case MarkdownTokenType.BoldItalic:
             case MarkdownTokenType.Emphasis:
             case MarkdownTokenType.CodeInline:
             case MarkdownTokenType.Link:

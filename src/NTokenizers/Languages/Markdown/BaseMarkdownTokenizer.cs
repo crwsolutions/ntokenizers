@@ -9,8 +9,97 @@ namespace NTokenizers.Markdown;
 /// </summary>
 public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
 {
+    /// <summary>
+    /// Checks whether the buffered text ends with a word character (letter, digit, or underscore).
+    /// Used to determine if an emphasis delimiter is left-flanking.
+    /// </summary>
+    private bool PrecededByWordCharacter()
+    {
+        if (_buffer.Length == 0)
+        {
+            return false;
+        }
+        return char.IsLetterOrDigit(_buffer[_buffer.Length - 1]) || _buffer[_buffer.Length - 1] == '_';
+    }
+
     internal bool TryParseBoldOrItalic()
     {
+        // Check for *** (bold italic with asterisks), but not four or more
+        // (which should be handled as nested bold). Only opens bold italic when
+        // not preceded by a word character (left-flanking rule). If the closing
+        // delimiter is ** instead of ***, fall back to bold with the extra * as text.
+        if (PeekAhead(0) == '*' && PeekAhead(1) == '*' && PeekAhead(2) == '*' && PeekAhead(3) != '*'
+            && !PrecededByWordCharacter())
+        {
+            EmitText();
+            Read();
+            Read();
+            Read();
+
+            var content = new StringBuilder();
+            while (Peek() != -1)
+            {
+                if (PeekAhead(0) == '*' && PeekAhead(1) == '*' && PeekAhead(2) == '*')
+                {
+                    // Closing ***, emit bold italic
+                    Read();
+                    Read();
+                    Read();
+                    _onToken(new MarkdownToken(MarkdownTokenType.BoldItalic, content.ToString()));
+                    return true;
+                }
+                if (PeekAhead(0) == '*' && PeekAhead(1) == '*' && PeekAhead(2) != '*')
+                {
+                    // Closing **, fall back to bold with leading * as text
+                    Read();
+                    Read();
+                    _onToken(new MarkdownToken(MarkdownTokenType.Bold, "*" + content.ToString()));
+                    return true;
+                }
+                AppendEscapedChar(content);
+            }
+
+            // No closing found, treat as text
+            _buffer.Append("***").Append(content);
+            return true;
+        }
+
+        // Check for ___ (bold italic with underscores), but not four or more.
+        // Only opens bold italic when not preceded by a word character.
+        if (PeekAhead(0) == '_' && PeekAhead(1) == '_' && PeekAhead(2) == '_' && PeekAhead(3) != '_'
+            && !PrecededByWordCharacter())
+        {
+            EmitText();
+            Read();
+            Read();
+            Read();
+
+            var content = new StringBuilder();
+            while (Peek() != -1)
+            {
+                if (PeekAhead(0) == '_' && PeekAhead(1) == '_' && PeekAhead(2) == '_')
+                {
+                    Read();
+                    Read();
+                    Read();
+                    _onToken(new MarkdownToken(MarkdownTokenType.BoldItalic, content.ToString()));
+                    return true;
+                }
+                if (PeekAhead(0) == '_' && PeekAhead(1) == '_' && PeekAhead(2) != '_')
+                {
+                    Read();
+                    Read();
+                    _onToken(new MarkdownToken(MarkdownTokenType.Bold, "_" + content.ToString()));
+                    return true;
+                }
+                AppendEscapedChar(content);
+            }
+
+            // No closing found, treat as text
+            _buffer.Append("___").Append(content);
+            return true;
+        }
+
         // Check for **
         if (PeekAhead(0) == '*' && PeekAhead(1) == '*')
         {

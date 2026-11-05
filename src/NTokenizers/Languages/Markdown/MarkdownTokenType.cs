@@ -21,6 +21,11 @@ public enum MarkdownTokenType
     Italic,
 
     /// <summary>
+    /// Represents bold italic text. Value contains only the text content without *** or ___ markers.
+    /// </summary>
+    BoldItalic,
+
+    /// <summary>
     /// Represents a heading. Value contains only the heading text without # markers. Level is stored in Metadata.
     /// </summary>
     Heading,
