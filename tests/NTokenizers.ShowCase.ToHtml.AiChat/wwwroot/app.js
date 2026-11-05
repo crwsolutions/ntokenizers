@@ -23,6 +23,8 @@ function addMessage(role, html) {
     if (inputContainer && inputContainer.classList.contains('centered')) {
         inputContainer.classList.remove('centered');
     }
+    // Reset initial state on first message
+    document.body.classList.remove('initial-state');
 
     const chat = document.getElementById('chat');
     const messageDiv = document.createElement('div');
@@ -123,6 +125,7 @@ function resetChat() {
 
 // Center input box on page load
 document.addEventListener('DOMContentLoaded', () => {
+    document.body.classList.add('initial-state');
     const inputContainer = document.querySelector('.input-container');
     inputContainer.classList.add('centered');
 });

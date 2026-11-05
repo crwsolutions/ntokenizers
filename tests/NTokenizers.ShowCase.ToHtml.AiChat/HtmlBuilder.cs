@@ -22,7 +22,7 @@ internal static class HtmlBuilder
             flex-direction: column;
         }
         .header {
-            background: linear-gradient(135deg, #2E803E 0%, #173513 100%);
+            background: #2E803E;
             color: white;
             padding: 1.25rem 1.5rem;
             text-align: center;
@@ -48,6 +48,10 @@ internal static class HtmlBuilder
             justify-content: center;
             text-align: center;
         }
+        body.initial-state .welcome-message {
+            align-items: flex-start;
+            padding-top: 20%;
+        }
         .welcome-message h2 {
             color: #224529;
             font-size: 1.5rem;
@@ -63,7 +67,7 @@ internal static class HtmlBuilder
         }
         .message.user {
             align-self: flex-end;
-            background: linear-gradient(135deg, #2E803E 0%, #173513 100%);
+            background: #2E803E;
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -125,7 +129,7 @@ internal static class HtmlBuilder
         }
         button {
             padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #2E803E 0%, #173513 100%);
+            background: #2E803E;
             color: white;
             border: none;
             border-radius: 8px;
