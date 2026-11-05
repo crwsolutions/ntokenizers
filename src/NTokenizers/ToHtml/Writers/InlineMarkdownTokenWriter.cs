@@ -32,6 +32,12 @@ internal class InlineMarkdownTokenWriter : BaseHtmlWriter
                 writer.Write("</em>");
                 break;
 
+            case MarkdownTokenType.BoldItalic:
+                writer.Write("<strong><em>");
+                WriteValue(writer, value, null);
+                writer.Write("</em></strong>");
+                break;
+
             case MarkdownTokenType.Emphasis:
                 writer.Write("<em>");
                 WriteValue(writer, value, null);

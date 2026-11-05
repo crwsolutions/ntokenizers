@@ -328,6 +328,7 @@ The Markdown Tokenizer produces tokens of type `MarkdownTokenType` with the foll
 - `Text` - Represents plain text content
 - `Bold` - Represents bold text (value contains text without `**` markers)
 - `Italic` - Represents italic text (value contains text without `*` markers)
+- `BoldItalic` - Represents bold italic text (value contains text without `***` or `___` markers)
 - `Heading` - Represents a heading (value contains text without `#` markers, level in Metadata)
 - `HorizontalRule` - Represents a horizontal rule (`---` or `***`)
 - `TypographicReplacement` - Represents a typographic replacement (`(c)`, `(r)`, `(tm)`, `+-`)

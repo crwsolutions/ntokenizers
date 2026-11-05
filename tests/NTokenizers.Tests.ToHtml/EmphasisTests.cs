@@ -950,7 +950,7 @@ public class EmphasisTests
     {
         var input = "***foo***";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><strong>*foo</strong>*</p>", html);
+        Assert.Equal("<p><strong><em>foo</em></strong></p>", html);
     }
 
     [Fact]
@@ -1071,6 +1071,40 @@ public class EmphasisTests
         var input = "[link](/uri \"title\")";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
         Assert.Equal("<p><a href=\"/uri\" title=\"title\">link</a></p>", html);
+    }
+
+    // ***bold italic*** syntax
+    [Fact]
+    public void BoldItalicAsterisks()
+    {
+        var input = "***bold italic***";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p><strong><em>bold italic</em></strong></p>", html);
+    }
+
+    [Fact]
+    public void BoldItalicUnderscores()
+    {
+        var input = "___bold italic___";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p><strong><em>bold italic</em></strong></p>", html);
+    }
+
+    [Fact]
+    public void BoldItalicMixedText()
+    {
+        var input = "Some ***bold italic*** text here";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p>Some <strong><em>bold italic</em></strong> text here</p>", html);
+    }
+
+    // Unclosed bold italic falls back to text
+    [Fact]
+    public void BoldItalicUnclosed()
+    {
+        var input = "***unclosed";
+        var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
+        Assert.Equal("<p>***unclosed</p>", html);
     }
 
 }

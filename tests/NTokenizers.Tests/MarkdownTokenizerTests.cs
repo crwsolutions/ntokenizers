@@ -197,6 +197,55 @@ public class MarkdownTokenizerTests : MarkdownTokenizerTestBase
     }
 
     [Fact]
+    public void TestBoldItalicText()
+    {
+        var markdown = "***bold italic text***";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.BoldItalic, tokens[1].TokenType);
+        Assert.Equal("bold italic text", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestBoldItalicAlternativeText()
+    {
+        var markdown = "___bold italic text___";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.BoldItalic, tokens[1].TokenType);
+        Assert.Equal("bold italic text", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestBoldItalicUnclosed()
+    {
+        var markdown = "***unclosed bold italic";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
+        Assert.Equal(MarkdownTokenType.Text, tokens[1].TokenType);
+        Assert.Equal("***unclosed bold italic", tokens[1].Value);
+        Assert.Equal(MarkdownTokenType.ParagraphBlockEnd, tokens[2].TokenType);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
+    public void TestMixedTextAndBoldItalic()
+    {
+        var markdown = "Some ***bold italic*** text here";
+        var (tokens, text) = Tokenize(markdown);
+        Assert.Equal(MarkdownTokenType.BoldItalic, tokens[2].TokenType);
+        Assert.Equal("bold italic", tokens[2].Value);
+        Assert.Equal(markdown, text);
+    }
+
+    [Fact]
     public void TestLink()
     {
         var markdown = "[link text](http://example.com)";
