@@ -34,6 +34,7 @@ internal static class HtmlBuilder
         .chat-container {
             flex: 1;
             padding: 1.5rem;
+            padding-bottom: 120px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -41,6 +42,7 @@ internal static class HtmlBuilder
             max-width: 900px;
             width: 100%;
             margin: 0 auto;
+            overflow-y: auto;
         }
         .welcome-message {
             flex: 1;
@@ -93,6 +95,10 @@ internal static class HtmlBuilder
         }
         /* Code block container from ToHtml */
         .input-container {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
             background: white;
             border-top: 1px solid #e0e0e0;
             border-radius: 16px;
@@ -101,8 +107,6 @@ internal static class HtmlBuilder
             gap: 0.75rem;
             max-width: 900px;
             width: 100%;
-            margin: 0 auto;
-            margin-bottom: 1.5rem;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
         .input-container.centered {
