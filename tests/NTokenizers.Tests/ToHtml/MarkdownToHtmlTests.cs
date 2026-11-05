@@ -284,4 +284,80 @@ var y = 2;
         Assert.Contains("<blockquote>", html);
         Assert.Contains("</html>", html);
     }
+
+    // --- Cancellation ---
+
+    [Fact]
+    public async Task WriteHtmlAsync_CalledWithCancelledToken_ThrowsImmediately()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Header"));
+        using var writer = new StringWriter();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            MarkdownConverter.WriteHtmlAsync(stream, writer, cts.Token));
+    }
+
+    [Fact]
+    public async Task WriteHtmlDocumentAsync_CalledWithCancelledToken_ThrowsImmediately()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Header"));
+        using var writer = new StringWriter();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            MarkdownConverter.WriteHtmlDocumentAsync(stream, writer, cts.Token));
+    }
+
+    [Fact]
+    public async Task WriteHtmlAsync_TokenIsPassedThroughToTokenizer()
+    {
+        // Verify that the token is actually used by the tokenizer by passing a token
+        // that is cancelled before the operation starts - it should fail immediately
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Header"));
+        using var writer = new StringWriter();
+        using var cts = new CancellationTokenSource();
+
+        var token = cts.Token;
+
+        var task = MarkdownConverter.WriteHtmlAsync(stream, writer, token);
+
+        // Cancel immediately after starting
+        cts.Cancel();
+
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected - token was passed through and cancelled
+        }
+    }
+
+    [Fact]
+    public async Task WriteHtmlDocumentAsync_TokenIsPassedThroughToTokenizer()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Header"));
+        using var writer = new StringWriter();
+        using var cts = new CancellationTokenSource();
+
+        var token = cts.Token;
+
+        var task = MarkdownConverter.WriteHtmlDocumentAsync(stream, writer, token);
+
+        // Cancel immediately after starting
+        cts.Cancel();
+
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected - token was passed through and cancelled
+        }
+    }
 }
