@@ -34,7 +34,7 @@ internal static class HtmlBuilder
         .chat-container {
             flex: 1;
             padding: 1.5rem;
-            padding-bottom: 140px;
+            padding-bottom: 1.5rem;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -43,6 +43,10 @@ internal static class HtmlBuilder
             width: 100%;
             margin: 0 auto;
             overflow-y: auto;
+        }
+        .input-spacer {
+            height: 100px;
+            flex-shrink: 0;
         }
         .welcome-message {
             flex: 1;
@@ -174,6 +178,7 @@ internal static class HtmlBuilder
         </div>
         <!-- Messages will be appended here -->
     </div>
+    <div class='input-spacer'></div>
     <div class='input-container'>
         <textarea id='chat-input' rows='1' placeholder='Type your message...'></textarea>
         <button id='send-btn' onclick='sendChat()'>Send</button>
