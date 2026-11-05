@@ -1,6 +1,6 @@
 # NTokenizers
 
-Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect **building block** for render logic and handling **AI responses**.
+Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect **building block** for render logic, handling **AI responses**, and **streaming Markdown to HTML** via the included [ToHtml](https://crwsolutions.github.io/ntokenizers/tohtml) converter.
 
 NTokenizers sits in the middle of a tokenization pipeline — it takes raw source code or markup as a stream and emits a sequence of typed tokens that a downstream renderer can consume:
 
