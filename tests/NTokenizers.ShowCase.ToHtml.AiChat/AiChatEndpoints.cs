@@ -63,8 +63,14 @@ public static class AiChatEndpoints
                 var aiStream = pipe.Reader.AsStream();
 
                 // Stream the AI response through ToHtml — real-time, no delays
-                await MarkdownConverter.WriteHtmlAsync(aiStream, streamingWriter);
+                var markdown = await MarkdownConverter.WriteHtmlAsync(aiStream, streamingWriter);
                 await aiStreamTask;
+
+                // Send the consumed Markdown as an inert JSON trailer on the same response,
+                // so the client can store the real assistant reply in its chat history.
+                // The \\/ replacement keeps a literal </script> in the content from terminating the tag.
+                var payload = JsonSerializer.Serialize(markdown).Replace("</", "<\\/");
+                await streamingWriter.WriteAsync($"<script id=\"assistant-markdown\" type=\"application/json\">{payload}</script>");
             }
             catch (Exception ex)
             {

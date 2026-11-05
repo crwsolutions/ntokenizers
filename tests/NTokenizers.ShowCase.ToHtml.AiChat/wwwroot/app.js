@@ -105,7 +105,10 @@ async function sendChat() {
             scrollToBottom();
         }
 
-        chatHistory.push({ Role: 'assistant', Content: '' });
+        // Extract the consumed Markdown from the inert trailer appended by /stream-chat
+        const mdEl = assistantMsg.querySelector('script#assistant-markdown');
+        const assistantContent = mdEl ? JSON.parse(mdEl.textContent) : '';
+        chatHistory.push({ Role: 'assistant', Content: assistantContent });
     } catch (error) {
         console.error('Error streaming chat:', error);
         removeTypingIndicator();
