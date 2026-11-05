@@ -34,7 +34,7 @@ internal static class HtmlBuilder
         .chat-container {
             flex: 1;
             padding: 1.5rem;
-            padding-bottom: 120px;
+            padding-bottom: 140px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -96,7 +96,7 @@ internal static class HtmlBuilder
         /* Code block container from ToHtml */
         .input-container {
             position: fixed;
-            bottom: 1.5rem;
+            bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
             background: white;
