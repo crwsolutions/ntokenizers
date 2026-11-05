@@ -51,9 +51,9 @@ public class StrikethroughTests
     [Fact]
     public void SuperscriptStillWorks()
     {
-        var input = "~sup~";
+        var input = "^sup^";
         var html = MarkdownConverter.ToHtml(input).Replace("\r\n", "\n");
-        Assert.Equal("<p><sup><span class=\"tok-superscript\">sup</span></sup></p>", html);
+        Assert.Equal("<p><sup>sup</sup></p>", html);
     }
 
     [Fact]

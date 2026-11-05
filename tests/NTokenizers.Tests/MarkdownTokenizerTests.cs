@@ -512,7 +512,7 @@ public class MarkdownTokenizerTests : MarkdownTokenizerTestBase
     [Fact]
     public void TestSubscript()
     {
-        var markdown = "^sub^";
+        var markdown = "~sub~";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(3, tokens.Count);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);
@@ -525,7 +525,7 @@ public class MarkdownTokenizerTests : MarkdownTokenizerTestBase
     [Fact]
     public void TestSuperscript()
     {
-        var markdown = "~sup~";
+        var markdown = "^sup^";
         var (tokens, text) = Tokenize(markdown);
         Assert.Equal(3, tokens.Count);
         Assert.Equal(MarkdownTokenType.ParagraphBlockStart, tokens[0].TokenType);

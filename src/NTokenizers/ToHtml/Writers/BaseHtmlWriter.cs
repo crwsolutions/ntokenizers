@@ -21,7 +21,7 @@ internal class BaseHtmlWriter
     /// Writes a value to the writer, optionally wrapped in a CSS class span.
     /// In pre blocks, newlines are preserved. In inline context, newlines become &lt;br/&gt;.
     /// </summary>
-    internal void WriteValue(TextWriter writer, string value, string? cssClass, bool inPreBlock = false)
+    internal void WriteValue(TextWriter writer, string value, string? cssClass = null, bool inPreBlock = false)
     {
         var escaped = EscapeHtml(value);
 

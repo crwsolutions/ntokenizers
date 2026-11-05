@@ -24,7 +24,7 @@ public class SetextHeadingsUnsupportedTests
         // Setext headings are not recognized: the '=====' underline stays paragraph text
         // and the '---------' underline becomes a thematic break.
         Assert.Equal(
-            "<p>Foo <em>bar</em><br/><mark><span class=\"tok-marked\"></span></mark><mark><span class=\"tok-marked\"></span></mark>=</p>\n" +
+            "<p>Foo <em>bar</em><br/><mark></mark><mark></mark>=</p>\n" +
             "<p>Foo <em>bar</em></p>\n" +
             "<hr />",
             html);
