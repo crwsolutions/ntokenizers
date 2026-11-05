@@ -96,11 +96,12 @@ internal static class HtmlBuilder
             max-width: 900px;
             width: 100%;
             margin: 0 auto;
+            margin-bottom: 1.5rem;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
         .input-container.centered {
             position: absolute;
-            bottom: 35%;
+            bottom: 45%;
             left: 50%;
             transform: translateX(-50%);
             border-radius: 16px;
