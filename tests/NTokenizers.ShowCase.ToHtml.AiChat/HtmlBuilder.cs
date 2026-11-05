@@ -34,6 +34,7 @@ internal static class HtmlBuilder
             flex: 1;
             overflow-y: auto;
             padding: 1.5rem;
+            position: relative;
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -49,8 +50,10 @@ internal static class HtmlBuilder
             text-align: center;
         }
         body.initial-state .welcome-message {
-            align-items: flex-start;
-            padding-top: 20%;
+            position: absolute;
+            top: 15%;
+            left: 0;
+            right: 0;
         }
         .welcome-message h2 {
             color: #224529;
