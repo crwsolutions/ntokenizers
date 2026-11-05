@@ -17,12 +17,12 @@ internal static class HtmlBuilder
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f0f2f5;
+            background: #f6f9f5;
             display: flex;
             flex-direction: column;
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2E803E 0%, #173513 100%);
             color: white;
             padding: 1.25rem 1.5rem;
             text-align: center;
@@ -49,7 +49,7 @@ internal static class HtmlBuilder
             text-align: center;
         }
         .welcome-message h2 {
-            color: #333;
+            color: #224529;
             font-size: 1.5rem;
         }
         .message {
@@ -63,14 +63,14 @@ internal static class HtmlBuilder
         }
         .message.user {
             align-self: flex-end;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2E803E 0%, #173513 100%);
             color: white;
             border-bottom-right-radius: 4px;
         }
         .message.assistant {
             align-self: flex-start;
             background: white;
-            color: #333;
+            color: #0D1B0B;
             border-bottom-left-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
@@ -115,11 +115,11 @@ internal static class HtmlBuilder
             transition: border-color 0.2s;
         }
         textarea:focus {
-            border-color: #667eea;
+            border-color: #2E803E;
         }
         button {
             padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2E803E 0%, #173513 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -130,7 +130,7 @@ internal static class HtmlBuilder
         }
         button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(46, 128, 62, 0.4);
         }
         button:disabled {
             opacity: 0.6;
@@ -141,7 +141,7 @@ internal static class HtmlBuilder
             .message { max-width: 90%; }
         }
         .typing-indicator {
-            color: #667eea;
+            color: #2E803E;
             font-size: 1.5rem;
             animation: pulse 1s infinite;
         }
