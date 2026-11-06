@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -13,9 +13,9 @@
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Description>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</Description>
-		<PackageDescription>Collection of stream-capable tokenizers for XML, JSON, HTML, YAML, TOML, Markdown, TypeScript, CSS, C#, SQL, Java, C, C++, Rust, Kotlin, Go, Swift and Python processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</PackageDescription>
-		<PackageTags>tokenizer;xml;json;yaml;toml;md;markdown;typescript;javascript;css;c#;csharp;sql;java;c;c++;cpp;rust;kotlin;go;swift;python;stream;streaming;parse;parsing;dotnet;tohtml;html</PackageTags>
+		<Description>Collection of stream-capable tokenizers for Markdown, HTML, JSON, XML, C#, TypeScript, Python, SQL, CSS, YAML, TOML, C, C++, Java, Go, Rust, Kotlin and Swift processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</Description>
+		<PackageDescription>Collection of stream-capable tokenizers for Markdown, HTML, JSON, XML, C#, TypeScript, Python, SQL, CSS, YAML, TOML, C, C++, Java, Go, Rust, Kotlin and Swift processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</PackageDescription>
+		<PackageTags>markdown;md;html;json;xml;c#;csharp;typescript;javascript;python;sql;css;yaml;toml;c;c++;cpp;java;go;rust;kotlin;swift;stream;streaming;parse;parsing;dotnet;tohtml</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
