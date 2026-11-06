@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -21,20 +21,8 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>This is a major release with a breaking change to the streaming ToHtml API.
-
-## Breaking change: WriteHtml* methods return the consumed Markdown text
-
-The streaming ToHtml methods now return the consumed Markdown source text:
-
-- `WriteHtmlAsync` (Stream and TextReader overloads) returns `Task&lt;string&gt;` instead of `Task`.
-- `WriteHtmlDocumentAsync` (Stream and TextReader overloads) returns `Task&lt;string&gt;` instead of `Task`.
-
-The returned string is the raw Markdown input exactly as consumed (the Stream overloads return the decoded text, with any BOM detected and stripped). The change is binary-breaking under NuGet semver; existing call sites that await the methods are source-compatible.
-
-Use the returned string to keep the Markdown you just rendered — for example, to store a live AI assistant reply in a chat history.
-
-The `ToHtmlAsync` and `ToHtmlDocumentAsync` methods are unchanged: they continue to return the HTML string.</PackageReleaseNotes>
+		<PackageReleaseNotes>Core: new Markdown tokens Strikethrough and BoldItalic.
+ToHtml (breaking): WriteHtml* methods now return the consumed Markdown text and take a CancellationToken. Inline HTML output uses semantic elements (&lt;strong&gt;, &lt;em&gt;, &lt;s&gt;) no classes.</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
