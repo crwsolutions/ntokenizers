@@ -1,8 +1,7 @@
+using System.ClientModel;
 using Microsoft.Extensions.AI;
-using NTokenizers.ToHtml;
 using NTokenizers.ShowCase.ToHtml.AiChat;
 using OpenAI;
-using System.ClientModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +14,11 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 
 // Configure ChatClient via DI with hardcoded endpoint and model
 var endpoint = "http://localhost:8080/";
-var modelId = "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K";
+var modelId = "dummy";
+var key = "dummy"; // llama.cpp requires one, value ignored
 
 builder.Services.AddChatClient(new OpenAIClient(
-    new ApiKeyCredential("dummy"), // llama.cpp requires one, value ignored
+    new ApiKeyCredential(key),
     new OpenAIClientOptions { Endpoint = new Uri(endpoint) })
     .GetChatClient(modelId)
     .AsIChatClient()
@@ -27,13 +27,5 @@ builder.Services.AddChatClient(new OpenAIClient(
     .Build());
 
 var app = builder.Build();
-
-// Enable static files serving
-app.UseDefaultFiles();
-app.UseStaticFiles();
-
-var injectedCss = MarkdownConverter.GetCss();
-
-app.MapAiChatEndpoints(injectedCss);
-
+app.MapAiChatEndpoints();
 app.Run();

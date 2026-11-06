@@ -1,5 +1,6 @@
 using Microsoft.Extensions.AI;
 using NTokenizers.ToHtml;
+using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Text;
 using System.Text.Json;
@@ -8,8 +9,10 @@ namespace NTokenizers.ShowCase.ToHtml.AiChat;
 
 public static class AiChatEndpoints
 {
-    public static IEndpointRouteBuilder MapAiChatEndpoints(this IEndpointRouteBuilder endpoints, string injectedCss)
+    public static IEndpointRouteBuilder MapAiChatEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        var injectedCss = MarkdownConverter.GetCss();
+
         endpoints.MapGet("/", (HttpContext context) =>
         {
             var html = HtmlBuilder.GenerateIndexHtml(injectedCss);
@@ -64,6 +67,9 @@ public static class AiChatEndpoints
 
                 // Stream the AI response through ToHtml — real-time, no delays
                 var markdown = await MarkdownConverter.WriteHtmlAsync(aiStream, streamingWriter);
+
+                Debug.WriteLine(markdown);
+
                 await aiStreamTask;
 
                 // Send the consumed Markdown as an inert JSON trailer on the same response,

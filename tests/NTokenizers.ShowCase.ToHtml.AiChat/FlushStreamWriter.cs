@@ -20,16 +20,4 @@ public class FlushStreamWriter : StreamWriter
         await base.WriteAsync(value);
         await FlushAsync();
     }
-
-    public override void Write(char value)
-    {
-        base.Write(value);
-        Flush();
-    }
-
-    public override async Task WriteAsync(char value)
-    {
-        await base.WriteAsync(value);
-        await FlushAsync();
-    }
 }
