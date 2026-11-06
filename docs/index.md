@@ -5,7 +5,7 @@ title: "Home"
 
 # NTokenizers
 
-Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect **building block** for render logic and handling **AI responses**.
+Lightweight **Stream Tokenizers** for syntax highlighting and formatting. Perfect **building block** for render logic, handling **AI responses**, and **streaming Markdown to HTML** via the included [ToHtml](https://crwsolutions.github.io/ntokenizers/tohtml) converter.
 
 NTokenizers sits in the middle of a tokenization pipeline — it takes raw source code or markup as a stream and emits a sequence of typed tokens that a downstream renderer can consume:
 
@@ -135,13 +135,6 @@ The library supports the following formats:
 
 > **Especially suitable for parsing AI chat streams**, NTokenizers excels at processing real-time tokenized data from AI models, enabling efficient handling of streaming responses and chat conversations without buffering entire responses.
 
-## Tools
+## Tools, examples, and showcases
 
-The repository ships a lot of sample applications and tools that showcase the library in action. I would like to highlight some:
-
-| **Tool** | **What it does** |
-|---|---|
-| [NTokenizers.Token.Debug.Web](https://github.com/crwsolutions/ntokenizers/tree/main/tests/NTokenizers.Token.Debug.Web) | Web app with four side-by-side columns — Input, Tokens, ToHtml raw and ToHtml rendered — that shows the token stream of a Markdown document in real time. |
-| [NTokenizers.ShowCase.ToHtml.Web](https://github.com/crwsolutions/ntokenizers/tree/main/tests/NTokenizers.ShowCase.ToHtml.Web) | Streaming Markdown showcase: edit Markdown in one pane and press Convert — the HTML fragment is streamed back and rendered live in the other pane, showing the ToHtml API in action. |
-| [NTokenizers.Tools.MarkdownToHtml](https://github.com/crwsolutions/ntokenizers/tree/main/tools/NTokenizers.Tools.MarkdownToHtml) | CLI tool that reads a Markdown file as a stream and writes a styled HTML file, with encoding detection and timing output. |
-| [NTokenizers.Tools.MarkdownViewer](https://github.com/crwsolutions/ntokenizers/tree/main/tools/NTokenizers.Tools.MarkdownViewer) | Windows WinUI 3 desktop app for reading `.md` files with ToHtml rendering. |
+The repository ships a collection of sample applications and tools that showcase the library in action — an AI chat showcase, a streaming Markdown to HTML showcase, a token debugger, and much more. See the [Tools](/ntokenizers/tools) page for details.

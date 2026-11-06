@@ -47,6 +47,8 @@ sidebar:
       url: "encoding"
     - title: "ToHtml"
       url: "tohtml"
+    - title: "Tools"
+      url: "tools"
     - title: "CommonMark"
       url: "commonmark"
 
