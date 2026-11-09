@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/Poc.Core/Poc.Core.csproj" />
+  <Project Path="apps/Poc.Console/Poc.Console.csproj" />
+  <Project Path="apps/Poc.Web/Poc.Web.csproj" />
+</Solution>
