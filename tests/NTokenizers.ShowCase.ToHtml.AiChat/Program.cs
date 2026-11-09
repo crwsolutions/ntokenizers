@@ -9,7 +9,6 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Limits.MinRequestBodyDataRate = null;
     serverOptions.Limits.MinResponseDataRate = null;
-    serverOptions.AllowSynchronousIO = true;
 });
 
 // Configure ChatClient via DI with hardcoded endpoint and model

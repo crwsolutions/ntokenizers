@@ -28,6 +28,7 @@ The `MarkdownConverter` class offers two conversion modes:
 | Method | Description |
 |--------|-------------|
 | `ToHtml(string input)` | Synchronously converts a Markdown string to an HTML fragment. |
+| `ToHtmlAsync(string input)` | Asynchronously converts a Markdown string to an HTML fragment. |
 | `ToHtmlAsync(Stream inputStream)` | Asynchronously converts a Markdown stream to an HTML fragment. |
 | `WriteHtmlAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream, writes the fragment directly to a `TextWriter`, and returns the consumed Markdown source text. |
 | `WriteHtmlAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader`, writes the fragment directly to a `TextWriter`, and returns the consumed Markdown source text. |
@@ -37,6 +38,7 @@ The `MarkdownConverter` class offers two conversion modes:
 | Method | Description |
 |--------|-------------|
 | `ToHtmlDocument(string input)` | Synchronously converts a Markdown string to a full HTML document. |
+| `ToHtmlDocumentAsync(string input)` | Asynchronously converts a Markdown string to a full HTML document. |
 | `ToHtmlDocumentAsync(Stream inputStream)` | Asynchronously converts a Markdown stream to a full HTML document. |
 | `WriteHtmlDocumentAsync(Stream inputStream, TextWriter writer)` | Asynchronously converts a Markdown stream, writes the full document directly to a `TextWriter`, and returns the consumed Markdown source text. |
 | `WriteHtmlDocumentAsync(TextReader reader, TextWriter writer)` | Asynchronously converts a Markdown `TextReader`, writes the full document directly to a `TextWriter`, and returns the consumed Markdown source text. |

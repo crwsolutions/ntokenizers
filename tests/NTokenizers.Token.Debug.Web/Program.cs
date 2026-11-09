@@ -17,7 +17,7 @@ app.MapPost("/convert", async (ConvertRequest request, HttpContext context) =>
     var markdown = request?.Markdown ?? string.Empty;
 
     var tokens = await TokenCapture.CaptureAsync(markdown, context.RequestAborted);
-    var htmlRaw = MarkdownConverter.ToHtml(markdown);
+    var htmlRaw = await MarkdownConverter.ToHtmlAsync(markdown);
     var htmlTokens = await TokenCapture.CaptureHtmlAsync(htmlRaw, context.RequestAborted);
 
     var response = new ConvertResponse

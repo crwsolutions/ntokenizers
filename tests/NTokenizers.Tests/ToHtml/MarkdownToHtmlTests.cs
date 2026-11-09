@@ -58,6 +58,16 @@ public class MarkdownToHtmlTests
         Assert.Contains("var", html);
     }
 
+    // --- ToHtmlAsync (fragment, string input) ---
+
+    [Fact]
+    public async Task ToHtmlAsync_StringInput_MatchesSyncConversion()
+    {
+        var input = "# Heading\n\nSome **bold** text with `code`.";
+        var html = await MarkdownConverter.ToHtmlAsync(input);
+        Assert.Equal(MarkdownConverter.ToHtml(input), html);
+    }
+
     // --- ToHtmlAsync (fragment, stream input) ---
 
     [Fact]
@@ -115,6 +125,14 @@ public class MarkdownToHtmlTests
     }
 
     // --- ToHtmlDocumentAsync (full document, stream input) ---
+
+    [Fact]
+    public async Task ToHtmlDocumentAsync_StringInput_MatchesSyncConversion()
+    {
+        var input = "# Heading\n\nSome **bold** text with `code`.";
+        var html = await MarkdownConverter.ToHtmlDocumentAsync(input);
+        Assert.Equal(MarkdownConverter.ToHtmlDocument(input), html);
+    }
 
     [Fact]
     public async Task ToHtmlDocumentAsync_ReturnsFullHtmlDocument()
