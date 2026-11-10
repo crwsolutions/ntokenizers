@@ -509,7 +509,7 @@ public class SqlTokenizerTests
         var tokens = new List<SqlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        SqlTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
+        SqlTokenizer.Create().ParseAsync(reader, stopDelimiter, async token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 
@@ -534,7 +534,7 @@ public class SqlTokenizerTests
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
-            await SqlTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            await SqlTokenizer.Create().ParseAsync(stream, cts.Token, async token => 
             {
                 tokens.Add(token);
                 tokenCount++;

@@ -577,11 +577,11 @@ public class PythonTokenizerTests
         var pythonTokens = new List<PythonToken>();
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is PythonCodeBlockMetadata pythonMeta)
             {
-                pythonMeta.RegisterInlineTokenHandler(t => pythonTokens.Add((PythonToken)t));
+                await pythonMeta.ParseInlinesAsync(async t => pythonTokens.Add((PythonToken)t));
             }
         });
 

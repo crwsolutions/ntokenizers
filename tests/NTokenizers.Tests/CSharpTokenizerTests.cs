@@ -659,7 +659,7 @@ int x = 5; /* Block comment */ int y = 10;";
         var tokens = new List<CSharpToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        CSharpTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
+        CSharpTokenizer.Create().ParseAsync(reader, stopDelimiter, async token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 
@@ -678,7 +678,7 @@ int x = 5; /* Block comment */ int y = 10;";
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
-            await CSharpTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            await CSharpTokenizer.Create().ParseAsync(stream, cts.Token, async token => 
             {
                 tokens.Add(token);
                 tokenCount++;

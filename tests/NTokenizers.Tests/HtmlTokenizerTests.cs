@@ -183,7 +183,7 @@ public class HtmlTokenizerTests
         var tokens = new List<HtmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(html));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        await HtmlTokenizer.Create().ParseAsync(reader, "</div>", tokens.Add);
+        await HtmlTokenizer.Create().ParseAsync(reader, "</div>", async t => tokens.Add(t));
 
         // Should stop at first </div>
         Assert.Contains(tokens, t => t.Value.Contains("content"));
@@ -251,7 +251,7 @@ public class HtmlTokenizerTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(html));
 
         // Cancel after receiving 5 tokens
-        HtmlTokenizer.Create().Parse(stream, cts.Token, token =>
+        HtmlTokenizer.Create().Parse(stream, cts.Token, async token => 
         {
             tokenCount++;
             if (tokenCount >= 5)
@@ -276,17 +276,17 @@ public class HtmlTokenizerTests
     {
         var tokens = new List<HtmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(html));
-        HtmlTokenizer.Create().Parse(stream, token =>
+        HtmlTokenizer.Create().Parse(stream, async token => 
         {
             tokens.Add(token);
 
             if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
             {
-                tsMetadata.RegisterInlineTokenHandler(innerToken => { /* Handle inline TypeScript tokens if needed */ });
+                await tsMetadata.ParseInlinesAsync(async innerToken => { /* Handle inline TypeScript tokens if needed */ });
             }
             else if (token.Metadata is CssCodeBlockMetadata cssMetadata)
             {
-                cssMetadata.RegisterInlineTokenHandler(innerToken => { /* Handle inline CSS tokens if needed */ });
+                await cssMetadata.ParseInlinesAsync(async innerToken => { /* Handle inline CSS tokens if needed */ });
             }
         });
         return tokens;

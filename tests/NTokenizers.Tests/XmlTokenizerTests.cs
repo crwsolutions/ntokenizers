@@ -391,7 +391,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
 
         using var stream = new MemoryStream(encoding.GetBytes(xml));
-        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, tokens.Add);
+        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, async t => tokens.Add(t));
 
         Assert.NotEmpty(tokens);
         Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
@@ -409,7 +409,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
 
         using var stream = new MemoryStream(encoding.GetBytes(xml));
-        var result = XmlTokenizer.Create().Parse(stream, encoding, tokens.Add);
+        var result = XmlTokenizer.Create().Parse(stream, encoding, async t => tokens.Add(t));
 
         Assert.NotEmpty(tokens);
         Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
@@ -427,7 +427,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
 
         using var stream = new MemoryStream(encoding.GetBytes(xml));
-        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, tokens.Add);
+        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, async t => tokens.Add(t));
 
         Assert.NotEmpty(tokens);
         Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
@@ -445,7 +445,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
 
         using var stream = new MemoryStream(encoding.GetBytes(xml));
-        var result = XmlTokenizer.Create().Parse(stream, encoding, tokens.Add);
+        var result = XmlTokenizer.Create().Parse(stream, encoding, async t => tokens.Add(t));
 
         Assert.NotEmpty(tokens);
         Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
@@ -463,7 +463,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
 
         using var stream = new MemoryStream(encoding.GetBytes(xml));
-        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, tokens.Add);
+        var result = await XmlTokenizer.Create().ParseAsync(stream, encoding, async t => tokens.Add(t));
 
         Assert.NotEmpty(tokens);
         Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
@@ -481,7 +481,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
 
         using var stream = new MemoryStream(encoding.GetBytes(xml));
-        var result = XmlTokenizer.Create().Parse(stream, encoding, tokens.Add);
+        var result = XmlTokenizer.Create().Parse(stream, encoding, async t => tokens.Add(t));
 
         Assert.NotEmpty(tokens);
         Assert.Equal(XmlTokenType.OpeningAngleBracket, tokens[0].TokenType);
@@ -498,7 +498,7 @@ public class XmlTokenizerTests
         var tokens = new List<XmlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        XmlTokenizer.Create().ParseAsync(reader, stopDelimiter, tokens.Add).GetAwaiter().GetResult();
+        XmlTokenizer.Create().ParseAsync(reader, stopDelimiter, async t => tokens.Add(t)).GetAwaiter().GetResult();
         return tokens;
     }
 
@@ -517,7 +517,7 @@ public class XmlTokenizerTests
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
-            await XmlTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            await XmlTokenizer.Create().ParseAsync(stream, cts.Token, async token => 
             {
                 tokens.Add(token);
                 tokenCount++;

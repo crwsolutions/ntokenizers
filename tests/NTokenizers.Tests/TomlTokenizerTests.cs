@@ -547,7 +547,7 @@ id = 1";
 
         var parseTask = Task.Run(async () =>
         {
-            await TomlTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            await TomlTokenizer.Create().ParseAsync(stream, cts.Token, async token => 
             {
                 tokens.Add(token);
                 tokenCount++;
@@ -570,7 +570,7 @@ id = 1";
         var tokens = new List<TomlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        TomlTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
+        TomlTokenizer.Create().ParseAsync(reader, stopDelimiter, async token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 }

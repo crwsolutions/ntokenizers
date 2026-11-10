@@ -352,7 +352,7 @@ public class JsonTokenizerTests
         var tokens = new List<JsonToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        JsonTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
+        JsonTokenizer.Create().ParseAsync(reader, stopDelimiter, async token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 
@@ -371,7 +371,7 @@ public class JsonTokenizerTests
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
-            await JsonTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            await JsonTokenizer.Create().ParseAsync(stream, cts.Token, async token => 
             {
                 tokens.Add(token);
                 tokenCount++;

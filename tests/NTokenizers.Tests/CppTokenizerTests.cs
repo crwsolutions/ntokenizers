@@ -678,7 +678,7 @@ public class CppTokenizerTests
         var code = "int x = 42;";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(code));
         var tokens = new List<CppToken>();
-        await CppTokenizer.Create().ParseAsync(stream, t => tokens.Add((CppToken)t));
+        await CppTokenizer.Create().ParseAsync(stream, async t => tokens.Add((CppToken)t));
         Assert.NotEmpty(tokens);
     }
 
@@ -697,11 +697,11 @@ public class CppTokenizerTests
 
         var cppTokens = new List<CppToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is CppCodeBlockMetadata cppMeta)
             {
-                cppMeta.RegisterInlineTokenHandler(t => cppTokens.Add((CppToken)t));
+                await cppMeta.ParseInlinesAsync(async t => cppTokens.Add((CppToken)t));
             }
         });
 

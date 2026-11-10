@@ -282,11 +282,11 @@ public class JavaTokenizerTests
 
         var javaTokens = new List<JavaToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is JavaCodeBlockMetadata javaMeta)
             {
-                javaMeta.RegisterInlineTokenHandler(t => javaTokens.Add((JavaToken)t));
+                await javaMeta.ParseInlinesAsync(async t => javaTokens.Add((JavaToken)t));
             }
         });
 
