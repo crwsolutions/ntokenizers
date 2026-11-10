@@ -20,61 +20,61 @@ internal sealed class YamlHtmlWriter : AbstractTokenToHtmlWriter<YamlToken>
         css.AppendLine();
     }
 
-    internal override void WriteHtml(YamlToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(YamlToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
             case YamlTokenType.Directive:
-                WriteValue(writer, token.Value, "tok-yaml-directive", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-directive", inPreBlock: true);
                 break;
 
             case YamlTokenType.DirectiveKey:
-                WriteValue(writer, token.Value, "tok-yaml-directive", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-directive", inPreBlock: true);
                 break;
 
             case YamlTokenType.DirectiveValue:
-                WriteValue(writer, token.Value, "tok-yaml-value", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-value", inPreBlock: true);
                 break;
 
             case YamlTokenType.DocumentStart:
             case YamlTokenType.DocumentEnd:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case YamlTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case YamlTokenType.Key:
-                WriteValue(writer, token.Value, "tok-yaml-key", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-key", inPreBlock: true);
                 break;
 
             case YamlTokenType.Colon:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case YamlTokenType.Value:
-                WriteValue(writer, token.Value, "tok-yaml-value", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-value", inPreBlock: true);
                 break;
 
             case YamlTokenType.Quote:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case YamlTokenType.String:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case YamlTokenType.Anchor:
-                WriteValue(writer, token.Value, "tok-yaml-anchor", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-anchor", inPreBlock: true);
                 break;
 
             case YamlTokenType.Alias:
-                WriteValue(writer, token.Value, "tok-yaml-alias", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-alias", inPreBlock: true);
                 break;
 
             case YamlTokenType.Tag:
-                WriteValue(writer, token.Value, "tok-yaml-tag", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-yaml-tag", inPreBlock: true);
                 break;
 
             case YamlTokenType.FlowSeqStart:
@@ -83,15 +83,15 @@ internal sealed class YamlHtmlWriter : AbstractTokenToHtmlWriter<YamlToken>
             case YamlTokenType.FlowMapEnd:
             case YamlTokenType.FlowEntry:
             case YamlTokenType.BlockSeqEntry:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case YamlTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

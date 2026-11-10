@@ -7,16 +7,16 @@ namespace NTokenizers.ToHtml.Writers;
 /// </summary>
 internal sealed class CppHtmlWriter : AbstractTokenToHtmlWriter<CppToken>
 {
-    internal override void WriteHtml(CppToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(CppToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
             case CppTokenType.NotDefined:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
 
             case CppTokenType.Operator:
-                WriteValue(writer, token.Value, "tok-operator", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-operator", inPreBlock: true);
                 break;
 
             case CppTokenType.OpenParenthesis:
@@ -32,47 +32,47 @@ internal sealed class CppHtmlWriter : AbstractTokenToHtmlWriter<CppToken>
             case CppTokenType.Colon:
             case CppTokenType.DoubleColon:
             case CppTokenType.QuestionMark:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case CppTokenType.StringValue:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case CppTokenType.CharValue:
-                WriteValue(writer, token.Value, "tok-char", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-char", inPreBlock: true);
                 break;
 
             case CppTokenType.Number:
-                WriteValue(writer, token.Value, "tok-number", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-number", inPreBlock: true);
                 break;
 
             case CppTokenType.Boolean:
-                WriteValue(writer, token.Value, "tok-boolean", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-boolean", inPreBlock: true);
                 break;
 
             case CppTokenType.Null:
-                WriteValue(writer, token.Value, "tok-null", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-null", inPreBlock: true);
                 break;
 
             case CppTokenType.Identifier:
-                WriteValue(writer, token.Value, "tok-identifier", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-identifier", inPreBlock: true);
                 break;
 
             case CppTokenType.Keyword:
-                WriteValue(writer, token.Value, "tok-keyword", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-keyword", inPreBlock: true);
                 break;
 
             case CppTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case CppTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

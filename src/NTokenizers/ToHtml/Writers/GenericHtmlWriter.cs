@@ -15,9 +15,9 @@ internal sealed class GenericHtmlWriter : AbstractTokenToHtmlWriter<MarkdownToke
         css.AppendLine();
     }
 
-    internal override void WriteHtml(MarkdownToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(MarkdownToken token, TextWriter writer, CancellationToken ct = default)
     {
         // Generic tokenizer only emits Text tokens
-        WriteValue(writer, token.Value, "tok-generic", inPreBlock: true);
+        await WriteValueAsync(writer, token.Value, "tok-generic", inPreBlock: true);
     }
 }

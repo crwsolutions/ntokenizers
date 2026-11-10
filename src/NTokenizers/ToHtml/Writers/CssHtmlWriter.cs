@@ -22,7 +22,7 @@ internal sealed class CssHtmlWriter : AbstractTokenToHtmlWriter<CssToken>
         css.AppendLine();
     }
 
-    internal override void WriteHtml(CssToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(CssToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
@@ -35,71 +35,71 @@ internal sealed class CssHtmlWriter : AbstractTokenToHtmlWriter<CssToken>
             case CssTokenType.Colon:
             case CssTokenType.Semicolon:
             case CssTokenType.Comma:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case CssTokenType.Selector:
-                WriteValue(writer, token.Value, "tok-css-selector", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-selector", inPreBlock: true);
                 break;
 
             case CssTokenType.PseudoElement:
-                WriteValue(writer, token.Value, "tok-css-pseudo", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-pseudo", inPreBlock: true);
                 break;
 
             case CssTokenType.PropertyName:
-                WriteValue(writer, token.Value, "tok-css-property", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-property", inPreBlock: true);
                 break;
 
             case CssTokenType.StringValue:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case CssTokenType.Quote:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case CssTokenType.Number:
-                WriteValue(writer, token.Value, "tok-number", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-number", inPreBlock: true);
                 break;
 
             case CssTokenType.Unit:
-                WriteValue(writer, token.Value, "tok-css-unit", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-unit", inPreBlock: true);
                 break;
 
             case CssTokenType.Function:
-                WriteValue(writer, token.Value, "tok-css-function", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-function", inPreBlock: true);
                 break;
 
             case CssTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case CssTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             case CssTokenType.AtRule:
-                WriteValue(writer, token.Value, "tok-css-atrule", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-atrule", inPreBlock: true);
                 break;
 
             case CssTokenType.Identifier:
-                WriteValue(writer, token.Value, "tok-identifier", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-identifier", inPreBlock: true);
                 break;
 
             case CssTokenType.Operator:
-                WriteValue(writer, token.Value, "tok-operator", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-operator", inPreBlock: true);
                 break;
 
             case CssTokenType.DotClass:
-                WriteValue(writer, token.Value, "tok-css-dotclass", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-dotclass", inPreBlock: true);
                 break;
 
             case CssTokenType.Equals:
-                WriteValue(writer, token.Value, "tok-css-equals", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-css-equals", inPreBlock: true);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

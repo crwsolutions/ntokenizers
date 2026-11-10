@@ -17,7 +17,7 @@ internal sealed class HeadingMarkdownTokenizer : BaseMarkdownTokenizer
 
     internal static HeadingMarkdownTokenizer Create() => new();
 
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
@@ -27,7 +27,7 @@ internal sealed class HeadingMarkdownTokenizer : BaseMarkdownTokenizer
                 break;
             }
 
-            if (TryParseInlineConstruct((char)ch))
+            if (await TryParseInlineConstructAsync((char)ch))
             {
                 continue;
             }
@@ -84,8 +84,8 @@ internal sealed class HeadingMarkdownTokenizer : BaseMarkdownTokenizer
                     {
                         Read();
                     }
-                    EmitText();
-                    return Task.CompletedTask;
+                    await EmitTextAsync();
+                    return;
                 }
             }
 
@@ -93,9 +93,7 @@ internal sealed class HeadingMarkdownTokenizer : BaseMarkdownTokenizer
             _buffer.Append((char)Read());
         }
 
-        EmitText();
-
-        return Task.CompletedTask;
+        await EmitTextAsync();
     }
 
     /// <summary>

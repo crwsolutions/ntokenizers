@@ -9,61 +9,61 @@ namespace NTokenizers.ToHtml.Writers;
 /// </summary>
 internal sealed class HtmlHtmlWriter : BaseHtmlWriter
 {
-    internal void WriteHtml(HtmlToken token, TextWriter writer)
+    internal async Task WriteHtmlAsync(HtmlToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
             case HtmlTokenType.None:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
 
             case HtmlTokenType.ElementName:
-                WriteValue(writer, token.Value, "tok-ml-element", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-ml-element", inPreBlock: true);
                 break;
 
             case HtmlTokenType.Text:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
 
             case HtmlTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case HtmlTokenType.DocumentTypeDeclaration:
-                WriteValue(writer, token.Value, "tok-ml-doctype", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-ml-doctype", inPreBlock: true);
                 break;
 
             case HtmlTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             case HtmlTokenType.OpeningAngleBracket:
             case HtmlTokenType.ClosingAngleBracket:
             case HtmlTokenType.SelfClosingSlash:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case HtmlTokenType.AttributeName:
-                WriteValue(writer, token.Value, "tok-ml-attribute", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-ml-attribute", inPreBlock: true);
                 break;
 
             case HtmlTokenType.AttributeEquals:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case HtmlTokenType.AttributeValue:
-                WriteValue(writer, token.Value, "tok-ml-attr-value", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-ml-attr-value", inPreBlock: true);
                 break;
 
             case HtmlTokenType.AttributeQuote:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case HtmlTokenType.ScriptElement:
                 if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
                 {
                     var tsWriter = new TypeScriptHtmlWriter();
-                    _ = tsMeta.RegisterInlineTokenHandler(t => tsWriter.WriteHtml(t, writer));
+                    await tsMeta.ParseInlinesAsync(async t => await tsWriter.WriteHtmlAsync(t, writer, ct));
                 }
                 break;
 
@@ -71,12 +71,12 @@ internal sealed class HtmlHtmlWriter : BaseHtmlWriter
                 if (token.Metadata is CssCodeBlockMetadata cssMeta)
                 {
                     var cssWriter = new CssHtmlWriter();
-                    _ = cssMeta.RegisterInlineTokenHandler(t => cssWriter.WriteHtml(t, writer));
+                    await cssMeta.ParseInlinesAsync(async t => await cssWriter.WriteHtmlAsync(t, writer, ct));
                 }
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

@@ -52,7 +52,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
 
         await TokenizeCharactersAsync(ct, async (c) => await ProcessCharAsync(c, state, ct));
 
-        EmitPending(state);
+        await EmitPending(state);
     }
 
     private async Task ProcessCharAsync(char c, ParseState state, CancellationToken ct)
@@ -64,7 +64,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                 {
                     if (_buffer.Length > 0)
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.Text, _buffer.ToString()));
+                        await _onToken(new HtmlToken(HtmlTokenType.Text, _buffer.ToString()));
                         _buffer.Clear();
                     }
                     _buffer.Append(c);
@@ -102,8 +102,8 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                     if (c == '/')
                     {
                         // End tag: </
-                        _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
-                        _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
+                        await _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
+                        await _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
                         _buffer.Clear();
                         state.InsideTag = true;
                         state.SeenElementName = false;
@@ -113,7 +113,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                     else if (IsWhitespace(c))
                     {
                         // < followed by whitespace
-                        _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
+                        await _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
                         _buffer.Remove(0, 1); // remove the '<'
                         state.InsideTag = true;
                         state.SeenElementName = false;
@@ -123,7 +123,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                     else if (IsNameStartChar(c))
                     {
                         // Regular opening tag: <name
-                        _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
+                        await _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
                         _buffer.Remove(0, 1); // remove the '<'
                         state.InsideTag = true;
                         state.SeenElementName = false;
@@ -143,7 +143,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                     if (_buffer.Length > 0)
                     {
                         var elementName = _buffer.ToString();
-                        _onToken(new HtmlToken(HtmlTokenType.ElementName, elementName));
+                        await _onToken(new HtmlToken(HtmlTokenType.ElementName, elementName));
                         state.SeenElementName = true;
 
                         // Track element name for special handling
@@ -157,7 +157,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
 
                     if (c == '>')
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
+                        await _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
                         state.InsideTag = false;
                         state.SeenElementName = false;
 
@@ -175,12 +175,22 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                             // Check if we need to delegate to a sub-tokenizer
                             if (state.CurrentElementName == "style")
                             {
-                                await HandleStyleElementAsync(ct, state);
+                                // Emit the style container token with the metadata that drives the
+                                // CSS sub-parse. The section is streamed when the client handler
+                                // calls metadata.ParseInlinesAsync; the post-emit work (the closing
+                                // tag, the depth fix-up) runs right after the awaited emit.
+                                await _onToken(new HtmlToken(HtmlTokenType.StyleElement, string.Empty,
+                                    new CssCodeBlockMetadata("css", Reader, Bob, _lookaheadBuffer, "</style>")));
+                                await EmitClosingTag("style");
+                                state.Depth--;
                                 state.CurrentElementName = null;
                             }
                             else if (state.CurrentElementName == "script")
                             {
-                                await HandleScriptElementAsync(ct, state);
+                                await _onToken(new HtmlToken(HtmlTokenType.ScriptElement, string.Empty,
+                                    new TypeScriptCodeBlockMetadata("javascript", Reader, Bob, _lookaheadBuffer, "</script>")));
+                                await EmitClosingTag("script");
+                                state.Depth--;
                                 state.CurrentElementName = null;
                             }
                         }
@@ -189,7 +199,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                     }
                     else if (c == '/')
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
+                        await _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
                         state.CurrentElementName = null; // Self-closing tag
                         state.CurrentState = State.AfterTagName;
                     }
@@ -210,7 +220,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                 {
                     if (_buffer.Length > 0)
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.Whitespace, _buffer.ToString()));
+                        await _onToken(new HtmlToken(HtmlTokenType.Whitespace, _buffer.ToString()));
                         _buffer.Clear();
                     }
 
@@ -221,7 +231,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                     }
                     else if (c == '>')
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
+                        await _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
                         state.InsideTag = false;
                         state.SeenElementName = false;
 
@@ -238,12 +248,22 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                             // Check if we need to delegate to a sub-tokenizer
                             if (state.CurrentElementName == "style")
                             {
-                                await HandleStyleElementAsync(ct, state);
+                                // Emit the style container token with the metadata that drives the
+                                // CSS sub-parse. The section is streamed when the client handler
+                                // calls metadata.ParseInlinesAsync; the post-emit work (the closing
+                                // tag, the depth fix-up) runs right after the awaited emit.
+                                await _onToken(new HtmlToken(HtmlTokenType.StyleElement, string.Empty,
+                                    new CssCodeBlockMetadata("css", Reader, Bob, _lookaheadBuffer, "</style>")));
+                                await EmitClosingTag("style");
+                                state.Depth--;
                                 state.CurrentElementName = null;
                             }
                             else if (state.CurrentElementName == "script")
                             {
-                                await HandleScriptElementAsync(ct, state);
+                                await _onToken(new HtmlToken(HtmlTokenType.ScriptElement, string.Empty,
+                                    new TypeScriptCodeBlockMetadata("javascript", Reader, Bob, _lookaheadBuffer, "</script>")));
+                                await EmitClosingTag("script");
+                                state.Depth--;
                                 state.CurrentElementName = null;
                             }
                         }
@@ -252,19 +272,19 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                     }
                     else if (c == '/')
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
+                        await _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
                         state.CurrentElementName = null; // Self-closing tag
                         state.CurrentState = State.AfterTagName;
                     }
                     else if (c == '=')
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.AttributeEquals, "="));
+                        await _onToken(new HtmlToken(HtmlTokenType.AttributeEquals, "="));
                         state.CurrentState = State.AfterEquals;
                     }
                     else if (c == '"' || c == '\'')
                     {
                         state.QuoteChar = c;
-                        _onToken(new HtmlToken(HtmlTokenType.AttributeQuote, c.ToString()));
+                        await _onToken(new HtmlToken(HtmlTokenType.AttributeQuote, c.ToString()));
                         state.CurrentState = State.InAttributeValue;
                     }
                     else if (IsNameStartChar(c))
@@ -285,7 +305,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
             case State.AfterTagName:
                 if (c == '>')
                 {
-                    _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
+                    await _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
                     state.InsideTag = false;
                     state.SeenElementName = false;
                     // Self-closing tag - don't change depth
@@ -299,7 +319,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                 }
                 else if (c == '/')
                 {
-                    _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
+                    await _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
                     // Stay in AfterTagName to handle the closing '>'
                 }
                 else if (IsWhitespace(c))
@@ -318,13 +338,13 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                 {
                     if (_buffer.Length > 0)
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.AttributeName, _buffer.ToString()));
+                        await _onToken(new HtmlToken(HtmlTokenType.AttributeName, _buffer.ToString()));
                         _buffer.Clear();
                     }
 
                     if (c == '=')
                     {
-                        _onToken(new HtmlToken(HtmlTokenType.AttributeEquals, "="));
+                        await _onToken(new HtmlToken(HtmlTokenType.AttributeEquals, "="));
                         state.CurrentState = State.AfterEquals;
                     }
                     else if (IsWhitespace(c))
@@ -339,7 +359,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                 if (c == '"' || c == '\'')
                 {
                     state.QuoteChar = c;
-                    _onToken(new HtmlToken(HtmlTokenType.AttributeQuote, c.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.AttributeQuote, c.ToString()));
                     state.CurrentState = State.InAttributeValue;
                 }
                 else if (IsWhitespace(c))
@@ -352,9 +372,9 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
             case State.InAttributeValue:
                 if (c == state.QuoteChar)
                 {
-                    _onToken(new HtmlToken(HtmlTokenType.AttributeValue, _buffer.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.AttributeValue, _buffer.ToString()));
                     _buffer.Clear();
-                    _onToken(new HtmlToken(HtmlTokenType.AttributeQuote, c.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.AttributeQuote, c.ToString()));
                     state.QuoteChar = null;
                     state.CurrentState = State.AfterTagName;
                 }
@@ -368,7 +388,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                 _buffer.Append(c);
                 if (_buffer.ToString().EndsWith("-->"))
                 {
-                    _onToken(new HtmlToken(HtmlTokenType.Comment, _buffer.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.Comment, _buffer.ToString()));
                     _buffer.Clear();
                     state.CurrentState = State.Text;
                 }
@@ -378,7 +398,7 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
                 _buffer.Append(c);
                 if (c == '>')
                 {
-                    _onToken(new HtmlToken(HtmlTokenType.DocumentTypeDeclaration, _buffer.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.DocumentTypeDeclaration, _buffer.ToString()));
                     _buffer.Clear();
                     state.CurrentState = State.Text;
                 }
@@ -386,99 +406,32 @@ public sealed class HtmlTokenizer : BaseSubTokenizer<HtmlToken>
         }
     }
 
-    private async Task<bool> HandleStyleElementAsync(CancellationToken ct, ParseState state)
-    {
-        var isHandled = await ParseCodeInlines(new CssCodeBlockMetadata("css"), HtmlTokenType.StyleElement, "</style>", ct);
-
-        if (isHandled is false)
-        {
-            return isHandled;
-        }
-
-        EmitClosingTag("style");
-        state.Depth--;
-
-        return true;
-    }
-
-    private async Task<bool> HandleScriptElementAsync(CancellationToken ct, ParseState state)
-    {
-        var isHandled = await ParseCodeInlines(new TypeScriptCodeBlockMetadata("javascript"), HtmlTokenType.ScriptElement, "</script>", ct);
-
-        if (isHandled is false)
-        {
-            return isHandled;
-        }
-
-        EmitClosingTag("script");
-        state.Depth--;
-        return true;
-    }
-
-    private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata, HtmlTokenType tokenType, string stopDelimiter, CancellationToken ct) where TToken : IToken
-    {
-        return ParseInlines(tokenType, metadata, async handler => await metadata.CreateTokenizer().ParseAsync(Reader, Bob, _lookaheadBuffer, stopDelimiter, ct, handler));
-    }
-
-    private async Task<bool> ParseInlines<TToken>(HtmlTokenType tokenType, InlineMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync) where TToken : IToken
-    {
-        // Emit heading token with empty value (client can set OnInlineToken to parse inline content)
-        //_onToken(new HtmlToken(tokenType, string.Empty, metadata));
-        var emitTask = Task.Run(() =>
-            _onToken(new HtmlToken(tokenType, string.Empty, metadata)));
-
-        // Await the client registering the handler
-        var handlerTask = metadata.GetInlineTokenHandlerAsync();
-
-        await emitTask;
-
-        using var cts = new CancellationTokenSource();
-        var delayTask = Task.Delay(2000, cts.Token);
-
-        var completedTask = await Task.WhenAny(handlerTask, delayTask);
-
-        if (completedTask != handlerTask || handlerTask.Result == null)
-        {
-            // No handler registered within timeout
-            return false;
-        }
-
-        cts.Cancel();
-        Debug.WriteLine("Canceling wait token");
-
-        // Run the tokenizer with the registered handler
-        await parseAsync(handlerTask.Result);
-
-        metadata.CompleteProcessing();
-        return true;
-    }
-
-    private void EmitClosingTag(string elementName)
+    private async Task EmitClosingTag(string elementName)
     {
         // Emit </elementName>
-        _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
-        _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
-        _onToken(new HtmlToken(HtmlTokenType.ElementName, elementName));
-        _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
+        await _onToken(new HtmlToken(HtmlTokenType.OpeningAngleBracket, "<"));
+        await _onToken(new HtmlToken(HtmlTokenType.SelfClosingSlash, "/"));
+        await _onToken(new HtmlToken(HtmlTokenType.ElementName, elementName));
+        await _onToken(new HtmlToken(HtmlTokenType.ClosingAngleBracket, ">"));
     }
 
-    private void EmitPending(ParseState state)
+    private async Task EmitPending(ParseState state)
     {
         if (_buffer.Length > 0)
         {
             switch (state.CurrentState)
             {
                 case State.Text:
-                    _onToken(new HtmlToken(HtmlTokenType.Text, _buffer.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.Text, _buffer.ToString()));
                     break;
                 case State.InWhitespace:
-                    _onToken(new HtmlToken(HtmlTokenType.Whitespace, _buffer.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.Whitespace, _buffer.ToString()));
                     break;
                 case State.InTagName:
-                    _onToken(new HtmlToken(HtmlTokenType.ElementName, _buffer.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.ElementName, _buffer.ToString()));
                     break;
                 case State.InAttributeName:
-                    _onToken(new HtmlToken(HtmlTokenType.AttributeName, _buffer.ToString()));
+                    await _onToken(new HtmlToken(HtmlTokenType.AttributeName, _buffer.ToString()));
                     break;
             }
             _buffer.Clear();

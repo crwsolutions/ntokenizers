@@ -15,24 +15,21 @@ internal sealed class BlockquoteHtmlWriter : AbstractMetadataToHtmlWriter<Blockq
     {
     }
 
-    internal override Task WriteContentAsync(BlockquoteMetadata metadata, TextWriter writer)
+    internal override async Task WriteContentAsync(BlockquoteMetadata metadata, TextWriter writer, CancellationToken ct = default)
     {
         var dispatcher = new MarkdownBlockTokenDispatcher(inlineListItems: true);
-        writer.Write("<blockquote>\n");
-        return metadata.RegisterInlineTokenHandler(
-            token =>
-            {
-                // The token dispatch is fire-and-forget from this synchronous handler: the
-                // returned Task completes when the whole quote content has been processed,
-                // which the parser already awaits through the registration's processing Task.
-                _ = dispatcher.WriteTokenAsync(token, writer);
-            },
-            () =>
-            {
-                // A closed paragraph inside the quote is separated from the closing tag by a
-                // line break; at end of content no trailing line break is emitted.
-                dispatcher.FlushPendingBlockBreak(writer);
-                writer.Write("</blockquote>");
-            });
+        await writer.WriteAsync("<blockquote>\n");
+
+        // Content tokens arrive in stream order as the quote is tokenized; each dispatch
+        // is awaited before the next token arrives.
+        await metadata.ParseInlinesAsync(async token =>
+        {
+            await dispatcher.WriteTokenAsync(token, writer, ct);
+        });
+
+        // A closed paragraph inside the quote is separated from the closing tag by a
+        // line break; at end of content no trailing line break is emitted.
+        await dispatcher.FlushPendingBlockBreak(writer, ct);
+        await writer.WriteAsync("</blockquote>");
     }
 }

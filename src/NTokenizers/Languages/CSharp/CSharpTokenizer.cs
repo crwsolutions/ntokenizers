@@ -26,7 +26,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
     };
 
-    private enum State
+    private enum ParseState
     {
         Start,
         InWhitespace,
@@ -39,40 +39,43 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         InOperator
     }
 
-    /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    private sealed class State
     {
-        State state = State.Start;
-        bool escape = false;
-
-        TokenizeCharacters(ct, (c) => ProcessChar(c, ref state, ref escape));
-
-        EmitPending(ref state);
-
-        return Task.CompletedTask;
+        public ParseState Current = ParseState.Start;
+        public bool Escape;
     }
 
-    private void ProcessChar(char c, ref State state, ref bool escape)
+    /// <inheritdoc/>
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
-        switch (state)
+        var state = new State();
+
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
+
+        await EmitPending(state);
+    }
+
+    private async Task ProcessChar(char c, State state)
+    {
+        switch (state.Current)
         {
-            case State.InString:
-                ProcessInString(c, ref state, ref escape);
+            case ParseState.InString:
+                await ProcessInString(c, state);
                 return;
 
-            case State.InVerbatimString:
-                ProcessInVerbatimString(c, ref state);
+            case ParseState.InVerbatimString:
+                await ProcessInVerbatimString(c, state);
                 return;
 
-            case State.InCommentLine:
-                ProcessInCommentLine(c, ref state);
+            case ParseState.InCommentLine:
+                await ProcessInCommentLine(c, state);
                 return;
 
-            case State.InCommentBlock:
-                ProcessInCommentBlock(c, ref state);
+            case ParseState.InCommentBlock:
+                await ProcessInCommentBlock(c, state);
                 return;
 
-            case State.InWhitespace:
+            case ParseState.InWhitespace:
                 if (char.IsWhiteSpace(c))
                 {
                     _buffer.Append(c);
@@ -80,13 +83,13 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                 }
                 else
                 {
-                    EmitToken(CSharpTokenType.Whitespace);
-                    state = State.Start;
+                    await EmitToken(CSharpTokenType.Whitespace);
+                    state.Current = ParseState.Start;
                     // Fall through to process current character
                 }
                 break;
 
-            case State.InIdentifier:
+            case ParseState.InIdentifier:
                 if (char.IsLetterOrDigit(c) || c == '_')
                 {
                     _buffer.Append(c);
@@ -94,14 +97,14 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                 }
                 else
                 {
-                    EmitIdentifierOrKeyword(_buffer.ToString());
+                    await EmitIdentifierOrKeyword(_buffer.ToString());
                     _buffer.Clear();
-                    state = State.Start;
+                    state.Current = ParseState.Start;
                     // Fall through to process current character
                 }
                 break;
 
-            case State.InNumber:
+            case ParseState.InNumber:
                 if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+' || c == 'x' || c == 'X' ||
                     (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == '_')
                 {
@@ -110,26 +113,26 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                 }
                 else
                 {
-                    EmitToken(CSharpTokenType.Number);
-                    state = State.Start;
+                    await EmitToken(CSharpTokenType.Number);
+                    state.Current = ParseState.Start;
                     // Fall through to process current character
                 }
                 break;
 
-            case State.InOperator:
-                ProcessInOperator(c, ref state);
+            case ParseState.InOperator:
+                await ProcessInOperator(c, state);
                 return;
         }
 
-        // State.Start - process new character
+        // ParseState.Start - process new character
         if (char.IsWhiteSpace(c))
         {
-            state = State.InWhitespace;
+            state.Current = ParseState.InWhitespace;
             _buffer.Append(c);
         }
         else if (c == '"')
         {
-            state = State.InString;
+            state.Current = ParseState.InString;
             _buffer.Append(c);
         }
         else if (c == '@')
@@ -140,23 +143,23 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             {
                 _buffer.Append(c);
                 _buffer.Append((char)Read());
-                state = State.InVerbatimString;
+                state.Current = ParseState.InVerbatimString;
             }
             else
             {
                 // @ can be part of an identifier
-                state = State.InIdentifier;
+                state.Current = ParseState.InIdentifier;
                 _buffer.Append(c);
             }
         }
         else if (char.IsLetter(c) || c == '_')
         {
-            state = State.InIdentifier;
+            state.Current = ParseState.InIdentifier;
             _buffer.Append(c);
         }
         else if (char.IsDigit(c))
         {
-            state = State.InNumber;
+            state.Current = ParseState.InNumber;
             _buffer.Append(c);
         }
         else if (c == '/')
@@ -165,24 +168,24 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             if (next == '/')
             {
                 Read(); // consume second /
-                state = State.InCommentLine;
+                state.Current = ParseState.InCommentLine;
                 _buffer.Append("//");
             }
             else if (next == '*')
             {
                 Read(); // consume *
-                state = State.InCommentBlock;
+                state.Current = ParseState.InCommentBlock;
                 _buffer.Append("/*");
             }
             else
             {
-                state = State.InOperator;
+                state.Current = ParseState.InOperator;
                 _buffer.Append(c);
             }
         }
         else if (c == '(' || c == ')' || c == ',' || c == ';')
         {
-            EmitPunctuation(c);
+            await EmitPunctuation(c);
         }
         else if (c == '.')
         {
@@ -190,45 +193,45 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             int next = Peek();
             if (next != -1 && char.IsDigit((char)next))
             {
-                state = State.InNumber;
+                state.Current = ParseState.InNumber;
                 _buffer.Append(c);
             }
             else
             {
-                EmitToken(CSharpTokenType.Dot, ".");
+                await EmitToken(CSharpTokenType.Dot, ".");
             }
         }
         else if (IsOperatorChar(c))
         {
-            state = State.InOperator;
+            state.Current = ParseState.InOperator;
             _buffer.Append(c);
         }
         else
         {
             // Unknown character - emit as NotDefined
-            EmitToken(CSharpTokenType.NotDefined, c.ToString());
+            await EmitToken(CSharpTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, ref State state, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(CSharpTokenType.StringValue);
-            state = State.Start;
+            await EmitToken(CSharpTokenType.StringValue);
+            state.Current = ParseState.Start;
         }
     }
 
-    private void ProcessInVerbatimString(char c, ref State state)
+    private async Task ProcessInVerbatimString(char c, State state)
     {
         _buffer.Append(c);
         if (c == '"')
@@ -242,18 +245,18 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             else
             {
                 // End of verbatim string
-                EmitToken(CSharpTokenType.StringValue);
-                state = State.Start;
+                await EmitToken(CSharpTokenType.StringValue);
+                state.Current = ParseState.Start;
             }
         }
     }
 
-    private void ProcessInCommentLine(char c, ref State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(CSharpTokenType.Comment);
-            state = State.InWhitespace;
+            await EmitToken(CSharpTokenType.Comment);
+            state.Current = ParseState.InWhitespace;
             _buffer.Append(c);
         }
         else
@@ -262,7 +265,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, ref State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -271,13 +274,13 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(CSharpTokenType.Comment);
-                state = State.Start;
+                await EmitToken(CSharpTokenType.Comment);
+                state.Current = ParseState.Start;
             }
         }
     }
 
-    private void ProcessInOperator(char c, ref State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -297,25 +300,25 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                 }
             }
             // Emit the operator
-            EmitOperatorToken(_buffer.ToString());
+            await EmitOperatorToken(_buffer.ToString());
             _buffer.Clear();
-            state = State.Start;
+            state.Current = ParseState.Start;
         }
         else if (IsOperatorChar(c))
         {
             // Emit the current operator and start a new one
-            EmitOperatorToken(current);
+            await EmitOperatorToken(current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
             // Emit the current operator and process this character
-            EmitOperatorToken(current);
+            await EmitOperatorToken(current);
             _buffer.Clear();
-            state = State.Start;
-            bool tempEscape = false;
-            ProcessChar(c, ref state, ref tempEscape);
+            state.Current = ParseState.Start;
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -334,7 +337,7 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
                op == "??" || op == "?." || op == "?[" || op == "=>" || op == "->>" || op == "<<=" || op == ">>=";
     }
 
-    private void EmitOperatorToken(string value)
+    private async Task EmitOperatorToken(string value)
     {
         CSharpTokenType type = value switch
         {
@@ -354,10 +357,10 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             "%" => CSharpTokenType.Modulo,
             _ => CSharpTokenType.Operator
         };
-        EmitToken(type, value);
+        await EmitToken(type, value);
     }
 
-    private void EmitPunctuation(char c)
+    private async Task EmitPunctuation(char c)
     {
         CSharpTokenType type = c switch
         {
@@ -367,63 +370,63 @@ public sealed class CSharpTokenizer : BaseSubTokenizer<CSharpToken>
             ';' => CSharpTokenType.SequenceTerminator,
             _ => CSharpTokenType.NotDefined
         };
-        EmitToken(type, c.ToString());
+        await EmitToken(type, c.ToString());
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
-            EmitToken(CSharpTokenType.Keyword, value);
+            await EmitToken(CSharpTokenType.Keyword, value);
         }
         else
         {
-            EmitToken(CSharpTokenType.Identifier, value);
+            await EmitToken(CSharpTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(CSharpTokenType type, string value)
+    private async Task EmitToken(CSharpTokenType type, string value)
     {
-        _onToken(new CSharpToken(type, value));
+        await _onToken(new CSharpToken(type, value));
     }
 
-    private void EmitToken(CSharpTokenType type)
+    private async Task EmitToken(CSharpTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(ref State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
-            switch (state)
+            switch (state.Current)
             {
-                case State.InWhitespace:
-                    EmitToken(CSharpTokenType.Whitespace);
+                case ParseState.InWhitespace:
+                    await EmitToken(CSharpTokenType.Whitespace);
                     break;
-                case State.InIdentifier:
-                    EmitIdentifierOrKeyword(_buffer.ToString());
+                case ParseState.InIdentifier:
+                    await EmitIdentifierOrKeyword(_buffer.ToString());
                     _buffer.Clear();
                     break;
-                case State.InNumber:
-                    EmitToken(CSharpTokenType.Number);
+                case ParseState.InNumber:
+                    await EmitToken(CSharpTokenType.Number);
                     break;
-                case State.InString:
-                case State.InVerbatimString:
+                case ParseState.InString:
+                case ParseState.InVerbatimString:
                     // Incomplete string - could emit as NotDefined or StringValue
-                    EmitToken(CSharpTokenType.StringValue);
+                    await EmitToken(CSharpTokenType.StringValue);
                     break;
-                case State.InCommentLine:
-                case State.InCommentBlock:
-                    EmitToken(CSharpTokenType.Comment);
+                case ParseState.InCommentLine:
+                case ParseState.InCommentBlock:
+                    await EmitToken(CSharpTokenType.Comment);
                     break;
-                case State.InOperator:
-                    EmitOperatorToken(_buffer.ToString());
+                case ParseState.InOperator:
+                    await EmitOperatorToken(_buffer.ToString());
                     _buffer.Clear();
                     break;
             }
         }
-        state = State.Start;
+        state.Current = ParseState.Start;
     }
 }

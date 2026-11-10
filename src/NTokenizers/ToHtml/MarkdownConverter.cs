@@ -1,4 +1,3 @@
-using System.Runtime.ExceptionServices;
 using System.Text;
 using NTokenizers.Markdown;
 using NTokenizers.ToHtml.Writers;
@@ -65,42 +64,25 @@ public sealed class MarkdownConverter
 
     /// <summary>
     /// Converts a Markdown text reader to an HTML fragment and writes it directly to the provided writer.
-    /// The writer is only written to through <c>WriteAsync</c> and <c>FlushAsync</c> (chunks in order,
+    /// The writer is only written to through <c>WriteAsync</c> and <c>FlushAsync</c> (in token order,
     /// with a single final flush), so it can safely wrap a stream that disallows synchronous IO,
-    /// such as a Kestrel response body.
+    /// such as a Kestrel response body. A write failure (e.g. the client went away)
+    /// propagates from the awaited token callback and ends the parse.
     /// </summary>
     /// <returns>The consumed Markdown source text, exactly as read from the reader.</returns>
     public static async Task<string> WriteHtmlAsync(TextReader reader, TextWriter writer, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         var markdownWriter = new MarkdownHtmlWriter();
-        var buffer = new BufferedHtmlTextWriter();
-        var drainTask = Task.Run(() => buffer.DrainAsync(writer), ct);
 
-        string markdown;
-        try
+        // Each token is written to completion before the tokenizer emits the next one,
+        // so the output cannot get ahead of the writer.
+        var markdown = await MarkdownTokenizer.Create().ParseAsync(reader, new StringBuilder(), new Queue<char>(), ct, async token =>
         {
-            markdown = await MarkdownTokenizer.Create().ParseAsync(reader, new StringBuilder(), new Queue<char>(), ct, token =>
-            {
-                // Stop tokenizing early when the response stream died (e.g. client
-                // disconnect), so the buffer cannot grow past one in-flight block.
-                // This throws synchronously from the token callback, so the exception
-                // propagates into the tokenizer and ends the parse.
-                if (drainTask.IsFaulted && drainTask.Exception is not null)
-                    ExceptionDispatchInfo.Capture(drainTask.Exception.GetBaseException()).Throw();
+            await markdownWriter.WriteTokenAsync(token, writer, ct);
+        });
 
-                // Fire-and-forget, as the previous async callback: the synchronous
-                // prefix of WriteTokenAsync registers the inline handler; its
-                // continuation resumes when inline parsing completes.
-                _ = markdownWriter.WriteTokenAsync(token, buffer);
-            });
-        }
-        finally
-        {
-            buffer.Complete();
-        }
-
-        await drainTask;
+        await writer.FlushAsync();
         return markdown;
     }
 

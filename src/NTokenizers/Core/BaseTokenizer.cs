@@ -5,6 +5,12 @@ namespace NTokenizers.Core;
 /// <summary>
 /// Abstract base class for tokenizers that provides common functionality for parsing text streams.
 /// </summary>
+/// <remarks>
+/// Token emission is asynchronous end-to-end: the parse loop awaits the client handler
+/// (<see cref="Func{TResult}"/>-style <c>onToken</c>) for every token it produces. The await
+/// in <see cref="EmitAsync"/> is the producer/consumer boundary: the tokenizer paces itself
+/// to the client, and ordering, completion and error propagation hold by construction.
+/// </remarks>
 /// <typeparam name="TToken">The type of token to be produced by the tokenizer.</typeparam>
 public abstract class BaseTokenizer<TToken> where TToken : IToken
 {
@@ -27,9 +33,11 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     internal protected TextReader Reader => _reader;
 
     /// <summary>
-    /// The action to invoke for each token found.
+    /// The function to await for each token found. The parse loop awaits this for every
+    /// token, so the client may do arbitrary asynchronous work (I/O, rendering, running a
+    /// sub-tokenizer) per token.
     /// </summary>
-    internal protected Action<TToken> _onToken = default!;
+    internal protected Func<TToken, Task> _onToken = default!;
 
     /// <summary>
     /// The internal buffer for accumulating characters.
@@ -37,87 +45,104 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     internal protected readonly StringBuilder _buffer = new();
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Emits a token: awaits the client handler. This await is the
+    /// producer/consumer boundary.
+    /// </summary>
+    /// <param name="token">The token to emit.</param>
+    internal protected Task EmitAsync(TToken token) => _onToken(token);
+
+    /// <summary>
+    /// Parses the input stream and awaits the onToken handler for each token found.
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public async Task<string> ParseAsync(Stream stream, Action<TToken> onToken) =>
+    public async Task<string> ParseAsync(Stream stream, Func<TToken, Task> onToken) =>
         await ParseAsync(new StreamReader(stream), new StringBuilder(), new Queue<char>(), onToken);
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Parses the input stream and awaits the onToken handler for each token found.
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public async Task<string> ParseAsync(Stream stream, CancellationToken cancellationToken, Action<TToken> onToken) =>
+    public async Task<string> ParseAsync(Stream stream, CancellationToken cancellationToken, Func<TToken, Task> onToken) =>
         await ParseAsync(new StreamReader(stream), new StringBuilder(), new Queue<char>(), cancellationToken, onToken);
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Parses the input stream and awaits the onToken handler for each token found.
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="encoding">The encoding to use when reading the stream.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public async Task<string> ParseAsync(Stream stream, Encoding encoding, Action<TToken> onToken) =>
+    public async Task<string> ParseAsync(Stream stream, Encoding encoding, Func<TToken, Task> onToken) =>
         await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), new Queue<char>(), onToken);
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Parses the input stream and awaits the onToken handler for each token found.
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="encoding">The encoding to use when reading the stream.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public async Task<string> ParseAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken, Action<TToken> onToken) =>
+    public async Task<string> ParseAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken, Func<TToken, Task> onToken) =>
         await ParseAsync(new StreamReader(stream, encoding), new StringBuilder(), new Queue<char>(), cancellationToken, onToken);
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Parses the input stream synchronously and awaits the onToken handler for each token found.
+    /// In-memory convenience: safe because the input is a memory stream and every await
+    /// completes synchronously (no real IO, so no deadlock).
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public string Parse(Stream stream, Action<TToken> onToken) =>
+    public string Parse(Stream stream, Func<TToken, Task> onToken) =>
         ParseAsync(stream, onToken).GetAwaiter().GetResult();
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Parses the input stream synchronously and awaits the onToken handler for each token found.
+    /// In-memory convenience: safe because the input is a memory stream and every await
+    /// completes synchronously (no real IO, so no deadlock).
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public string Parse(Stream stream, CancellationToken cancellationToken, Action<TToken> onToken) =>
+    public string Parse(Stream stream, CancellationToken cancellationToken, Func<TToken, Task> onToken) =>
         ParseAsync(stream, cancellationToken, onToken).GetAwaiter().GetResult();
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Parses the input stream synchronously and awaits the onToken handler for each token found.
+    /// In-memory convenience: safe because the input is a memory stream and every await
+    /// completes synchronously (no real IO, so no deadlock).
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="encoding">The encoding to use when reading the stream.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public string Parse(Stream stream, Encoding encoding, Action<TToken> onToken) =>
+    public string Parse(Stream stream, Encoding encoding, Func<TToken, Task> onToken) =>
         ParseAsync(stream, encoding, onToken).GetAwaiter().GetResult();
 
     /// <summary>
-    /// Parses the input stream and invokes the onToken action for each token found.
+    /// Parses the input stream synchronously and awaits the onToken handler for each token found.
+    /// In-memory convenience: safe because the input is a memory stream and every await
+    /// completes synchronously (no real IO, so no deadlock).
     /// </summary>
     /// <param name="stream">The input stream to parse.</param>
     /// <param name="encoding">The encoding to use when reading the stream.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    public string Parse(Stream stream, Encoding encoding, CancellationToken cancellationToken, Action<TToken> onToken) =>
+    public string Parse(Stream stream, Encoding encoding, CancellationToken cancellationToken, Func<TToken, Task> onToken) =>
         ParseAsync(stream, encoding, cancellationToken, onToken).GetAwaiter().GetResult();
 
     /// <summary>
     /// Parses the input string and returns a list of tokens found.
+    /// In-memory convenience: safe because the input is a memory stream and every await
+    /// completes synchronously (no real IO, so no deadlock).
     /// </summary>
     /// <param name="input">The input string to parse.</param>
     /// <returns>A list of tokens found in the input string.</returns>
@@ -126,19 +151,23 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
         _stringBuilder = new StringBuilder();
         var tokens = new List<TToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        ParseAsync(stream, tokens.Add).GetAwaiter().GetResult();
+        ParseAsync(stream, token =>
+        {
+            tokens.Add(token);
+            return Task.CompletedTask;
+        }).GetAwaiter().GetResult();
         return tokens;
     }
 
     /// <summary>
-    /// Parses the input text reader and invokes the onToken action for each token found.
+    /// Parses the input text reader and awaits the onToken handler for each token found.
     /// </summary>
     /// <param name="reader">The text reader to parse.</param>
     /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
     /// <param name="lookaheadBuffer">Look ahead buffer</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Queue<char> lookaheadBuffer, Action<TToken> onToken)
+    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Queue<char> lookaheadBuffer, Func<TToken, Task> onToken)
     {
         _reader = reader;
         _onToken = onToken;
@@ -151,15 +180,15 @@ public abstract class BaseTokenizer<TToken> where TToken : IToken
     }
 
     /// <summary>
-    /// Parses the input text reader and invokes the onToken action for each token found.
+    /// Parses the input text reader and awaits the onToken handler for each token found.
     /// </summary>
     /// <param name="reader">The text reader to parse.</param>
     /// <param name="stringBuilder">Stringbuilder that captures all characters from the stream</param>
     /// <param name="lookaheadBuffer">Look ahead buffer</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <param name="onToken">The action to invoke for each token found.</param>
+    /// <param name="onToken">The function to await for each token found.</param>
     /// <returns>The input stream as string</returns>
-    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Queue<char> lookaheadBuffer, CancellationToken cancellationToken, Action<TToken> onToken)
+    internal async Task<string> ParseAsync(TextReader reader, StringBuilder stringBuilder, Queue<char> lookaheadBuffer, CancellationToken cancellationToken, Func<TToken, Task> onToken)
     {
         _reader = reader;
         _onToken = onToken;

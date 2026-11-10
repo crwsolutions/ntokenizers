@@ -5,7 +5,7 @@ namespace NTokenizers.ToHtml.Writers;
 
 /// <summary>
 /// Abstract base for token-to-HTML writers. Provides shared escaping and value-writing utilities,
-/// a default no-op <see cref="WriteAdditionalCss"/>, and an abstract <see cref="WriteHtml"/> contract.
+/// a default no-op <see cref="WriteAdditionalCss"/>, and an abstract <see cref="WriteHtmlAsync"/> contract.
 /// </summary>
 /// <typeparam name="TToken">The token type, constrained to <see cref="IToken"/>.</typeparam>
 internal abstract class AbstractTokenToHtmlWriter<TToken> : BaseHtmlWriter, IAdditionalCssWriter
@@ -27,5 +27,5 @@ internal abstract class AbstractTokenToHtmlWriter<TToken> : BaseHtmlWriter, IAdd
     /// </summary>
     /// <param name="token">The token to render.</param>
     /// <param name="writer">The text writer to write HTML to.</param>
-    internal abstract void WriteHtml(TToken token, TextWriter writer);
+    internal abstract Task WriteHtmlAsync(TToken token, TextWriter writer, CancellationToken ct = default);
 }

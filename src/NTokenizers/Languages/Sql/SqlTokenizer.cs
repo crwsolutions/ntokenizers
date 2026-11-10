@@ -36,63 +36,60 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
     /// Parses SQL content from the given <see cref="TextReader"/> and produces a sequence
     /// of <see cref="SqlToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
-        var state = State.Start;
-        char stringQuote = '\0';
+        var state = new State();
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, ref state, ref stringQuote));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state); // Emit last token
-
-        return Task.CompletedTask;
+        await EmitPending(state); // Emit last token
     }
 
-    private void ProcessChar(char c, ref State state, ref char stringQuote)
+    private async Task ProcessChar(char c, State state)
     {
-        state = state switch
+        state.Current = state.Current switch
         {
-            State.Start => ProcessStart(c, ref stringQuote),
-            State.InString => ProcessInString(c, stringQuote),
-            State.InNumber => ProcessInNumber(c),
-            State.InIdentifier => ProcessInIdentifier(c),
-            State.InOperator => ProcessInOperator(c),
-            State.InLineComment => ProcessInLineComment(c),
-            State.InBlockComment => ProcessInBlockComment(c),
-            State.InWhitespace => ProcessInWhitespace(c, ref stringQuote),
-            _ => State.Start,
+            ParseState.Start => await ProcessStart(c, state),
+            ParseState.InString => await ProcessInString(c, state.StringQuote),
+            ParseState.InNumber => await ProcessInNumber(c),
+            ParseState.InIdentifier => await ProcessInIdentifier(c),
+            ParseState.InOperator => await ProcessInOperator(c),
+            ParseState.InLineComment => await ProcessInLineComment(c),
+            ParseState.InBlockComment => await ProcessInBlockComment(c),
+            ParseState.InWhitespace => await ProcessInWhitespace(c, state),
+            _ => ParseState.Start,
         };
     }
 
-    private State ProcessStart(char c, ref char stringQuote)
+    private async Task<ParseState> ProcessStart(char c, State state)
     {
         // Accumulate whitespace
         if (char.IsWhiteSpace(c))
         {
             _buffer.Append(c);
-            return State.InWhitespace;
+            return ParseState.InWhitespace;
         }
 
         // String literals
         if (c == '\'' || c == '"')
         {
-            stringQuote = c;
+            state.StringQuote = c;
             _buffer.Append(c);
-            return State.InString;
+            return ParseState.InString;
         }
 
         // Numbers
         if (char.IsDigit(c))
         {
             _buffer.Append(c);
-            return State.InNumber;
+            return ParseState.InNumber;
         }
 
         // Identifiers and keywords
         if (char.IsLetter(c) || c == '_')
         {
             _buffer.Append(c);
-            return State.InIdentifier;
+            return ParseState.InIdentifier;
         }
 
         // Comments
@@ -103,12 +100,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             {
                 Read(); // consume second '-'
                 _buffer.Append("--");
-                return State.InLineComment;
+                return ParseState.InLineComment;
             }
             else
             {
                 _buffer.Append(c);
-                return State.InOperator;
+                return ParseState.InOperator;
             }
         }
 
@@ -119,12 +116,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             {
                 Read(); // consume '*'
                 _buffer.Append("/*");
-                return State.InBlockComment;
+                return ParseState.InBlockComment;
             }
             else
             {
                 _buffer.Append(c);
-                return State.InOperator;
+                return ParseState.InOperator;
             }
         }
 
@@ -132,35 +129,35 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         switch (c)
         {
             case ',':
-                _onToken(new SqlToken(SqlTokenType.Comma, ","));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.Comma, ","));
+                return ParseState.Start;
             case '.':
-                _onToken(new SqlToken(SqlTokenType.Dot, "."));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.Dot, "."));
+                return ParseState.Start;
             case '(':
-                _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
+                return ParseState.Start;
             case ')':
-                _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
+                return ParseState.Start;
             case ';':
-                _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
+                return ParseState.Start;
         }
 
         // Operators
         if (IsOperatorChar(c))
         {
             _buffer.Append(c);
-            return State.InOperator;
+            return ParseState.InOperator;
         }
 
         // Not defined
-        _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
-        return State.Start;
+        await _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
+        return ParseState.Start;
     }
 
-    private State ProcessInString(char c, char stringQuote)
+    private async Task<ParseState> ProcessInString(char c, char stringQuote)
     {
         _buffer.Append(c);
 
@@ -175,33 +172,33 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             // This is a simplification - in reality, we should peek
             // For now, emit the string
             string value = _buffer.ToString();
-            _onToken(new SqlToken(SqlTokenType.StringValue, value));
+            await _onToken(new SqlToken(SqlTokenType.StringValue, value));
             _buffer.Clear();
-            return State.Start;
+            return ParseState.Start;
         }
 
-        return State.InString;
+        return ParseState.InString;
     }
 
-    private State ProcessInNumber(char c)
+    private async Task<ParseState> ProcessInNumber(char c)
     {
         if (char.IsDigit(c) || c == '.')
         {
             _buffer.Append(c);
-            return State.InNumber;
+            return ParseState.InNumber;
         }
         else
         {
             // Number is complete
             string value = _buffer.ToString();
-            _onToken(new SqlToken(SqlTokenType.Number, value));
+            await _onToken(new SqlToken(SqlTokenType.Number, value));
             _buffer.Clear();
 
             // Handle current character based on what it is
             if (char.IsWhiteSpace(c))
             {
                 _buffer.Append(c);
-                return State.InWhitespace;
+                return ParseState.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
             {
@@ -209,103 +206,103 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 switch (c)
                 {
                     case ',':
-                        _onToken(new SqlToken(SqlTokenType.Comma, ","));
+                        await _onToken(new SqlToken(SqlTokenType.Comma, ","));
                         break;
                     case '.':
-                        _onToken(new SqlToken(SqlTokenType.Dot, "."));
+                        await _onToken(new SqlToken(SqlTokenType.Dot, "."));
                         break;
                     case '(':
-                        _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
+                        await _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
                         break;
                     case ')':
-                        _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
+                        await _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
                         break;
                     case ';':
-                        _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
+                        await _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
                         break;
                 }
-                return State.Start;
+                return ParseState.Start;
             }
             else if (char.IsLetter(c) || c == '_')
             {
                 _buffer.Append(c);
-                return State.InIdentifier;
+                return ParseState.InIdentifier;
             }
             else if (IsOperatorChar(c))
             {
                 _buffer.Append(c);
-                return State.InOperator;
+                return ParseState.InOperator;
             }
             else
             {
-                _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
+                return ParseState.Start;
             }
         }
     }
 
-    private State ProcessInIdentifier(char c)
+    private async Task<ParseState> ProcessInIdentifier(char c)
     {
         if (char.IsLetterOrDigit(c) || c == '_')
         {
             _buffer.Append(c);
-            return State.InIdentifier;
+            return ParseState.InIdentifier;
         }
         else
         {
             // Identifier is complete
             string value = _buffer.ToString();
             SqlTokenType tokenType = _keywords.Contains(value) ? SqlTokenType.Keyword : SqlTokenType.Identifier;
-            _onToken(new SqlToken(tokenType, value));
+            await _onToken(new SqlToken(tokenType, value));
             _buffer.Clear();
 
             // Handle current character
             if (char.IsWhiteSpace(c))
             {
                 _buffer.Append(c);
-                return State.InWhitespace;
+                return ParseState.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
             {
                 switch (c)
                 {
                     case ',':
-                        _onToken(new SqlToken(SqlTokenType.Comma, ","));
+                        await _onToken(new SqlToken(SqlTokenType.Comma, ","));
                         break;
                     case '.':
-                        _onToken(new SqlToken(SqlTokenType.Dot, "."));
+                        await _onToken(new SqlToken(SqlTokenType.Dot, "."));
                         break;
                     case '(':
-                        _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
+                        await _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
                         break;
                     case ')':
-                        _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
+                        await _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
                         break;
                     case ';':
-                        _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
+                        await _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
                         break;
                 }
-                return State.Start;
+                return ParseState.Start;
             }
             else if (char.IsDigit(c))
             {
                 _buffer.Append(c);
-                return State.InNumber;
+                return ParseState.InNumber;
             }
             else if (IsOperatorChar(c))
             {
                 _buffer.Append(c);
-                return State.InOperator;
+                return ParseState.InOperator;
             }
             else
             {
-                _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
+                return ParseState.Start;
             }
         }
     }
 
-    private State ProcessInOperator(char c)
+    private async Task<ParseState> ProcessInOperator(char c)
     {
         if (IsOperatorChar(c))
         {
@@ -314,84 +311,84 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
             string current = _buffer.ToString();
             if (current == "<>" || current == "<=" || current == ">=" || current == "!=" || current == "||")
             {
-                _onToken(new SqlToken(SqlTokenType.Operator, current));
+                await _onToken(new SqlToken(SqlTokenType.Operator, current));
                 _buffer.Clear();
-                return State.Start;
+                return ParseState.Start;
             }
-            return State.InOperator;
+            return ParseState.InOperator;
         }
         else
         {
             // Operator is complete
             string value = _buffer.ToString();
-            _onToken(new SqlToken(SqlTokenType.Operator, value));
+            await _onToken(new SqlToken(SqlTokenType.Operator, value));
             _buffer.Clear();
 
             // Handle current character
             if (char.IsWhiteSpace(c))
             {
                 _buffer.Append(c);
-                return State.InWhitespace;
+                return ParseState.InWhitespace;
             }
             else if (c == ',' || c == '.' || c == '(' || c == ')' || c == ';')
             {
                 switch (c)
                 {
                     case ',':
-                        _onToken(new SqlToken(SqlTokenType.Comma, ","));
+                        await _onToken(new SqlToken(SqlTokenType.Comma, ","));
                         break;
                     case '.':
-                        _onToken(new SqlToken(SqlTokenType.Dot, "."));
+                        await _onToken(new SqlToken(SqlTokenType.Dot, "."));
                         break;
                     case '(':
-                        _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
+                        await _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
                         break;
                     case ')':
-                        _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
+                        await _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
                         break;
                     case ';':
-                        _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
+                        await _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
                         break;
                 }
-                return State.Start;
+                return ParseState.Start;
             }
             else if (char.IsDigit(c))
             {
                 _buffer.Append(c);
-                return State.InNumber;
+                return ParseState.InNumber;
             }
             else if (char.IsLetter(c) || c == '_')
             {
                 _buffer.Append(c);
-                return State.InIdentifier;
+                return ParseState.InIdentifier;
             }
             else
             {
-                _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
+                return ParseState.Start;
             }
         }
     }
 
-    private State ProcessInLineComment(char c)
+    private async Task<ParseState> ProcessInLineComment(char c)
     {
         if (c == '\n' || c == '\r')
         {
             // Line comment is complete
             _buffer.Append(c);
             string value = _buffer.ToString();
-            _onToken(new SqlToken(SqlTokenType.Comment, value));
+            await _onToken(new SqlToken(SqlTokenType.Comment, value));
             _buffer.Clear();
-            return State.Start;
+            return ParseState.Start;
         }
         else
         {
             _buffer.Append(c);
-            return State.InLineComment;
+            return ParseState.InLineComment;
         }
     }
 
-    private State ProcessInBlockComment(char c)
+    private async Task<ParseState> ProcessInBlockComment(char c)
     {
         _buffer.Append(c);
 
@@ -399,44 +396,44 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         string current = _buffer.ToString();
         if (current.Length >= 2 && current.EndsWith("*/"))
         {
-            _onToken(new SqlToken(SqlTokenType.Comment, current));
+            await _onToken(new SqlToken(SqlTokenType.Comment, current));
             _buffer.Clear();
-            return State.Start;
+            return ParseState.Start;
         }
 
-        return State.InBlockComment;
+        return ParseState.InBlockComment;
     }
 
-    private State ProcessInWhitespace(char c, ref char stringQuote)
+    private async Task<ParseState> ProcessInWhitespace(char c, State state)
     {
         if (char.IsWhiteSpace(c))
         {
             _buffer.Append(c);
-            return State.InWhitespace;
+            return ParseState.InWhitespace;
         }
         else
         {
             // Whitespace is complete
             string value = _buffer.ToString();
-            _onToken(new SqlToken(SqlTokenType.Whitespace, value));
+            await _onToken(new SqlToken(SqlTokenType.Whitespace, value));
             _buffer.Clear();
 
             // Handle current character based on what it is
             if (c == '\'' || c == '"')
             {
-                stringQuote = c;
+                state.StringQuote = c;
                 _buffer.Append(c);
-                return State.InString;
+                return ParseState.InString;
             }
             else if (char.IsDigit(c))
             {
                 _buffer.Append(c);
-                return State.InNumber;
+                return ParseState.InNumber;
             }
             else if (char.IsLetter(c) || c == '_')
             {
                 _buffer.Append(c);
-                return State.InIdentifier;
+                return ParseState.InIdentifier;
             }
             // Check for comments
             else if (c == '-')
@@ -446,12 +443,12 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 {
                     Read(); // consume second '-'
                     _buffer.Append("--");
-                    return State.InLineComment;
+                    return ParseState.InLineComment;
                 }
                 else
                 {
                     _buffer.Append(c);
-                    return State.InOperator;
+                    return ParseState.InOperator;
                 }
             }
             else if (c == '/')
@@ -461,80 +458,80 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                 {
                     Read(); // consume '*'
                     _buffer.Append("/*");
-                    return State.InBlockComment;
+                    return ParseState.InBlockComment;
                 }
                 else
                 {
                     _buffer.Append(c);
-                    return State.InOperator;
+                    return ParseState.InOperator;
                 }
             }
             else if (c == ',')
             {
-                _onToken(new SqlToken(SqlTokenType.Comma, ","));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.Comma, ","));
+                return ParseState.Start;
             }
             else if (c == '.')
             {
-                _onToken(new SqlToken(SqlTokenType.Dot, "."));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.Dot, "."));
+                return ParseState.Start;
             }
             else if (c == '(')
             {
-                _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.OpenParenthesis, "("));
+                return ParseState.Start;
             }
             else if (c == ')')
             {
-                _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.CloseParenthesis, ")"));
+                return ParseState.Start;
             }
             else if (c == ';')
             {
-                _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.SequenceTerminator, ";"));
+                return ParseState.Start;
             }
             else if (IsOperatorChar(c))
             {
                 _buffer.Append(c);
-                return State.InOperator;
+                return ParseState.InOperator;
             }
             else
             {
-                _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
-                return State.Start;
+                await _onToken(new SqlToken(SqlTokenType.NotDefined, c.ToString()));
+                return ParseState.Start;
             }
         }
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length == 0)
             return;
 
         string value = _buffer.ToString();
 
-        switch (state)
+        switch (state.Current)
         {
-            case State.InString:
-                _onToken(new SqlToken(SqlTokenType.StringValue, value));
+            case ParseState.InString:
+                await _onToken(new SqlToken(SqlTokenType.StringValue, value));
                 break;
-            case State.InNumber:
-                _onToken(new SqlToken(SqlTokenType.Number, value));
+            case ParseState.InNumber:
+                await _onToken(new SqlToken(SqlTokenType.Number, value));
                 break;
-            case State.InIdentifier:
+            case ParseState.InIdentifier:
                 SqlTokenType tokenType = _keywords.Contains(value) ? SqlTokenType.Keyword : SqlTokenType.Identifier;
-                _onToken(new SqlToken(tokenType, value));
+                await _onToken(new SqlToken(tokenType, value));
                 break;
-            case State.InOperator:
-                _onToken(new SqlToken(SqlTokenType.Operator, value));
+            case ParseState.InOperator:
+                await _onToken(new SqlToken(SqlTokenType.Operator, value));
                 break;
-            case State.InLineComment:
-            case State.InBlockComment:
-                _onToken(new SqlToken(SqlTokenType.Comment, value));
+            case ParseState.InLineComment:
+            case ParseState.InBlockComment:
+                await _onToken(new SqlToken(SqlTokenType.Comment, value));
                 break;
-            case State.InWhitespace:
-                _onToken(new SqlToken(SqlTokenType.Whitespace, value));
+            case ParseState.InWhitespace:
+                await _onToken(new SqlToken(SqlTokenType.Whitespace, value));
                 break;
         }
 
@@ -547,7 +544,7 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
                c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '|';
     }
 
-    private enum State
+    private enum ParseState
     {
         Start,
         InString,
@@ -557,5 +554,11 @@ public sealed class SqlTokenizer : BaseSubTokenizer<SqlToken>
         InLineComment,
         InBlockComment,
         InWhitespace
+    }
+
+    private sealed class State
+    {
+        public ParseState Current = ParseState.Start;
+        public char StringQuote = '\0';
     }
 }

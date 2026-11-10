@@ -16,53 +16,43 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
     /// Parses YAML or YAML-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="YamlToken"/> objects.
     /// </summary>
-    protected internal override Task ParseAsync(CancellationToken ct)
+    protected internal override async Task ParseAsync(CancellationToken ct)
     {
         var stack = new Stack<ContainerType>();
-        bool inQuotedString = false;
-        bool inKey = false;
-        bool inValue = false;
-        bool inComment = false;
-        bool escape = false;
-        bool isLineStart = true;
-        bool isAfterColon = false;
-        bool isAfterBlockSeqEntry = false;
-        bool isDocumentStartOrBlockSeqEntry = false;
+        var state = new State();
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, ref inQuotedString, ref inKey, ref inValue, ref inComment, ref escape, ref isLineStart, ref isAfterColon, ref isAfterBlockSeqEntry, ref isDocumentStartOrBlockSeqEntry, stack));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state, stack));
 
-        EmitPending(ref inQuotedString, ref inKey, ref inValue, ref inComment);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, ref bool inQuotedString, ref bool inKey, ref bool inValue, ref bool inComment, ref bool escape, ref bool isLineStart, ref bool isAfterColon, ref bool isAfterBlockSeqEntry, ref bool isDocumentStartOrBlockSeqEntry, Stack<ContainerType> stack)
+    private async Task ProcessChar(char c, State state, Stack<ContainerType> stack)
     {
         // Handle comments - comments consume everything until newline
-        if (inComment)
+        if (state.InComment)
         {
             _buffer.Append(c);
             if (c == '\n')
             {
-                _onToken(new YamlToken(YamlTokenType.Comment, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Comment, _buffer.ToString()));
                 _buffer.Clear();
-                inComment = false;
-                isLineStart = true;
+                state.InComment = false;
+                state.IsLineStart = true;
             }
             return;
         }
 
         // Handle quoted strings
-        if (inQuotedString)
+        if (state.InQuotedString)
         {
             _buffer.Append(c);
-            if (escape)
+            if (state.Escape)
             {
-                escape = false;
+                state.Escape = false;
             }
             else if (c == '\\')
             {
-                escape = true;
+                state.Escape = true;
             }
             else if (c == '"')
             {
@@ -73,35 +63,35 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 // Extract content between quotes
                 if (str.Length > 1)
                 {
-                    _onToken(new YamlToken(YamlTokenType.String, str.Substring(1, str.Length - 2)));
+                    await _onToken(new YamlToken(YamlTokenType.String, str.Substring(1, str.Length - 2)));
                 }
                 // Emit the closing quote
-                _onToken(new YamlToken(YamlTokenType.Quote, "\""));
+                await _onToken(new YamlToken(YamlTokenType.Quote, "\""));
 
-                inQuotedString = false;
-                inValue = false;
-                isAfterColon = false;
+                state.InQuotedString = false;
+                state.InValue = false;
+                state.IsAfterColon = false;
             }
             return;
         }
 
-        if (isDocumentStartOrBlockSeqEntry)
+        if (state.IsDocumentStartOrBlockSeqEntry)
         {
             if (c == '-' && _buffer.Length == 2)
             {
-                _onToken(new YamlToken(YamlTokenType.DocumentStart, "---"));
+                await _onToken(new YamlToken(YamlTokenType.DocumentStart, "---"));
                 _buffer.Clear();
-                isDocumentStartOrBlockSeqEntry = false;
+                state.IsDocumentStartOrBlockSeqEntry = false;
                 return;
             }
             if (char.IsWhiteSpace(c))
             {
                 // Block sequence entry
-                _onToken(new YamlToken(YamlTokenType.BlockSeqEntry, "-"));
-                _onToken(new YamlToken(YamlTokenType.Whitespace, c.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.BlockSeqEntry, "-"));
+                await _onToken(new YamlToken(YamlTokenType.Whitespace, c.ToString()));
                 _buffer.Clear();
-                isDocumentStartOrBlockSeqEntry = false;
-                inValue = true;
+                state.IsDocumentStartOrBlockSeqEntry = false;
+                state.InValue = true;
                 return;
             }
             _buffer.Append(c);
@@ -119,16 +109,16 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             // Emit pending content
             if (_buffer.Length > 0)
             {
-                if (inKey)
+                if (state.InKey)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
-                    inKey = false;
+                    await _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
+                    state.InKey = false;
                     _buffer.Clear();
                 }
-                else if (inValue)
+                else if (state.InValue)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
-                    inValue = false;
+                    await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                    state.InValue = false;
                     _buffer.Clear();
                 }
             }
@@ -136,8 +126,8 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             // Append newline to buffer - it will be emitted as part of the next Whitespace token
             // along with any following indentation/spaces
             _buffer.Append(c);
-            isLineStart = true;
-            isAfterColon = false;
+            state.IsLineStart = true;
+            state.IsAfterColon = false;
             return;
         }
 
@@ -145,29 +135,29 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         if (char.IsWhiteSpace(c))
         {
             // If we're after a colon or block sequence entry, we're starting a value (include leading whitespace)
-            if ((isAfterColon || isAfterBlockSeqEntry) && !inValue)
+            if ((state.IsAfterColon || state.IsAfterBlockSeqEntry) && !state.InValue)
             {
-                inValue = true;
-                isAfterColon = false;
-                isAfterBlockSeqEntry = false;
+                state.InValue = true;
+                state.IsAfterColon = false;
+                state.IsAfterBlockSeqEntry = false;
             }
 
             // If we're in a key or value, we need to decide whether to include the whitespace
-            if (inKey || inValue)
+            if (state.InKey || state.InValue)
             {
                 // For keys: never include trailing whitespace - emit immediately
-                if (inKey)
+                if (state.InKey)
                 {
                     // Emit key without trailing whitespace
                     if (_buffer.Length > 0)
                     {
-                        _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
+                        await _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
                         _buffer.Clear();
                     }
-                    inKey = false;
+                    state.InKey = false;
                     // Fall through to handle whitespace
                 }
-                else if (inValue)
+                else if (state.InValue)
                 {
                     // For values: accumulate whitespace, but handle specially based on context
                     int nextChar = Peek();
@@ -180,9 +170,9 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                         if (Peek() == '#')
                         {
                             // Immediately followed by #, emit value with trailing space
-                            _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                            await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                             _buffer.Clear();
-                            inValue = false;
+                            state.InValue = false;
                         }
                         return;
                     }
@@ -198,10 +188,10 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                             string val = _buffer.ToString().TrimEnd();
                             if (val.Length > 0)
                             {
-                                _onToken(new YamlToken(YamlTokenType.Value, val));
+                                await _onToken(new YamlToken(YamlTokenType.Value, val));
                             }
                             _buffer.Clear();
-                            inValue = false;
+                            state.InValue = false;
                             // Re-process just the current whitespace char
                             _buffer.Append(c);
                         }
@@ -216,23 +206,23 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         }
 
         // Non-whitespace means line start is over
-        bool wasLineStart = isLineStart;
+        bool wasLineStart = state.IsLineStart;
         if (!char.IsWhiteSpace(c))
         {
-            isLineStart = false;
+            state.IsLineStart = false;
         }
 
         // Emit any pending whitespace
-        if (_buffer.Length > 0 && !inKey && !inValue)
+        if (_buffer.Length > 0 && !state.InKey && !state.InValue)
         {
-            _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
+            await _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
             _buffer.Clear();
         }
 
         //Check for directives
         if (wasLineStart && c == '%')
         {
-            _onToken(new YamlToken(YamlTokenType.Directive, c.ToString()));
+            await _onToken(new YamlToken(YamlTokenType.Directive, c.ToString()));
             var readKey = true;
             while (true)
             {
@@ -243,11 +233,11 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     {
                         if (readKey)
                         {
-                            _onToken(new YamlToken(YamlTokenType.DirectiveKey, _buffer.ToString()));
+                            await _onToken(new YamlToken(YamlTokenType.DirectiveKey, _buffer.ToString()));
                         }
                         else
                         {
-                            _onToken(new YamlToken(YamlTokenType.DirectiveValue, _buffer.ToString()));
+                            await _onToken(new YamlToken(YamlTokenType.DirectiveValue, _buffer.ToString()));
                         }
                         _buffer.Clear();
                     }
@@ -258,8 +248,8 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     var rc = (char)cc;
                     if (readKey && char.IsWhiteSpace(rc))
                     {
-                        _onToken(new YamlToken(YamlTokenType.DirectiveKey, _buffer.ToString()));
-                        _onToken(new YamlToken(YamlTokenType.Whitespace, rc.ToString()));
+                        await _onToken(new YamlToken(YamlTokenType.DirectiveKey, _buffer.ToString()));
+                        await _onToken(new YamlToken(YamlTokenType.Whitespace, rc.ToString()));
                         _buffer.Clear();
                         readKey = false;
                         continue;
@@ -267,7 +257,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     else if (!readKey && (Peek() == '\n' || Peek() == '\r' || Peek() == '\0'))
                     {
                         _buffer.Append(rc);
-                        _onToken(new YamlToken(YamlTokenType.DirectiveValue, _buffer.ToString()));
+                        await _onToken(new YamlToken(YamlTokenType.DirectiveValue, _buffer.ToString()));
                         _buffer.Clear();
                         return;
                     }
@@ -280,7 +270,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         if (wasLineStart && c == '-')
         {
             // Check for --- or block sequence entry
-            isDocumentStartOrBlockSeqEntry = true;
+            state.IsDocumentStartOrBlockSeqEntry = true;
             _buffer.Append(c);
             return;
         }
@@ -295,7 +285,7 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
             {
                 Read(); // consume second .
                 Read(); // consume third .
-                _onToken(new YamlToken(YamlTokenType.DocumentEnd, "..."));
+                await _onToken(new YamlToken(YamlTokenType.DocumentEnd, "..."));
                 return;
             }
         }
@@ -304,122 +294,122 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         switch (c)
         {
             case '[':
-                if (inValue)
+                if (state.InValue)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
                 else if (_buffer.Length > 0)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
                     _buffer.Clear();
                 }
-                _onToken(new YamlToken(YamlTokenType.FlowSeqStart, "["));
+                await _onToken(new YamlToken(YamlTokenType.FlowSeqStart, "["));
                 stack.Push(ContainerType.FlowSeq);
-                isAfterColon = false;
-                isAfterBlockSeqEntry = false;
+                state.IsAfterColon = false;
+                state.IsAfterBlockSeqEntry = false;
                 return;
 
             case ']':
-                if (inValue)
+                if (state.InValue)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
                 if (stack.Count > 0 && stack.Peek() == ContainerType.FlowSeq)
                 {
                     stack.Pop();
                 }
-                _onToken(new YamlToken(YamlTokenType.FlowSeqEnd, "]"));
-                isAfterColon = false;
+                await _onToken(new YamlToken(YamlTokenType.FlowSeqEnd, "]"));
+                state.IsAfterColon = false;
                 return;
 
             case '{':
-                if (inValue)
+                if (state.InValue)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
-                _onToken(new YamlToken(YamlTokenType.FlowMapStart, "{"));
+                await _onToken(new YamlToken(YamlTokenType.FlowMapStart, "{"));
                 stack.Push(ContainerType.FlowMap);
-                isAfterColon = false;
+                state.IsAfterColon = false;
                 return;
 
             case '}':
-                if (inValue)
+                if (state.InValue)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
                 if (stack.Count > 0 && stack.Peek() == ContainerType.FlowMap)
                 {
                     stack.Pop();
                 }
-                _onToken(new YamlToken(YamlTokenType.FlowMapEnd, "}"));
-                isAfterColon = false;
+                await _onToken(new YamlToken(YamlTokenType.FlowMapEnd, "}"));
+                state.IsAfterColon = false;
                 return;
 
             case ',':
-                if (inKey)
+                if (state.InKey)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
                     _buffer.Clear();
-                    inKey = false;
+                    state.InKey = false;
                 }
-                else if (inValue)
+                else if (state.InValue)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
-                _onToken(new YamlToken(YamlTokenType.FlowEntry, ","));
-                isAfterColon = false;
-                isAfterBlockSeqEntry = false;
+                await _onToken(new YamlToken(YamlTokenType.FlowEntry, ","));
+                state.IsAfterColon = false;
+                state.IsAfterBlockSeqEntry = false;
                 return;
 
             case ':':
                 // Emit key if we have one
-                if (inKey)
+                if (state.InKey)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
                     _buffer.Clear();
-                    inKey = false;
+                    state.InKey = false;
                 }
                 else if (_buffer.Length > 0)
                 {
                     // We had accumulated something, it's a key
-                    _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
                     _buffer.Clear();
                 }
-                _onToken(new YamlToken(YamlTokenType.Colon, ":"));
-                isAfterColon = true;
+                await _onToken(new YamlToken(YamlTokenType.Colon, ":"));
+                state.IsAfterColon = true;
                 return;
 
             case '#':
                 // Start of comment
-                if (inKey)
+                if (state.InKey)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
                     _buffer.Clear();
-                    inKey = false;
+                    state.InKey = false;
                 }
-                else if (inValue)
+                else if (state.InValue)
                 {
-                    _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
-                inComment = true;
+                state.InComment = true;
                 _buffer.Append(c);
                 return;
 
             case '"':
                 // Start of quoted string
-                if (inValue)
+                if (state.InValue)
                 {
                     // If buffer is only whitespace, emit as Whitespace, not Value
                     string bufferContent = _buffer.ToString();
@@ -427,11 +417,11 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     {
                         if (bufferContent.Trim().Length == 0)
                         {
-                            _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
                         }
                         else
                         {
-                            _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
                         }
                     }
                     _buffer.Clear();
@@ -439,18 +429,18 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                 else if (_buffer.Length > 0)
                 {
                     // Emit any pending whitespace
-                    _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
                     _buffer.Clear();
                 }
-                _onToken(new YamlToken(YamlTokenType.Quote, "\""));
-                inQuotedString = true;
-                inValue = false;
+                await _onToken(new YamlToken(YamlTokenType.Quote, "\""));
+                state.InQuotedString = true;
+                state.InValue = false;
                 _buffer.Append(c);
                 return;
 
             case '&':
                 // Anchor
-                if (inValue)
+                if (state.InValue)
                 {
                     // If buffer is only whitespace, emit as Whitespace, not Value
                     string bufferContent = _buffer.ToString();
@@ -458,20 +448,20 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     {
                         if (bufferContent.Trim().Length == 0)
                         {
-                            _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
                         }
                         else
                         {
-                            _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
                         }
                     }
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
                 else if (_buffer.Length > 0)
                 {
                     // Emit any pending whitespace
-                    _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
                     _buffer.Clear();
                 }
                 _buffer.Append(c);
@@ -483,13 +473,13 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                         break;
                     _buffer.Append((char)Read());
                 }
-                _onToken(new YamlToken(YamlTokenType.Anchor, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Anchor, _buffer.ToString()));
                 _buffer.Clear();
                 return;
 
             case '*':
                 // Alias
-                if (inValue)
+                if (state.InValue)
                 {
                     // If buffer is only whitespace, emit as Whitespace, not Value
                     string bufferContent = _buffer.ToString();
@@ -497,20 +487,20 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     {
                         if (bufferContent.Trim().Length == 0)
                         {
-                            _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
                         }
                         else
                         {
-                            _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
                         }
                     }
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
                 else if (_buffer.Length > 0)
                 {
                     // Emit any pending whitespace
-                    _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
                     _buffer.Clear();
                 }
                 _buffer.Append(c);
@@ -522,13 +512,13 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                         break;
                     _buffer.Append((char)Read());
                 }
-                _onToken(new YamlToken(YamlTokenType.Alias, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Alias, _buffer.ToString()));
                 _buffer.Clear();
                 return;
 
             case '!':
                 // Tag
-                if (inValue)
+                if (state.InValue)
                 {
                     // If buffer is only whitespace, emit as Whitespace, not Value
                     string bufferContent = _buffer.ToString();
@@ -536,20 +526,20 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                     {
                         if (bufferContent.Trim().Length == 0)
                         {
-                            _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Whitespace, bufferContent));
                         }
                         else
                         {
-                            _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
+                            await _onToken(new YamlToken(YamlTokenType.Value, bufferContent));
                         }
                     }
                     _buffer.Clear();
-                    inValue = false;
+                    state.InValue = false;
                 }
                 else if (_buffer.Length > 0)
                 {
                     // Emit any pending whitespace
-                    _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
+                    await _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
                     _buffer.Clear();
                 }
                 _buffer.Append(c);
@@ -566,30 +556,30 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
                         break;
                     _buffer.Append((char)Read());
                 }
-                _onToken(new YamlToken(YamlTokenType.Tag, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Tag, _buffer.ToString()));
                 _buffer.Clear();
                 return;
 
             default:
                 // Regular character - part of key or value
-                if (isAfterColon || isAfterBlockSeqEntry)
+                if (state.IsAfterColon || state.IsAfterBlockSeqEntry)
                 {
                     // After colon or block seq entry, we're in a value
-                    inValue = true;
-                    isAfterColon = false;
-                    isAfterBlockSeqEntry = false;
+                    state.InValue = true;
+                    state.IsAfterColon = false;
+                    state.IsAfterBlockSeqEntry = false;
                 }
-                else if (!inValue)
+                else if (!state.InValue)
                 {
                     // Check if we're in a flow sequence - if so, treat as value
                     if (stack.Count > 0 && stack.Peek() == ContainerType.FlowSeq)
                     {
-                        inValue = true;
+                        state.InValue = true;
                     }
                     else
                     {
                         // Before colon, we're in a key
-                        inKey = true;
+                        state.InKey = true;
                     }
                 }
                 _buffer.Append(c);
@@ -597,42 +587,55 @@ public sealed class YamlTokenizer : BaseSubTokenizer<YamlToken>
         }
     }
 
-    private void EmitPending(ref bool inQuotedString, ref bool inKey, ref bool inValue, ref bool inComment)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
-            if (inComment)
+            if (state.InComment)
             {
-                _onToken(new YamlToken(YamlTokenType.Comment, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Comment, _buffer.ToString()));
             }
-            else if (inQuotedString)
+            else if (state.InQuotedString)
             {
                 // Incomplete string - emit as string
                 string str = _buffer.ToString();
                 if (str.Length > 1)
                 {
-                    _onToken(new YamlToken(YamlTokenType.String, str.Substring(1)));
+                    await _onToken(new YamlToken(YamlTokenType.String, str.Substring(1)));
                 }
             }
-            else if (inKey)
+            else if (state.InKey)
             {
-                _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Key, _buffer.ToString()));
             }
-            else if (inValue)
+            else if (state.InValue)
             {
-                _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Value, _buffer.ToString()));
             }
             else
             {
-                _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
+                await _onToken(new YamlToken(YamlTokenType.Whitespace, _buffer.ToString()));
             }
             _buffer.Clear();
         }
 
-        inQuotedString = false;
-        inKey = false;
-        inValue = false;
-        inComment = false;
+        state.InQuotedString = false;
+        state.InKey = false;
+        state.InValue = false;
+        state.InComment = false;
+    }
+
+    private sealed class State
+    {
+        public bool InQuotedString;
+        public bool InKey;
+        public bool InValue;
+        public bool InComment;
+        public bool Escape;
+        public bool IsLineStart = true;
+        public bool IsAfterColon;
+        public bool IsAfterBlockSeqEntry;
+        public bool IsDocumentStartOrBlockSeqEntry;
     }
 
     private enum ContainerType

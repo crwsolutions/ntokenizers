@@ -16,53 +16,47 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
     /// Parses JSON or JSON-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="JsonToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var stack = new Stack<ContainerType>();
-        bool inString = false;
-        bool inNumber = false;
-        bool inKeyword = false;
-        bool isExpectingKey = false;
-        bool escape = false;
+        var state = new State();
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, ref inString, ref inNumber, ref inKeyword, ref escape, ref isExpectingKey, stack));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state, stack));
 
-        EmitPending(ref inString, ref inNumber, ref inKeyword);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, ref bool inString, ref bool inNumber, ref bool inKeyword, ref bool escape, ref bool isExpectingKey, Stack<ContainerType> stack)
+    private async Task ProcessChar(char c, State state, Stack<ContainerType> stack)
     {
-        if (inString)
+        if (state.InString)
         {
             _buffer.Append(c);
-            if (escape)
+            if (state.Escape)
             {
-                escape = false;
+                state.Escape = false;
             }
             else if (c == '\\')
             {
-                escape = true;
+                state.Escape = true;
             }
             else if (c == '"')
             {
-                inString = false;
+                state.InString = false;
                 string str = _buffer.ToString();
                 _buffer.Clear();
-                JsonTokenType type = (stack.Count > 0 && stack.Peek() == ContainerType.Object && isExpectingKey)
+                JsonTokenType type = (stack.Count > 0 && stack.Peek() == ContainerType.Object && state.IsExpectingKey)
                     ? JsonTokenType.PropertyName
                     : JsonTokenType.StringValue;
-                _onToken(new JsonToken(type, str));
+                await _onToken(new JsonToken(type, str));
                 if (type == JsonTokenType.PropertyName)
                 {
-                    isExpectingKey = false;
+                    state.IsExpectingKey = false;
                 }
             }
             return;
         }
 
-        if (inNumber)
+        if (state.InNumber)
         {
             if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+')
             {
@@ -73,41 +67,41 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             {
                 string num = _buffer.ToString();
                 _buffer.Clear();
-                _onToken(new JsonToken(JsonTokenType.Number, num));
-                inNumber = false;
+                await _onToken(new JsonToken(JsonTokenType.Number, num));
+                state.InNumber = false;
                 // Fall through to process current c
             }
         }
 
-        if (inKeyword)
+        if (state.InKeyword)
         {
             _buffer.Append(c);
             string kw = _buffer.ToString();
             if (kw == "true")
             {
-                _onToken(new JsonToken(JsonTokenType.True, "true"));
-                inKeyword = false;
+                await _onToken(new JsonToken(JsonTokenType.True, "true"));
+                state.InKeyword = false;
                 _buffer.Clear();
                 return;
             }
             else if (kw == "false")
             {
-                _onToken(new JsonToken(JsonTokenType.False, "false"));
-                inKeyword = false;
+                await _onToken(new JsonToken(JsonTokenType.False, "false"));
+                state.InKeyword = false;
                 _buffer.Clear();
                 return;
             }
             else if (kw == "null")
             {
-                _onToken(new JsonToken(JsonTokenType.Null, "null"));
-                inKeyword = false;
+                await _onToken(new JsonToken(JsonTokenType.Null, "null"));
+                state.InKeyword = false;
                 _buffer.Clear();
                 return;
             }
             else if (!"true".StartsWith(kw) && !"false".StartsWith(kw) && !"null".StartsWith(kw))
             {
                 // Invalid, reset
-                inKeyword = false;
+                state.InKeyword = false;
                 _buffer.Clear();
             }
             else
@@ -125,9 +119,9 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
         else
         {
             // Emit any pending whitespace
-            if (_buffer.Length > 0 && !inNumber && !inKeyword && !inString)
+            if (_buffer.Length > 0 && !state.InNumber && !state.InKeyword && !state.InString)
             {
-                _onToken(new JsonToken(JsonTokenType.Whitespace, _buffer.ToString()));
+                await _onToken(new JsonToken(JsonTokenType.Whitespace, _buffer.ToString()));
                 _buffer.Clear();
             }
         }
@@ -136,41 +130,41 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
         switch (c)
         {
             case '{':
-                _onToken(new JsonToken(JsonTokenType.StartObject, "{"));
+                await _onToken(new JsonToken(JsonTokenType.StartObject, "{"));
                 stack.Push(ContainerType.Object);
-                isExpectingKey = true;
+                state.IsExpectingKey = true;
                 break;
             case '}':
                 if (stack.Count > 0 && stack.Peek() == ContainerType.Object)
                 {
                     stack.Pop();
                 }
-                _onToken(new JsonToken(JsonTokenType.EndObject, "}"));
-                isExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
+                await _onToken(new JsonToken(JsonTokenType.EndObject, "}"));
+                state.IsExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
                 break;
             case '[':
-                _onToken(new JsonToken(JsonTokenType.StartArray, "["));
+                await _onToken(new JsonToken(JsonTokenType.StartArray, "["));
                 stack.Push(ContainerType.Array);
-                isExpectingKey = false;
+                state.IsExpectingKey = false;
                 break;
             case ']':
                 if (stack.Count > 0 && stack.Peek() == ContainerType.Array)
                 {
                     stack.Pop();
                 }
-                _onToken(new JsonToken(JsonTokenType.EndArray, "]"));
-                isExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
+                await _onToken(new JsonToken(JsonTokenType.EndArray, "]"));
+                state.IsExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
                 break;
             case ':':
-                _onToken(new JsonToken(JsonTokenType.Colon, ":"));
-                isExpectingKey = false;
+                await _onToken(new JsonToken(JsonTokenType.Colon, ":"));
+                state.IsExpectingKey = false;
                 break;
             case ',':
-                _onToken(new JsonToken(JsonTokenType.Comma, ","));
-                isExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
+                await _onToken(new JsonToken(JsonTokenType.Comma, ","));
+                state.IsExpectingKey = stack.Count > 0 && stack.Peek() == ContainerType.Object;
                 break;
             case '"':
-                inString = true;
+                state.InString = true;
                 _buffer.Append(c);
                 break;
             case '-':
@@ -184,13 +178,13 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
             case '7':
             case '8':
             case '9':
-                inNumber = true;
+                state.InNumber = true;
                 _buffer.Append(c);
                 break;
             case 't':
             case 'f':
             case 'n':
-                inKeyword = true;
+                state.InKeyword = true;
                 _buffer.Append(c);
                 break;
             default:
@@ -199,31 +193,40 @@ public sealed class JsonTokenizer : BaseSubTokenizer<JsonToken>
         }
     }
 
-    private void EmitPending(ref bool inString, ref bool inNumber, ref bool inKeyword)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
-            if (inString)
+            if (state.InString)
             {
                 // Incomplete string, skip or handle
             }
-            else if (inNumber)
+            else if (state.InNumber)
             {
-                _onToken(new JsonToken(JsonTokenType.Number, _buffer.ToString()));
+                await _onToken(new JsonToken(JsonTokenType.Number, _buffer.ToString()));
             }
-            else if (inKeyword)
+            else if (state.InKeyword)
             {
                 // Incomplete, skip
             }
             else
             {
-                _onToken(new JsonToken(JsonTokenType.Whitespace, _buffer.ToString()));
+                await _onToken(new JsonToken(JsonTokenType.Whitespace, _buffer.ToString()));
             }
             _buffer.Clear();
         }
-        inString = false;
-        inNumber = false;
-        inKeyword = false;
+        state.InString = false;
+        state.InNumber = false;
+        state.InKeyword = false;
+    }
+
+    private sealed class State
+    {
+        public bool InString;
+        public bool InNumber;
+        public bool InKeyword;
+        public bool IsExpectingKey;
+        public bool Escape;
     }
 
     private enum ContainerType

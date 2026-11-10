@@ -7,7 +7,7 @@ internal class InlineMarkdownTokenizer : BaseMarkdownTokenizer
 {
     internal static InlineMarkdownTokenizer Create() => new();
 
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
@@ -17,7 +17,7 @@ internal class InlineMarkdownTokenizer : BaseMarkdownTokenizer
                 break;
             }
 
-            if (TryParseInlineConstruct((char)ch))
+            if (await TryParseInlineConstructAsync((char)ch))
             {
                 continue;
             }
@@ -26,8 +26,6 @@ internal class InlineMarkdownTokenizer : BaseMarkdownTokenizer
             _buffer.Append((char)Read());
         }
 
-        EmitText();
-
-        return Task.CompletedTask;
+        await EmitTextAsync();
     }
 }

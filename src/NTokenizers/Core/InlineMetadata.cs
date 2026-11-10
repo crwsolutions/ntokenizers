@@ -1,58 +1,60 @@
+using System.Text;
+
 namespace NTokenizers.Core;
 
 /// <summary>
-/// Markdown metadata with inline tokenization support.
+/// Metadata for a block whose content is parsed by a sub-tokenizer.
 /// </summary>
-public abstract class InlineMetadata<TToken>() : InlineMetadata where TToken : IToken
-{
-    private readonly TaskCompletionSource<Action<TToken>> _onInlineTokenTcs = new();
-
-    private Action<TToken>? _onInlineToken;
-
-    // Awaitable getter for the handler (parser uses this)
-    internal Task<Action<TToken>> GetInlineTokenHandlerAsync() => _onInlineTokenTcs.Task;
-
-    /// <summary>
-    /// Client calls this to register the handler and signal; returns processing Task for awaiting.
-    /// </summary>
-    /// <param name="handler">The inline token handler.</param>
-    /// <param name="onInlinesCompleted">Optional callback invoked after inline parsing completes, before the parser continues.</param>
-    public Task<bool> RegisterInlineTokenHandler(Action<TToken> handler, Action? onInlinesCompleted = null)
-    {
-        _onInlineToken = handler ?? throw new ArgumentNullException(nameof(handler));
-        _onInlinesCompleted = onInlinesCompleted;
-        _onInlineTokenTcs.TrySetResult(handler);
-        return _processingTcs.Task;
-    }
-}
-
-/// <summary>
-/// Metadata with inline tokenization support.
-/// </summary>
-public abstract class InlineMetadata : Metadata
+/// <remarks>
+/// The client drives the inline parse: it calls <see cref="ParseInlinesAsync"/> from inside
+/// its handler for the container token; the sub-tokenizer runs there and the inline handler
+/// is awaited for every sub-token. The call completes when the section is fully consumed, so
+/// the container handler can do its closing work right after the await. There is no
+/// registration window and no rendezvous: the await inside the container handler is the
+/// coordination.
+/// </remarks>
+/// <typeparam name="TToken">The type of tokens emitted by the sub-tokenizer.</typeparam>
+public abstract class InlineMetadata<TToken> : Metadata where TToken : IToken
 {
     /// <summary>
-    /// Task that completes when processing is done
+    /// Initializes the metadata with the section plumbing the sub-tokenizer reads from:
+    /// the section reader, the shared capture builder (all characters, incl. the section)
+    /// and the lookahead queue (the parent's shared buffer, or a private one).
     /// </summary>
-    internal protected readonly TaskCompletionSource<bool> _processingTcs = new();
+    internal protected InlineMetadata(TextReader reader, StringBuilder capture, Queue<char> lookahead)
+    {
+        Reader = reader;
+        Capture = capture;
+        Lookahead = lookahead;
+    }
+
+    /// <summary>The section reader the sub-tokenizer reads from.</summary>
+    internal protected TextReader Reader { get; }
+
+    /// <summary>The capture builder that records every character of the stream.</summary>
+    internal protected StringBuilder Capture { get; }
+
+    /// <summary>The lookahead queue the sub-tokenizer reads from (shared with the parent).</summary>
+    internal protected Queue<char> Lookahead { get; }
 
     /// <summary>
-    /// Optional callback invoked after inline parsing completes, before the parser continues.
+    /// Runs the block's sub-tokenizer, awaiting <paramref name="onToken"/> for every
+    /// sub-token. Must be called from the container token's handler. Completes when the
+    /// section is fully consumed, so the handler can do its closing work right after the
+    /// await.
     /// </summary>
-    internal protected Action? _onInlinesCompleted;
-
-    // Parser calls this to signal completion
-    internal void CompleteProcessing(Exception? ex = null)
+    /// <param name="onToken">The function to await for each sub-token.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    public Task ParseInlinesAsync(Func<TToken, Task> onToken, CancellationToken ct = default)
     {
-        _onInlinesCompleted?.Invoke();
-
-        if (ex != null)
-        {
-            _processingTcs.TrySetException(ex);
-        }
-        else
-        {
-            _processingTcs.TrySetResult(true);
-        }
+        if (onToken is null) throw new ArgumentNullException(nameof(onToken));
+        return RunInlinesAsync(onToken, ct);
     }
+
+    /// <summary>
+    /// Runs the block's sub-tokenizer over its section. Implemented by each metadata type,
+    /// which carries the section reader, capture builder, lookahead queue and (for code
+    /// blocks) the stop delimiter, plus the sub-tokenizer it runs.
+    /// </summary>
+    internal abstract Task RunInlinesAsync(Func<TToken, Task> onToken, CancellationToken ct);
 }

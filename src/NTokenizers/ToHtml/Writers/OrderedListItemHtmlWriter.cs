@@ -26,18 +26,21 @@ internal sealed class OrderedListItemHtmlWriter : AbstractMetadataToHtmlWriter<O
 
     }
 
-    internal override Task WriteContentAsync(OrderedListItemMetadata metadata, TextWriter writer)
+    internal override async Task WriteContentAsync(OrderedListItemMetadata metadata, TextWriter writer, CancellationToken ct = default)
     {
         var dispatcher = new MarkdownBlockTokenDispatcher();
         var inlineWriter = new InlineMarkdownTokenWriter();
         // value="N" is written only where the source number deviates from the logical
         // sequence (the dispatcher's counter simulation); the browser continues from it.
-        writer.Write(_value.HasValue ? $"<li value=\"{_value.Value}\">" : "<li>");
-        return metadata.RegisterInlineTokenHandler(token =>
+        await writer.WriteAsync(_value.HasValue ? $"<li value=\"{_value.Value}\">" : "<li>");
+
+        // Item content tokens arrive in stream order; each dispatch is awaited before the
+        // next token arrives.
+        await metadata.ParseInlinesAsync(async token =>
         {
             if (!_hasContent && token.TokenType is MarkdownTokenType.ParagraphBlockStart or MarkdownTokenType.Blockquote or MarkdownTokenType.ListStart or MarkdownTokenType.CodeBlock or MarkdownTokenType.IndentedCodeBlock or MarkdownTokenType.Heading or MarkdownTokenType.Table or MarkdownTokenType.HorizontalRule)
             {
-                writer.Write('\n');
+                await writer.WriteAsync("\n");
             }
             _hasContent = true;
             _lastTokenType = token.TokenType;
@@ -49,24 +52,22 @@ internal sealed class OrderedListItemHtmlWriter : AbstractMetadataToHtmlWriter<O
                 }
                 if (token.TokenType is MarkdownTokenType.UnorderedListItem or MarkdownTokenType.OrderedListItem)
                 {
-                    writer.Write("</li><li>");
+                    await writer.WriteAsync("</li><li>");
                     return;
                 }
-                inlineWriter.WriteToken(token, writer);
+                await inlineWriter.WriteTokenAsync(token, writer, ct);
             }
             else
             {
-                _ = dispatcher.WriteTokenAsync(token, writer);
+                await dispatcher.WriteTokenAsync(token, writer, ct);
             }
-        },
-        () =>
-        {
-            dispatcher.FlushPendingBlockBreak(writer);
-            if (_lastTokenType == MarkdownTokenType.ListEnd)
-            {
-                writer.Write('\n');
-            }
-            writer.Write("</li>\n");
         });
+
+        await dispatcher.FlushPendingBlockBreak(writer, ct);
+        if (_lastTokenType == MarkdownTokenType.ListEnd)
+        {
+            await writer.WriteAsync("\n");
+        }
+        await writer.WriteAsync("</li>\n");
     }
 }

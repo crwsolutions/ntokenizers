@@ -15,16 +15,16 @@ internal sealed class RustHtmlWriter : AbstractTokenToHtmlWriter<RustToken>
         css.AppendLine();
     }
 
-    internal override void WriteHtml(RustToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(RustToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
             case RustTokenType.NotDefined:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
 
             case RustTokenType.Operator:
-                WriteValue(writer, token.Value, "tok-operator", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-operator", inPreBlock: true);
                 break;
 
             case RustTokenType.OpenParenthesis:
@@ -43,47 +43,47 @@ internal sealed class RustHtmlWriter : AbstractTokenToHtmlWriter<RustToken>
             case RustTokenType.Pound:
             case RustTokenType.At:
             case RustTokenType.QuestionMark:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case RustTokenType.StringValue:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case RustTokenType.CharValue:
-                WriteValue(writer, token.Value, "tok-char", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-char", inPreBlock: true);
                 break;
 
             case RustTokenType.Number:
-                WriteValue(writer, token.Value, "tok-number", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-number", inPreBlock: true);
                 break;
 
             case RustTokenType.Boolean:
-                WriteValue(writer, token.Value, "tok-boolean", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-boolean", inPreBlock: true);
                 break;
 
             case RustTokenType.Lifetime:
-                WriteValue(writer, token.Value, "tok-rust-lifetime", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-rust-lifetime", inPreBlock: true);
                 break;
 
             case RustTokenType.Identifier:
-                WriteValue(writer, token.Value, "tok-identifier", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-identifier", inPreBlock: true);
                 break;
 
             case RustTokenType.Keyword:
-                WriteValue(writer, token.Value, "tok-keyword", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-keyword", inPreBlock: true);
                 break;
 
             case RustTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case RustTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

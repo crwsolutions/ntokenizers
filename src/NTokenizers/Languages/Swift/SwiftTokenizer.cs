@@ -34,44 +34,42 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
         public bool InCommentLine;
         public bool InCommentBlock;
         public bool InOperator;
+        public bool Escape;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        bool escape = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref escape));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref bool escape)
+    private async Task ProcessChar(char c, State state)
     {
         if (state.InString)
         {
-            ProcessInString(c, state, ref escape);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InChar)
         {
-            ProcessInChar(c, state, ref escape);
+            await ProcessInChar(c, state);
             return;
         }
 
         if (state.InCommentLine)
         {
-            ProcessInCommentLine(c, state);
+            await ProcessInCommentLine(c, state);
             return;
         }
 
         if (state.InCommentBlock)
         {
-            ProcessInCommentBlock(c, state);
+            await ProcessInCommentBlock(c, state);
             return;
         }
 
@@ -84,9 +82,9 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
             }
             else
             {
-                EmitToken(SwiftTokenType.Whitespace);
+                await EmitToken(SwiftTokenType.Whitespace);
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -100,10 +98,10 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -118,17 +116,17 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
             }
             else
             {
-                EmitToken(SwiftTokenType.Number);
+                await EmitToken(SwiftTokenType.Number);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
 
         if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -181,35 +179,35 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
         }
         else if (c == '(')
         {
-            EmitToken(SwiftTokenType.OpenParenthesis, "(");
+            await EmitToken(SwiftTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(SwiftTokenType.CloseParenthesis, ")");
+            await EmitToken(SwiftTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(SwiftTokenType.OpenBrace, "{");
+            await EmitToken(SwiftTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(SwiftTokenType.CloseBrace, "}");
+            await EmitToken(SwiftTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(SwiftTokenType.OpenBracket, "[");
+            await EmitToken(SwiftTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(SwiftTokenType.CloseBracket, "]");
+            await EmitToken(SwiftTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(SwiftTokenType.Comma, ",");
+            await EmitToken(SwiftTokenType.Comma, ",");
         }
         else if (c == ';')
         {
-            EmitToken(SwiftTokenType.SequenceTerminator, ";");
+            await EmitToken(SwiftTokenType.SequenceTerminator, ";");
         }
         else if (c == ':')
         {
@@ -217,11 +215,11 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
             if (next == ':')
             {
                 Read();
-                EmitToken(SwiftTokenType.DoubleColon, "::");
+                await EmitToken(SwiftTokenType.DoubleColon, "::");
             }
             else
             {
-                EmitToken(SwiftTokenType.Colon, ":");
+                await EmitToken(SwiftTokenType.Colon, ":");
             }
         }
         else if (c == '.')
@@ -234,20 +232,20 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
             }
             else
             {
-                EmitToken(SwiftTokenType.Dot, ".");
+                await EmitToken(SwiftTokenType.Dot, ".");
             }
         }
         else if (c == '@')
         {
-            EmitToken(SwiftTokenType.At, "@");
+            await EmitToken(SwiftTokenType.At, "@");
         }
         else if (c == '#')
         {
-            EmitToken(SwiftTokenType.Pound, "#");
+            await EmitToken(SwiftTokenType.Pound, "#");
         }
         else if (c == '?')
         {
-            EmitToken(SwiftTokenType.QuestionMark, "?");
+            await EmitToken(SwiftTokenType.QuestionMark, "?");
         }
         else if (IsOperatorChar(c))
         {
@@ -256,51 +254,51 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
         }
         else
         {
-            EmitToken(SwiftTokenType.NotDefined, c.ToString());
+            await EmitToken(SwiftTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(SwiftTokenType.StringValue);
+            await EmitToken(SwiftTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInChar(char c, State state, ref bool escape)
+    private async Task ProcessInChar(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '\'')
         {
-            EmitToken(SwiftTokenType.CharValue);
+            await EmitToken(SwiftTokenType.CharValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInCommentLine(char c, State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(SwiftTokenType.Comment);
+            await EmitToken(SwiftTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -312,7 +310,7 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -321,7 +319,7 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(SwiftTokenType.Comment);
+                await EmitToken(SwiftTokenType.Comment);
                 _buffer.Clear();
                 ClearState(state);
                 return;
@@ -329,7 +327,7 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
         }
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -337,23 +335,23 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
         if (IsMultiCharOperator(combined))
         {
             _buffer.Append(c);
-            EmitToken(SwiftTokenType.Operator);
+            await EmitToken(SwiftTokenType.Operator);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
-            EmitToken(SwiftTokenType.Operator, current);
+            await EmitToken(SwiftTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
-            EmitToken(SwiftTokenType.Operator, current);
+            await EmitToken(SwiftTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            bool tempEscape = false;
-            ProcessChar(c, state, ref tempEscape);
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -375,72 +373,72 @@ public sealed class SwiftTokenizer : BaseSubTokenizer<SwiftToken>
                op == "<" || op == ">" || op == "=" || op == "?";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
             if (value == "true" || value == "false")
             {
-                EmitToken(SwiftTokenType.Boolean, value);
+                await EmitToken(SwiftTokenType.Boolean, value);
             }
             else if (value == "nil")
             {
-                EmitToken(SwiftTokenType.Null, value);
+                await EmitToken(SwiftTokenType.Null, value);
             }
             else
             {
-                EmitToken(SwiftTokenType.Keyword, value);
+                await EmitToken(SwiftTokenType.Keyword, value);
             }
         }
         else
         {
-            EmitToken(SwiftTokenType.Identifier, value);
+            await EmitToken(SwiftTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(SwiftTokenType type, string value)
+    private async Task EmitToken(SwiftTokenType type, string value)
     {
-        _onToken(new SwiftToken(type, value));
+        await _onToken(new SwiftToken(type, value));
     }
 
-    private void EmitToken(SwiftTokenType type)
+    private async Task EmitToken(SwiftTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(SwiftTokenType.Whitespace);
+                await EmitToken(SwiftTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(SwiftTokenType.Number);
+                await EmitToken(SwiftTokenType.Number);
             }
             else if (state.InString)
             {
-                EmitToken(SwiftTokenType.StringValue);
+                await EmitToken(SwiftTokenType.StringValue);
             }
             else if (state.InChar)
             {
-                EmitToken(SwiftTokenType.CharValue);
+                await EmitToken(SwiftTokenType.CharValue);
             }
             else if (state.InCommentLine || state.InCommentBlock)
             {
-                EmitToken(SwiftTokenType.Comment);
+                await EmitToken(SwiftTokenType.Comment);
             }
             else if (state.InOperator)
             {
-                EmitToken(SwiftTokenType.Operator);
+                await EmitToken(SwiftTokenType.Operator);
                 _buffer.Clear();
             }
         }

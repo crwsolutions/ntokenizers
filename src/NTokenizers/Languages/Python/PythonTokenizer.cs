@@ -30,40 +30,37 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
         public bool InTripleString;
         public bool InComment;
         public bool InOperator;
+        public bool Escape; public char? StringDelimiter;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        char? stringDelimiter = null;
-        bool escape = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref stringDelimiter, ref escape));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref char? stringDelimiter, ref bool escape)
+    private async Task ProcessChar(char c, State state)
     {
         // Handle specific states first
         if (state.InString)
         {
-            ProcessInString(c, state, ref stringDelimiter, ref escape);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InTripleString)
         {
-            ProcessInTripleString(c, state, ref stringDelimiter, ref escape);
+            await ProcessInTripleString(c, state);
             return;
         }
 
         if (state.InComment)
         {
-            ProcessInComment(c, state, ref stringDelimiter, ref escape);
+            await ProcessInComment(c, state);
             return;
         }
 
@@ -76,7 +73,7 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
             }
             else
             {
-                EmitToken(PythonTokenType.Whitespace);
+                await EmitToken(PythonTokenType.Whitespace);
                 ClearState(state);
                 // Fall through to process current character
             }
@@ -90,7 +87,7 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
                 // Fall through to process current character
@@ -110,14 +107,14 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
             }
             else
             {
-                EmitToken(PythonTokenType.Number);
+                await EmitToken(PythonTokenType.Number);
                 ClearState(state);
                 // Fall through to process current character
             }
         }
         else if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -138,7 +135,7 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
                 Read(); // consume second quote
                 Read(); // consume third quote
                 state.InTripleString = true;
-                stringDelimiter = c;
+                state.StringDelimiter = c;
                 _buffer.Append(c);
                 _buffer.Append(c);
                 _buffer.Append(c);
@@ -146,7 +143,7 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
             else
             {
                 state.InString = true;
-                stringDelimiter = c;
+                state.StringDelimiter = c;
                 _buffer.Append(c);
             }
         }
@@ -167,31 +164,31 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
         }
         else if (c == '(')
         {
-            EmitToken(PythonTokenType.OpenParenthesis, "(");
+            await EmitToken(PythonTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(PythonTokenType.CloseParenthesis, ")");
+            await EmitToken(PythonTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(PythonTokenType.OpenBrace, "{");
+            await EmitToken(PythonTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(PythonTokenType.CloseBrace, "}");
+            await EmitToken(PythonTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(PythonTokenType.OpenBracket, "[");
+            await EmitToken(PythonTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(PythonTokenType.CloseBracket, "]");
+            await EmitToken(PythonTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(PythonTokenType.Comma, ",");
+            await EmitToken(PythonTokenType.Comma, ",");
         }
         else if (c == '.')
         {
@@ -204,7 +201,7 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
             }
             else
             {
-                EmitToken(PythonTokenType.Dot, ".");
+                await EmitToken(PythonTokenType.Dot, ".");
             }
         }
         else if (c == ':')
@@ -214,20 +211,20 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
             if (next == '=')
             {
                 Read(); // consume =
-                EmitToken(PythonTokenType.Operator, ":=");
+                await EmitToken(PythonTokenType.Operator, ":=");
             }
             else
             {
-                EmitToken(PythonTokenType.Colon, ":");
+                await EmitToken(PythonTokenType.Colon, ":");
             }
         }
         else if (c == ';')
         {
-            EmitToken(PythonTokenType.Semicolon, ";");
+            await EmitToken(PythonTokenType.Semicolon, ";");
         }
         else if (c == '@')
         {
-            EmitToken(PythonTokenType.Hash, "@");
+            await EmitToken(PythonTokenType.Hash, "@");
         }
         else if (IsOperatorChar(c))
         {
@@ -237,77 +234,77 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
         else
         {
             // Unknown character - emit as NotDefined
-            EmitToken(PythonTokenType.NotDefined, c.ToString());
+            await EmitToken(PythonTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref char? stringDelimiter, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
 
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
             return;
         }
 
         if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
             return;
         }
 
-        if (c == stringDelimiter)
+        if (c == state.StringDelimiter)
         {
-            EmitToken(PythonTokenType.StringValue);
+            await EmitToken(PythonTokenType.StringValue);
             ClearState(state);
-            stringDelimiter = null;
+            state.StringDelimiter = null;
         }
     }
 
-    private void ProcessInTripleString(char c, State state, ref char? stringDelimiter, ref bool escape)
+    private async Task ProcessInTripleString(char c, State state)
     {
         _buffer.Append(c);
 
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
             return;
         }
 
         if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
             return;
         }
 
-        if (c == stringDelimiter)
+        if (c == state.StringDelimiter)
         {
             // Check for triple quote end
             int next = Peek();
             int next2 = PeekAhead(1);
-            if (next == stringDelimiter && next2 == stringDelimiter)
+            if (next == state.StringDelimiter && next2 == state.StringDelimiter)
             {
                 Read(); // consume second quote
                 Read(); // consume third quote
-                _buffer.Append(stringDelimiter.Value);
-                _buffer.Append(stringDelimiter.Value);
-                EmitToken(PythonTokenType.StringValue);
+                _buffer.Append(state.StringDelimiter.Value);
+                _buffer.Append(state.StringDelimiter.Value);
+                await EmitToken(PythonTokenType.StringValue);
                 ClearState(state);
-                stringDelimiter = null;
+                state.StringDelimiter = null;
             }
         }
     }
 
-    private void ProcessInComment(char c, State state, ref char? stringDelimiter, ref bool escape)
+    private async Task ProcessInComment(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(PythonTokenType.Comment);
+            await EmitToken(PythonTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             // Re-process the newline as a fresh character
-            ProcessChar(c, state, ref stringDelimiter, ref escape);
+            await ProcessChar(c, state);
         }
         else
         {
@@ -315,7 +312,7 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
         }
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -335,26 +332,26 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
                 }
             }
             // Emit the operator
-            EmitToken(PythonTokenType.Operator, combined);
+            await EmitToken(PythonTokenType.Operator, combined);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
             // Emit the current operator and start a new one
-            EmitToken(PythonTokenType.Operator, current);
+            await EmitToken(PythonTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
             // Emit the current operator and process this character
-            EmitToken(PythonTokenType.Operator, current);
+            await EmitToken(PythonTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            char? stringDelimiter = null;
-            bool escape = false;
-            ProcessChar(c, state, ref stringDelimiter, ref escape);
+            state.StringDelimiter = null;
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -373,26 +370,26 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
                op == "<<=" || op == ">>=";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
-            EmitToken(PythonTokenType.Keyword, value);
+            await EmitToken(PythonTokenType.Keyword, value);
         }
         else
         {
-            EmitToken(PythonTokenType.Identifier, value);
+            await EmitToken(PythonTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(PythonTokenType type, string value)
+    private async Task EmitToken(PythonTokenType type, string value)
     {
-        _onToken(new PythonToken(type, value));
+        await _onToken(new PythonToken(type, value));
     }
 
-    private void EmitToken(PythonTokenType type)
+    private async Task EmitToken(PythonTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
@@ -407,35 +404,35 @@ public sealed class PythonTokenizer : BaseSubTokenizer<PythonToken>
         state.InOperator = false;
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(PythonTokenType.Whitespace);
+                await EmitToken(PythonTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(PythonTokenType.Number);
+                await EmitToken(PythonTokenType.Number);
             }
             else if (state.InString || state.InTripleString)
             {
                 // Incomplete string - emit as StringValue
-                EmitToken(PythonTokenType.StringValue);
+                await EmitToken(PythonTokenType.StringValue);
             }
             else if (state.InComment)
             {
-                EmitToken(PythonTokenType.Comment);
+                await EmitToken(PythonTokenType.Comment);
             }
             else if (state.InOperator)
             {
-                EmitToken(PythonTokenType.Operator, _buffer.ToString());
+                await EmitToken(PythonTokenType.Operator, _buffer.ToString());
                 _buffer.Clear();
             }
         }
