@@ -47,6 +47,8 @@ public class FlushStreamWriter : TextWriter
         return WriteAndFlushAsync(bytes);
     }
 
+    public override Task WriteLineAsync(string? value) => WriteAsync(value + Environment.NewLine);
+
     public override Task FlushAsync() => _stream.FlushAsync();
 
     private async Task WriteAndFlushAsync(byte[] bytes)

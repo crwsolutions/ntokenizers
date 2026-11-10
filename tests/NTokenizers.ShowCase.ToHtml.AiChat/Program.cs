@@ -26,5 +26,6 @@ builder.Services.AddChatClient(new OpenAIClient(
     .Build());
 
 var app = builder.Build();
+app.UseStaticFiles();
 app.MapAiChatEndpoints();
 app.Run();
