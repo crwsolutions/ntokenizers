@@ -69,7 +69,7 @@ await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     if (token.Metadata is ICodeBlockMetadata codeBlock)
     {
-        await codeBlock.RegisterInlineTokenHandler(inlineToken =>
+        await codeBlock.ParseInlinesAsync(async inlineToken =>
         {
             // Handle code block tokens with syntax highlighting
         });

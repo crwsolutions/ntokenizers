@@ -52,7 +52,7 @@ string css = """
         """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(css));
-await CssTokenizer.Create().ParseAsync(stream, onToken: token =>
+await CssTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch

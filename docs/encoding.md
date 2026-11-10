@@ -15,8 +15,8 @@ In the context of tokenizers, encoding determines how characters are represented
 The `BaseTokenizer` class offers several methods for handling different encodings:
 
 ```csharp
-public async Task<string> ParseAsync(Stream stream, Encoding encoding, Action<TToken> onToken)
-public string Parse(Stream stream, Encoding encoding, Action<TToken> onToken)
+public async Task<string> ParseAsync(Stream stream, Encoding encoding, Func<TToken, Task> onToken)
+public string Parse(Stream stream, Encoding encoding, Func<TToken, Task> onToken)
 ```
 
 ## Default Encoding Behavior

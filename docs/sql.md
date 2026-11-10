@@ -15,10 +15,10 @@ The SQL tokenizer is part of the NTokenizers library and provides a stream-capab
 
 The SQL tokenizer inherits from `BaseSubTokenizer<SqlToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<SqlToken> onToken)` - Asynchronously parses a stream of SQL code
-- `Parse(Stream stream, Action<SqlToken> onToken)` - Synchronously parses a stream of SQL code
+- `ParseAsync(Stream stream, Func<SqlToken, Task> onToken)` - Asynchronously parses a stream of SQL code
+- `Parse(Stream stream, Func<SqlToken, Task> onToken)` - Synchronously parses a stream of SQL code
 - `Parse(string input)` - Parses a string of SQL code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<SqlToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<SqlToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -37,7 +37,7 @@ string sqlCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(sqlCode));
-await SqlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await SqlTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -63,7 +63,7 @@ using System.IO;
 
 string sqlCode = "SELECT * FROM users WHERE id = 42;";
 using var reader = new StringReader(sqlCode);
-await SqlTokenizer.Create().ParseAsync(reader, onToken: token =>
+await SqlTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

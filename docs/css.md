@@ -19,10 +19,10 @@ The CSS tokenizer is part of the NTokenizers library and provides a stream-capab
 
 The CSS tokenizer inherits from `BaseSubTokenizer<CssToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<CssToken> onToken)` - Asynchronously parses a stream of CSS code
-- `Parse(Stream stream, Action<CssToken> onToken)` - Synchronously parses a stream of CSS code
+- `ParseAsync(Stream stream, Func<CssToken, Task> onToken)` - Asynchronously parses a stream of CSS code
+- `Parse(Stream stream, Func<CssToken, Task> onToken)` - Synchronously parses a stream of CSS code
 - `Parse(string input)` - Parses a string of CSS code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<CssToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<CssToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -41,7 +41,7 @@ string cssCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(cssCode));
-await CssTokenizer.Create().ParseAsync(stream, onToken: token =>
+await CssTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -83,7 +83,7 @@ string cssCode = """
     }
     """;
 using var reader = new StringReader(cssCode);
-await CssTokenizer.Create().ParseAsync(reader, onToken: token =>
+await CssTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

@@ -19,10 +19,10 @@ The YAML tokenizer is part of the NTokenizers library and provides a stream-capa
 
 The YAML tokenizer inherits from `BaseSubTokenizer<YamlToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<YamlToken> onToken)` - Asynchronously parses a stream of YAML code
-- `Parse(Stream stream, Action<YamlToken> onToken)` - Synchronously parses a stream of YAML code
+- `ParseAsync(Stream stream, Func<YamlToken, Task> onToken)` - Asynchronously parses a stream of YAML code
+- `Parse(Stream stream, Func<YamlToken, Task> onToken)` - Synchronously parses a stream of YAML code
 - `Parse(string input)` - Parses a string of YAML code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<YamlToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<YamlToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -45,7 +45,7 @@ string yamlCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(yamlCode));
-await YamlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await YamlTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -85,7 +85,7 @@ string yamlCode = """
     age: 30
     """;
 using var reader = new StringReader(yamlCode);
-await YamlTokenizer.Create().ParseAsync(reader, onToken: token =>
+await YamlTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

@@ -9,7 +9,7 @@ string xml = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(xml));
-await XmlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await XmlTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch

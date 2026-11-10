@@ -17,10 +17,10 @@ The HTML tokenizer also supports embedded CSS and JavaScript by delegating to th
 
 The HTML tokenizer inherits from `BaseSubTokenizer<HtmlToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<HtmlToken> onToken)` - Asynchronously parses a stream of HTML code
-- `Parse(Stream stream, Action<HtmlToken> onToken)` - Synchronously parses a stream of HTML code
+- `ParseAsync(Stream stream, Func<HtmlToken, Task> onToken)` - Asynchronously parses a stream of HTML code
+- `Parse(Stream stream, Func<HtmlToken, Task> onToken)` - Synchronously parses a stream of HTML code
 - `Parse(string input)` - Parses a string of HTML code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<HtmlToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<HtmlToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -45,7 +45,7 @@ string htmlCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(htmlCode));
-await HtmlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await HtmlTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -76,7 +76,7 @@ using System.IO;
 
 string htmlCode = """<div class="container"><p>Hello</p></div>""";
 using var reader = new StringReader(htmlCode);
-await HtmlTokenizer.Create().ParseAsync(reader, onToken: token =>
+await HtmlTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });
@@ -121,18 +121,18 @@ string htmlCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(htmlCode));
-await HtmlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await HtmlTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     if (inlineToken.Metadata is TypeScriptCodeBlockMetadata tsMeta)
     {
-        await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await tsMetadata.ParseInlinesAsync(async inlineToken =>
         {
             Console.WriteLine($"Token: {inlineToken.TokenType} = '{inlineToken.Value}'");
         }
     }
     else if (inlineToken.Metadata is CssCodeBlockMetadata cssMeta)
     {
-        await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await cssMetadata.ParseInlinesAsync(async inlineToken =>
         {
             Console.WriteLine($"Token: {inlineToken.TokenType} = '{inlineToken.Value}'");
         }

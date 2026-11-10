@@ -48,7 +48,7 @@ string yaml = """
         """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(yaml));
-await YamlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await YamlTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch

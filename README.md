@@ -216,7 +216,7 @@ class Program
             if (token.Metadata is ListItemMetadata listMetadata)
             {
                 AnsiConsole.Write(new Markup($"[bold lime]{listMetadata.Marker} [/]"));
-                await listMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await listMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     AnsiConsole.Write(new Markup($"[bold red]{value}[/]"));
@@ -226,7 +226,7 @@ class Program
             }
             else if (token.Metadata is HeadingMetadata headingMetadata)
             {
-                await headingMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await headingMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = headingMetadata.Level != 1 ?
@@ -238,7 +238,7 @@ class Program
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
             {
-                await xmlMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await xmlMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -260,7 +260,7 @@ class Program
             }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
             {
-                await jsonMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await jsonMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -285,7 +285,7 @@ class Program
             }
             else if (token.Metadata is HtmlCodeBlockMetadata htmlMetadata)
             {
-                await htmlMetadata.RegisterInlineTokenHandler(async inlineToken =>
+                await htmlMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     if (inlineToken.Metadata is TypeScriptCodeBlockMetadata tsMeta)
                     {
@@ -353,7 +353,7 @@ class Program
 
     private static async Task HandleScript(TypeScriptCodeBlockMetadata tsMetadata)
     {
-        await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await tsMetadata.ParseInlinesAsync(async inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
             var colored = inlineToken.TokenType switch
@@ -373,7 +373,7 @@ class Program
 
     private static async Task HandleCss(CssCodeBlockMetadata cssMetadata)
     {
-        await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await cssMetadata.ParseInlinesAsync(async inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
             var colored = inlineToken.TokenType switch

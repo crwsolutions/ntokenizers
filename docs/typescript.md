@@ -15,10 +15,10 @@ The TypeScript tokenizer is part of the NTokenizers library and provides a strea
 
 The TypeScript tokenizer inherits from `BaseSubTokenizer<TypescriptToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<TypescriptToken> onToken)` - Asynchronously parses a stream of TypeScript code
-- `Parse(Stream stream, Action<TypescriptToken> onToken)` - Synchronously parses a stream of TypeScript code
+- `ParseAsync(Stream stream, Func<TypescriptToken, Task> onToken)` - Asynchronously parses a stream of TypeScript code
+- `Parse(Stream stream, Func<TypescriptToken, Task> onToken)` - Synchronously parses a stream of TypeScript code
 - `Parse(string input)` - Parses a string of TypeScript code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<TypescriptToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<TypescriptToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -37,7 +37,7 @@ string tsCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(tsCode));
-await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token =>
+await TypescriptTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -63,7 +63,7 @@ using System.IO;
 
 string tsCode = "let x: number = 42;";
 using var reader = new StringReader(tsCode);
-await TypescriptTokenizer.Create().ParseAsync(reader, onToken: token =>
+await TypescriptTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

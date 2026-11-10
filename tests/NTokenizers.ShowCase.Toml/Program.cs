@@ -41,7 +41,7 @@ id = 2
 ";
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(toml));
-await TomlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await TomlTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch

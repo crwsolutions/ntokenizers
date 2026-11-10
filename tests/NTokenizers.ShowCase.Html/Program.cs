@@ -44,7 +44,7 @@ class Program
         {
             if (token.Metadata is TypeScriptCodeBlockMetadata tsMetadata)
             {
-                await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await tsMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -63,7 +63,7 @@ class Program
             }
             else if (token.Metadata is CssCodeBlockMetadata cssMetadata)
             {
-                await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await cssMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
