@@ -7,6 +7,14 @@ title: "Migrating from v8 to v9"
 
 Version 9.0.0 is a **breaking** release with one core change: **token emission is now async end-to-end**. The token handler you pass to a tokenizer is no longer a synchronous callback; it is an async function the tokenizer *awaits for every token it produces*. That await is the producer/consumer boundary: the tokenizer paces itself to your code, and ordering, completion, and error propagation hold by construction.
 
+```csharp
+// 8.x — the handler is an Action<CSharpToken>
+string text = csharpTokenizer.Parse(input, token => Render(token));
+
+// 9.0 — the handler becomes a Func<CSharpToken, Task>
+string text = csharpTokenizer.Parse(input, async token => await RenderAsync(token));
+```
+
 Everything else in the release is a consequence of that change.
 
 ## Summary of breaking changes

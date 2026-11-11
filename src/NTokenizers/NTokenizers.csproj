@@ -23,9 +23,9 @@
 		<Title>NTokenizers</Title>
 		<PackageReleaseNotes>BREAKING: token emission is now async end-to-end.
 - All ParseAsync/Parse handler overloads take Func&lt;TToken, Task&gt; instead of Action&lt;TToken&gt;; the parse loop awaits the handler for every token.
-- Removed: RegisterInlineTokenHandler, the inline-token rendezvous (TCS + 2000 ms window), the non-generic InlineMetadata base, and ToHtml BufferedHtmlTextWriter.
-- Added: InlineMetadata&lt;TToken&gt;.ParseInlinesAsync(Func&lt;TToken, Task&gt;) - call and await it from inside the container token's handler; it completes when the section is fully consumed.
-- ToHtml: MarkdownConverter writes asynchronously straight to the caller's TextWriter. ToHtml(string)/ToHtmlDocument(string) are kept as in-memory convenience wrappers (sync-over-async).</PackageReleaseNotes>
+- Renamed: RegisterInlineTokenHandler is now InlineMetadata&lt;TToken&gt;.ParseInlinesAsync(handler) - call and await it from inside the container token's handler; it completes when the section is fully consumed (the onInlinesCompleted callback is gone).
+- ToHtml: MarkdownConverter writes asynchronously straight to the caller's TextWriter. ToHtml(string)/ToHtmlDocument(string) are kept as in-memory convenience wrappers (sync-over-async).
+See the v8 to v9 migration guide: https://crwsolutions.github.io/ntokenizers/migrating-v8-v9</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>

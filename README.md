@@ -12,6 +12,10 @@ NTokenizers sits in the middle of a tokenization pipeline — it takes raw sourc
 
 This separation of concerns means NTokenizers stays format-focused while rendering is delegated to the consumer — whether that is a console UI, a web component, or a custom formatter. The stream-first design ensures low memory usage and real-time compatibility with AI chat outputs, CI logs, or any scenario where data arrives incrementally.
 
+> [!WARNING] 
+>
+> **Version 9.0.0 is a breaking release**: token handlers are now async (`Func<TToken, Task>` instead of `Action<TToken>`) and Markdown inline sub-parsing now uses `ParseInlinesAsync`. If you are upgrading from 8.x, read the [v8 → v9 migration guide](https://crwsolutions.github.io/ntokenizers/migrating-v8-v9) first.
+
 ### Used by
 
 - [NTokenizers.Extensions.Spectre.Console](https://www.nuget.org/packages/NTokenizers.Extensions.Spectre.Console/) Spectre.Console rendering extensions for NTokenizers, Style-rich console syntax highlighting.
