@@ -8,7 +8,7 @@ string csharp = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csharp));
-await CSharpTokenizer.Create().ParseAsync(stream, onToken: token =>
+await CSharpTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch

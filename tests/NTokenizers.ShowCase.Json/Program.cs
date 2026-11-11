@@ -10,7 +10,7 @@ string json = """
         """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-await JsonTokenizer.Create().ParseAsync(stream, onToken: token =>
+await JsonTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch

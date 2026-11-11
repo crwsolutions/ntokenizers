@@ -1029,7 +1029,7 @@ Visit [Google](https://google.com) for more.";
         // Cancel after a few tokens
         var parseTask = Task.Run(async () =>
         {
-            await MarkdownTokenizer.Create().ParseAsync(stream, cts.Token, token =>
+            await MarkdownTokenizer.Create().ParseAsync(stream, cts.Token, async token => 
             {
                 tokens.Add(token);
                 tokenCount++;
@@ -1047,55 +1047,47 @@ Visit [Google](https://google.com) for more.";
     }
 
     [Fact]
-    public async Task TestOnInlinesCompletedCallbackIsInvoked()
+    public async Task TestParseInlinesCompletesWhenSectionIsConsumed()
     {
-        var callbackInvoked = false;
+        var parseCompleted = false;
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\n"));
 
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token =>
         {
             if (token.Metadata is HeadingMetadata headingMeta)
             {
-                headingMeta.RegisterInlineTokenHandler(
-                    _ => { /* inline handler */ },
-                    () => { callbackInvoked = true; }
-                );
+                await headingMeta.ParseInlinesAsync(_ => Task.CompletedTask);
+                parseCompleted = true;
             }
         });
-        Assert.True(callbackInvoked, "The onInlinesCompleted callback should have been invoked");
+        Assert.True(parseCompleted, "The inline parse should have completed when the section was consumed");
     }
 
     [Fact]
-    public async Task TestOnInlinesCompletedCallbackRunsBeforeParseCompletes()
+    public async Task TestParseInlinesCompletesBeforeSubsequentTokens()
     {
         var tokens = new List<MarkdownToken>();
-        var callbackInvoked = false;
+        var headingInlinesDone = false;
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("# Heading\nText after"));
 
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token =>
         {
             tokens.Add(token);
 
             if (token.Metadata is HeadingMetadata headingMeta)
             {
-                headingMeta.RegisterInlineTokenHandler(
-                    _ => { /* inline handler */ },
-                    () =>
-                    {
-                        callbackInvoked = true;
-                        // The callback runs before CompleteProcessing, so the parser
-                        // has not yet continued to emit subsequent tokens.
-                        // At this point, only the heading token and its inline content
-                        // should have been collected so far.
-                    }
-                );
+                await headingMeta.ParseInlinesAsync(_ => Task.CompletedTask);
+                headingInlinesDone = true;
+                // The await completes before the parser has emitted subsequent tokens,
+                // so at this point only the heading token and its inline content
+                // have been collected.
             }
         });
 
-        Assert.True(callbackInvoked, "Callback should have been invoked");
+        Assert.True(headingInlinesDone, "The heading inline parse should have completed");
 
-        // Verify the full token stream was produced after the callback
+        // Verify the full token stream was produced after the inline parse
         Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Heading);
         Assert.Contains(tokens, t => t.TokenType == MarkdownTokenType.Text && t.Value.StartsWith("Text"));
     }

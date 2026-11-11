@@ -7,16 +7,16 @@ namespace NTokenizers.ToHtml.Writers;
 /// </summary>
 internal sealed class JavaHtmlWriter : AbstractTokenToHtmlWriter<JavaToken>
 {
-    internal override void WriteHtml(JavaToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(JavaToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
             case JavaTokenType.NotDefined:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
 
             case JavaTokenType.Operator:
-                WriteValue(writer, token.Value, "tok-operator", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-operator", inPreBlock: true);
                 break;
 
             case JavaTokenType.OpenParenthesis:
@@ -31,47 +31,47 @@ internal sealed class JavaHtmlWriter : AbstractTokenToHtmlWriter<JavaToken>
             case JavaTokenType.Colon:
             case JavaTokenType.DoubleColon:
             case JavaTokenType.QuestionMark:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case JavaTokenType.StringValue:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case JavaTokenType.CharValue:
-                WriteValue(writer, token.Value, "tok-char", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-char", inPreBlock: true);
                 break;
 
             case JavaTokenType.Number:
-                WriteValue(writer, token.Value, "tok-number", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-number", inPreBlock: true);
                 break;
 
             case JavaTokenType.Boolean:
-                WriteValue(writer, token.Value, "tok-boolean", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-boolean", inPreBlock: true);
                 break;
 
             case JavaTokenType.Null:
-                WriteValue(writer, token.Value, "tok-null", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-null", inPreBlock: true);
                 break;
 
             case JavaTokenType.Identifier:
-                WriteValue(writer, token.Value, "tok-identifier", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-identifier", inPreBlock: true);
                 break;
 
             case JavaTokenType.Keyword:
-                WriteValue(writer, token.Value, "tok-keyword", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-keyword", inPreBlock: true);
                 break;
 
             case JavaTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case JavaTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

@@ -572,7 +572,7 @@ public class RustTokenizerTests
         var code = "let x = 42;";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(code));
         var tokens = new List<RustToken>();
-        await RustTokenizer.Create().ParseAsync(stream, t => tokens.Add((RustToken)t));
+        await RustTokenizer.Create().ParseAsync(stream, async t => tokens.Add((RustToken)t));
         Assert.NotEmpty(tokens);
     }
 
@@ -591,11 +591,11 @@ public class RustTokenizerTests
 
         var rustTokens = new List<RustToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is RustCodeBlockMetadata rustMeta)
             {
-                rustMeta.RegisterInlineTokenHandler(t => rustTokens.Add((RustToken)t));
+                await rustMeta.ParseInlinesAsync(async t => rustTokens.Add((RustToken)t));
             }
         });
 

@@ -558,7 +558,7 @@ public class SwiftTokenizerTests
         var code = "let x = 42";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(code));
         var tokens = new List<SwiftToken>();
-        await SwiftTokenizer.Create().ParseAsync(stream, t => tokens.Add((SwiftToken)t));
+        await SwiftTokenizer.Create().ParseAsync(stream, async t => tokens.Add((SwiftToken)t));
         Assert.NotEmpty(tokens);
     }
 
@@ -577,11 +577,11 @@ public class SwiftTokenizerTests
 
         var swiftTokens = new List<SwiftToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is SwiftCodeBlockMetadata swiftMeta)
             {
-                swiftMeta.RegisterInlineTokenHandler(t => swiftTokens.Add((SwiftToken)t));
+                await swiftMeta.ParseInlinesAsync(async t => swiftTokens.Add((SwiftToken)t));
             }
         });
 

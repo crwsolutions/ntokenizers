@@ -31,69 +31,65 @@ public sealed class CssTokenizer : BaseSubTokenizer<CssToken>
         RuleSet
     }
 
+    private sealed class State
+    {
+        public ParseState Current = ParseState.None;
+        public char StringDelimiter = '\0';
+        public bool Escape;
+        public bool IsExpectingValue;
+        public bool InSelector = true;
+    }
+
     /// <summary>
     /// Parses the input text and generates CSS tokens.
     /// </summary>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var stack = new Stack<ContainerType>();
-        ParseState state = ParseState.None;
-        char stringDelimiter = '\0';
-        bool escape = false;
-        bool isExpectingValue = false;
-        bool inSelector = true;
+        var state = new State();
 
-        TokenizeCharacters(ct, (c) =>
-            ProcessChar(c, ref state, ref stringDelimiter, ref escape,
-                        ref isExpectingValue, ref inSelector, stack));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state, stack));
 
-        EmitPending(ref state, inSelector);
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c,
-        ref ParseState state,
-        ref char stringDelimiter,
-        ref bool escape,
-        ref bool isExpectingValue,
-        ref bool inSelector,
-        Stack<ContainerType> stack)
+    private async Task ProcessChar(char c, State state, Stack<ContainerType> stack)
     {
         // Handle comment
-        if (state == ParseState.Comment)
+        if (state.Current == ParseState.Comment)
         {
             _buffer.Append(c);
             if (c == '*' && Peek() == '/')
             {
                 _buffer.Append((char)Read());
-                _onToken(new CssToken(CssTokenType.Comment, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.Comment, _buffer.ToString()));
                 _buffer.Clear();
-                state = ParseState.None;
+                state.Current = ParseState.None;
             }
             return;
         }
 
         // Handle string
-        if (state == ParseState.String)
+        if (state.Current == ParseState.String)
         {
-            if (escape)
+            if (state.Escape)
             {
                 _buffer.Append(c);
-                escape = false;
+                state.Escape = false;
             }
             else if (c == '\\')
             {
                 _buffer.Append(c);
-                escape = true;
+                state.Escape = true;
             }
-            else if (c == stringDelimiter)
+            else if (c == state.StringDelimiter)
             {
-                _onToken(new CssToken(CssTokenType.StringValue, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.StringValue, _buffer.ToString()));
                 _buffer.Clear();
-                state = ParseState.None;
-                _onToken(new CssToken(CssTokenType.Quote, c.ToString()));
+                state.Current = ParseState.None;
+                await _onToken(new CssToken(CssTokenType.Quote, c.ToString()));
             }
             else
             {
@@ -103,87 +99,87 @@ public sealed class CssTokenizer : BaseSubTokenizer<CssToken>
         }
 
         // Handle number
-        if (state == ParseState.Number)
+        if (state.Current == ParseState.Number)
         {
             if (char.IsDigit(c) || c == '.' || c == 'E' || c == '-' || c == '+')
             {
                 _buffer.Append(c);
                 return;
             }
-            _onToken(new CssToken(CssTokenType.Number, _buffer.ToString()));
+            await _onToken(new CssToken(CssTokenType.Number, _buffer.ToString()));
             _buffer.Clear();
             if (char.IsLetter(c))
             {
                 _buffer.Append(c);
-                state = ParseState.Unit;
+                state.Current = ParseState.Unit;
                 return;
             }
 
-            state = ParseState.None;
+            state.Current = ParseState.None;
         }
 
         // Handle unit
-        if (state == ParseState.Unit)
+        if (state.Current == ParseState.Unit)
         {
             if (char.IsLetter(c))
             {
                 _buffer.Append(c);
                 return;
             }
-            _onToken(new CssToken(CssTokenType.Unit, _buffer.ToString()));
+            await _onToken(new CssToken(CssTokenType.Unit, _buffer.ToString()));
             _buffer.Clear();
-            state = ParseState.None;
+            state.Current = ParseState.None;
         }
 
         // Handle whitespace
         if (char.IsWhiteSpace(c))
         {
-            if (state != ParseState.InWhiteSpace)
+            if (state.Current != ParseState.InWhiteSpace)
             {
-                EmitPending(ref state, inSelector);
+                await EmitPending(state);
             }
-            state = ParseState.InWhiteSpace;
+            state.Current = ParseState.InWhiteSpace;
             _buffer.Append(c);
             return;
         }
-        else if (state == ParseState.InWhiteSpace)
+        else if (state.Current == ParseState.InWhiteSpace)
         {
-            _onToken(new CssToken(CssTokenType.Whitespace, _buffer.ToString()));
+            await _onToken(new CssToken(CssTokenType.Whitespace, _buffer.ToString()));
             _buffer.Clear();
-            state = ParseState.None;
+            state.Current = ParseState.None;
         }
 
         // Structural and special characters
         switch (c)
         {
             case '{':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.StartRuleSet, "{"));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.StartRuleSet, "{"));
                 stack.Push(ContainerType.RuleSet);
-                inSelector = false;
+                state.InSelector = false;
                 break;
 
             case '}':
                 if (stack.Count > 0 && stack.Peek() == ContainerType.RuleSet)
                     stack.Pop();
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.EndRuleSet, "}"));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.EndRuleSet, "}"));
                 break;
 
             case ':':
-                EmitPending(ref state, inSelector);
+                await EmitPending(state);
                 if (Peek() == ':')
                 {
                     Read();
-                    state = ParseState.PseudoElement;
+                    state.Current = ParseState.PseudoElement;
                     _buffer.Append("::");
                     return;
                 }
                 else
                 {
-                    _onToken(new CssToken(CssTokenType.Colon, ":"));
-                    if (!inSelector) isExpectingValue = true;
-                    inSelector = false;
+                    await _onToken(new CssToken(CssTokenType.Colon, ":"));
+                    if (!state.InSelector) state.IsExpectingValue = true;
+                    state.InSelector = false;
                 }
                 break;
 
@@ -192,96 +188,96 @@ public sealed class CssTokenizer : BaseSubTokenizer<CssToken>
                 {
                     _buffer.Append("-");
                     _buffer.Append((char)Read());
-                    state = ParseState.CustomProperty;
+                    state.Current = ParseState.CustomProperty;
                     return;
                 }
-                else if (state == ParseState.Identifier || state == ParseState.Number || state == ParseState.CustomProperty || state == ParseState.PseudoElement)
+                else if (state.Current == ParseState.Identifier || state.Current == ParseState.Number || state.Current == ParseState.CustomProperty || state.Current == ParseState.PseudoElement)
                     _buffer.Append(c);
                 else
-                    _onToken(new CssToken(CssTokenType.Operator, "-"));
+                    await _onToken(new CssToken(CssTokenType.Operator, "-"));
                 break;
 
             case ';':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.Semicolon, ";"));
-                inSelector = false;
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.Semicolon, ";"));
+                state.InSelector = false;
                 break;
 
             case ',':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.Comma, ","));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.Comma, ","));
                 break;
 
             case '(':
-                if (isExpectingValue && _buffer.Length > 0)
+                if (state.IsExpectingValue && _buffer.Length > 0)
                 {
-                    _onToken(new CssToken(CssTokenType.Function, _buffer.ToString()));
+                    await _onToken(new CssToken(CssTokenType.Function, _buffer.ToString()));
                     _buffer.Clear();
                 }
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.OpenParen, "("));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.OpenParen, "("));
                 break;
 
             case ')':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.CloseParen, ")"));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.CloseParen, ")"));
                 break;
 
             case '"':
             case '\'':
                 // Emit the opening quote as a separate token
-                _onToken(new CssToken(CssTokenType.Quote, c.ToString()));
-                state = ParseState.String;
-                stringDelimiter = c;
+                await _onToken(new CssToken(CssTokenType.Quote, c.ToString()));
+                state.Current = ParseState.String;
+                state.StringDelimiter = c;
                 break;
 
             case '@':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.AtRule, "@"));
-                state = ParseState.Identifier;
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.AtRule, "@"));
+                state.Current = ParseState.Identifier;
                 break;
 
             case '#':
-                EmitPending(ref state, inSelector);
+                await EmitPending(state);
                 _buffer.Append(c);
-                state = ParseState.Identifier;
-                if (inSelector || !isExpectingValue)
+                state.Current = ParseState.Identifier;
+                if (state.InSelector || !state.IsExpectingValue)
                 {
-                    inSelector = true;
+                    state.InSelector = true;
                 }
                 else
                 {
-                    inSelector = false;
+                    state.InSelector = false;
                 }
 
                 break;
 
             case '.':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.DotClass, "."));
-                state = ParseState.Identifier;
-                inSelector = true;
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.DotClass, "."));
+                state.Current = ParseState.Identifier;
+                state.InSelector = true;
                 break;
 
             case '[':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.LeftBracket, "["));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.LeftBracket, "["));
                 break;
 
             case ']':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.RightBracket, "]"));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.RightBracket, "]"));
                 break;
 
             case '=':
-                EmitPending(ref state, inSelector);
-                _onToken(new CssToken(CssTokenType.Equals, "="));
+                await EmitPending(state);
+                await _onToken(new CssToken(CssTokenType.Equals, "="));
                 break;
 
             case '+':
             case '*':
-                if (state == ParseState.Number) _buffer.Append(c);
-                else _onToken(new CssToken(CssTokenType.Operator, c.ToString()));
+                if (state.Current == ParseState.Number) _buffer.Append(c);
+                else await _onToken(new CssToken(CssTokenType.Operator, c.ToString()));
                 break;
 
             case '/':
@@ -289,24 +285,24 @@ public sealed class CssTokenizer : BaseSubTokenizer<CssToken>
                 {
                     _buffer.Append(c);
                     _buffer.Append((char)Read());
-                    state = ParseState.Comment;
+                    state.Current = ParseState.Comment;
                 }
-                else _onToken(new CssToken(CssTokenType.Operator, "/"));
+                else await _onToken(new CssToken(CssTokenType.Operator, "/"));
                 break;
 
             default:
-                if (state == ParseState.None && char.IsDigit(c))
+                if (state.Current == ParseState.None && char.IsDigit(c))
                 {
-                    state = ParseState.Number;
+                    state.Current = ParseState.Number;
                     _buffer.Append(c);
                 }
                 else if (char.IsLetter(c) || c == '_' || c == '-')
                 {
-                    if (state == ParseState.PseudoElement || state == ParseState.CustomProperty)
+                    if (state.Current == ParseState.PseudoElement || state.Current == ParseState.CustomProperty)
                         _buffer.Append(c);
                     else
                     {
-                        state = ParseState.Identifier;
+                        state.Current = ParseState.Identifier;
                         _buffer.Append(c);
                     }
                 }
@@ -318,58 +314,58 @@ public sealed class CssTokenizer : BaseSubTokenizer<CssToken>
         }
 
         // Emit pseudo-element or custom property token if non-letter encountered
-        if ((state == ParseState.PseudoElement || state == ParseState.CustomProperty) &&
+        if ((state.Current == ParseState.PseudoElement || state.Current == ParseState.CustomProperty) &&
             !char.IsLetterOrDigit(c) && c != '-')
         {
             if (_buffer.Length > 0)
             {
-                if (state == ParseState.PseudoElement)
-                    _onToken(new CssToken(CssTokenType.PseudoElement, _buffer.ToString()));
+                if (state.Current == ParseState.PseudoElement)
+                    await _onToken(new CssToken(CssTokenType.PseudoElement, _buffer.ToString()));
                 else
-                    _onToken(new CssToken(CssTokenType.PropertyName, _buffer.ToString()));
+                    await _onToken(new CssToken(CssTokenType.PropertyName, _buffer.ToString()));
 
                 _buffer.Clear();
-                state = ParseState.None;
+                state.Current = ParseState.None;
             }
         }
     }
 
-    private void EmitPending(ref ParseState state, bool inSelector)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length == 0) return;
 
-        switch (state)
+        switch (state.Current)
         {
             case ParseState.String:
-                _onToken(new CssToken(CssTokenType.StringValue, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.StringValue, _buffer.ToString()));
                 break;
             case ParseState.Number:
-                _onToken(new CssToken(CssTokenType.Number, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.Number, _buffer.ToString()));
                 break;
             case ParseState.Unit:
-                _onToken(new CssToken(CssTokenType.Unit, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.Unit, _buffer.ToString()));
                 break;
             case ParseState.Identifier:
-                if (inSelector)
-                    _onToken(new CssToken(CssTokenType.Selector, _buffer.ToString()));
+                if (state.InSelector)
+                    await _onToken(new CssToken(CssTokenType.Selector, _buffer.ToString()));
                 else
-                    _onToken(new CssToken(CssTokenType.Identifier, _buffer.ToString()));
+                    await _onToken(new CssToken(CssTokenType.Identifier, _buffer.ToString()));
                 break;
             case ParseState.Comment:
-                _onToken(new CssToken(CssTokenType.Comment, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.Comment, _buffer.ToString()));
                 break;
             case ParseState.PseudoElement:
-                _onToken(new CssToken(CssTokenType.PseudoElement, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.PseudoElement, _buffer.ToString()));
                 break;
             case ParseState.CustomProperty:
-                _onToken(new CssToken(CssTokenType.PropertyName, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.PropertyName, _buffer.ToString()));
                 break;
             default:
-                _onToken(new CssToken(CssTokenType.Whitespace, _buffer.ToString()));
+                await _onToken(new CssToken(CssTokenType.Whitespace, _buffer.ToString()));
                 break;
         }
 
         _buffer.Clear();
-        state = ParseState.None;
+        state.Current = ParseState.None;
     }
 }

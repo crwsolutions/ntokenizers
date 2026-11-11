@@ -49,50 +49,48 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
         public bool InCommentBlock;
         public bool InOperator;
         public bool InPreprocessor;
+        public bool Escape;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        bool escape = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref escape));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref bool escape)
+    private async Task ProcessChar(char c, State state)
     {
         if (state.InString)
         {
-            ProcessInString(c, state, ref escape);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InChar)
         {
-            ProcessInChar(c, state, ref escape);
+            await ProcessInChar(c, state);
             return;
         }
 
         if (state.InCommentLine)
         {
-            ProcessInCommentLine(c, state);
+            await ProcessInCommentLine(c, state);
             return;
         }
 
         if (state.InCommentBlock)
         {
-            ProcessInCommentBlock(c, state);
+            await ProcessInCommentBlock(c, state);
             return;
         }
 
         if (state.InPreprocessor)
         {
-            ProcessInPreprocessor(c, state);
+            await ProcessInPreprocessor(c, state);
             return;
         }
 
@@ -105,9 +103,9 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
             }
             else
             {
-                EmitToken(CppTokenType.Whitespace);
+                await EmitToken(CppTokenType.Whitespace);
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -121,10 +119,10 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -140,17 +138,17 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
             }
             else
             {
-                EmitToken(CppTokenType.Number);
+                await EmitToken(CppTokenType.Number);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
 
         if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -250,35 +248,35 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
         }
         else if (c == '(')
         {
-            EmitToken(CppTokenType.OpenParenthesis, "(");
+            await EmitToken(CppTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(CppTokenType.CloseParenthesis, ")");
+            await EmitToken(CppTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(CppTokenType.OpenBrace, "{");
+            await EmitToken(CppTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(CppTokenType.CloseBrace, "}");
+            await EmitToken(CppTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(CppTokenType.OpenBracket, "[");
+            await EmitToken(CppTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(CppTokenType.CloseBracket, "]");
+            await EmitToken(CppTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(CppTokenType.Comma, ",");
+            await EmitToken(CppTokenType.Comma, ",");
         }
         else if (c == ';')
         {
-            EmitToken(CppTokenType.SequenceTerminator, ";");
+            await EmitToken(CppTokenType.SequenceTerminator, ";");
         }
         else if (c == ':')
         {
@@ -286,11 +284,11 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
             if (next == ':')
             {
                 Read();
-                EmitToken(CppTokenType.DoubleColon, "::");
+                await EmitToken(CppTokenType.DoubleColon, "::");
             }
             else
             {
-                EmitToken(CppTokenType.Colon, ":");
+                await EmitToken(CppTokenType.Colon, ":");
             }
         }
         else if (c == '.')
@@ -303,7 +301,7 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
             }
             else
             {
-                EmitToken(CppTokenType.Dot, ".");
+                await EmitToken(CppTokenType.Dot, ".");
             }
         }
         else if (IsOperatorChar(c))
@@ -313,51 +311,51 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
         }
         else
         {
-            EmitToken(CppTokenType.NotDefined, c.ToString());
+            await EmitToken(CppTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(CppTokenType.StringValue);
+            await EmitToken(CppTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInChar(char c, State state, ref bool escape)
+    private async Task ProcessInChar(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '\'')
         {
-            EmitToken(CppTokenType.CharValue);
+            await EmitToken(CppTokenType.CharValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInCommentLine(char c, State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(CppTokenType.Comment);
+            await EmitToken(CppTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -369,7 +367,7 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -378,18 +376,18 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(CppTokenType.Comment);
+                await EmitToken(CppTokenType.Comment);
                 ClearState(state);
                 return;
             }
         }
     }
 
-    private void ProcessInPreprocessor(char c, State state)
+    private async Task ProcessInPreprocessor(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(CppTokenType.Keyword);
+            await EmitToken(CppTokenType.Keyword);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -401,7 +399,7 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
         }
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -418,23 +416,23 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
                     return;
                 }
             }
-            EmitToken(CppTokenType.Operator);
+            await EmitToken(CppTokenType.Operator);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
-            EmitToken(CppTokenType.Operator, current);
+            await EmitToken(CppTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
-            EmitToken(CppTokenType.Operator, current);
+            await EmitToken(CppTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            bool tempEscape = false;
-            ProcessChar(c, state, ref tempEscape);
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -456,76 +454,76 @@ public sealed class CppTokenizer : BaseSubTokenizer<CppToken>
                op == "<" || op == ">" || op == "=" || op == "?";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
             if (value == "true" || value == "false")
             {
-                EmitToken(CppTokenType.Boolean, value);
+                await EmitToken(CppTokenType.Boolean, value);
             }
             else if (value == "nullptr")
             {
-                EmitToken(CppTokenType.Null, value);
+                await EmitToken(CppTokenType.Null, value);
             }
             else
             {
-                EmitToken(CppTokenType.Keyword, value);
+                await EmitToken(CppTokenType.Keyword, value);
             }
         }
         else
         {
-            EmitToken(CppTokenType.Identifier, value);
+            await EmitToken(CppTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(CppTokenType type, string value)
+    private async Task EmitToken(CppTokenType type, string value)
     {
-        _onToken(new CppToken(type, value));
+        await _onToken(new CppToken(type, value));
     }
 
-    private void EmitToken(CppTokenType type)
+    private async Task EmitToken(CppTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(CppTokenType.Whitespace);
+                await EmitToken(CppTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(CppTokenType.Number);
+                await EmitToken(CppTokenType.Number);
             }
             else if (state.InString)
             {
-                EmitToken(CppTokenType.StringValue);
+                await EmitToken(CppTokenType.StringValue);
             }
             else if (state.InChar)
             {
-                EmitToken(CppTokenType.CharValue);
+                await EmitToken(CppTokenType.CharValue);
             }
             else if (state.InCommentLine || state.InCommentBlock)
             {
-                EmitToken(CppTokenType.Comment);
+                await EmitToken(CppTokenType.Comment);
             }
             else if (state.InPreprocessor)
             {
-                EmitToken(CppTokenType.Keyword);
+                await EmitToken(CppTokenType.Keyword);
             }
             else if (state.InOperator)
             {
-                EmitToken(CppTokenType.Operator);
+                await EmitToken(CppTokenType.Operator);
                 _buffer.Clear();
             }
         }

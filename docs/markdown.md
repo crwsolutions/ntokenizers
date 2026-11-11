@@ -23,29 +23,29 @@ The Markdown Tokenizer is part of the NTokenizers library and provides a stream-
 
 The Markdown Tokenizer inherits from `BaseTokenizer<MarkdownToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<MarkdownToken> onToken)` - Asynchronously parses a stream of Markdown code
-- `Parse(Stream stream, Action<MarkdownToken> onToken)` - Synchronously parses a stream of Markdown code
+- `ParseAsync(Stream stream, Func<MarkdownToken, Task> onToken)` - Asynchronously parses a stream of Markdown code
+- `Parse(Stream stream, Func<MarkdownToken, Task> onToken)` - Synchronously parses a stream of Markdown code
 - `Parse(string input)` - Parses a string of Markdown code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<MarkdownToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<MarkdownToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ### Inline tokenizers
 
-The `MarkdownTokenizer` produces tokens that carry **metadata** describing the type of content they represent. They also contain an inline token handler. Make sure to register to it:
+The `MarkdownTokenizer` produces tokens that carry **metadata** describing the type of content they represent. Tokens that contain inline (sub) tokens run that sub-tokenizer with `ParseInlinesAsync` — called and awaited from inside the handler for the container token; the call completes when the section is fully consumed:
 
 ```csharp
-await listMetadata.RegisterInlineTokenHandler(async inlineToken => { /* Handle inline tokens here */ })
+await listMetadata.ParseInlinesAsync(async inlineToken => { /* Handle inline tokens here */ })
 ```
 
 Handling this metadata correctly is essential to render the markdown accurately. Below is a breakdown of the different metadata types, separated into **code block types** and **other markdown types**:
 
 #### Code block metadata
 
-The Markdown tokenizer delegates code blocks to language-specific sub-tokenizers. Each code block produces metadata that you can use to register an inline token handler:
+The Markdown tokenizer delegates code blocks to language-specific sub-tokenizers. Each code block produces metadata that runs the language sub-tokenizer via `ParseInlinesAsync`:
 
 ```csharp
 if (token.Metadata is ICodeBlockMetadata codeBlock)
 {
-    await codeBlock.RegisterInlineTokenHandler(inlineToken =>
+    await codeBlock.ParseInlinesAsync(async inlineToken =>
     {
         // inlineToken.TokenType is the language-specific token type
         // inlineToken.Value is the token content
@@ -144,7 +144,7 @@ await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
     // Handle inline tokens for list items, do this for all the metadata types you expect
     if (token.Metadata is ListItemMetadata listMetadata)
     {
-        await listMetadata.RegisterInlineTokenHandler(async inlineToken =>
+        await listMetadata.ParseInlinesAsync(async inlineToken =>
         {
             // Example: simply write the inline token value
             await ansiConsole.WriteAsync(inlineToken.Value);
@@ -182,7 +182,7 @@ await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
     if (token.Metadata is ListItemMetadata listMetadata)
     {
         AnsiConsole.Write(new Markup($"{token.Value}[bold lime]{listMetadata.Marker} [/]"));
-        await listMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await listMetadata.ParseInlinesAsync(async inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
             AnsiConsole.Write(new Markup($"[bold red]{value}[/]"));
@@ -193,7 +193,7 @@ await MarkdownTokenizer.Create().ParseAsync(stream, onToken: async token =>
     }
     else if (token.Metadata is HeadingMetadata headingMetadata)
     {
-        await headingMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await headingMetadata.ParseInlinesAsync(async inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
             var colored = headingMetadata.Level != 1 ?
@@ -228,7 +228,7 @@ await MarkdownTokenizer.Create().ParseAsync(reader, onToken: async token =>
     //Handle json code fence
     if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
     {
-        await jsonMetadata.RegisterInlineTokenHandler( inlineToken =>
+        await jsonMetadata.ParseInlinesAsync(async inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
             var colored = inlineToken.TokenType switch
@@ -281,7 +281,7 @@ using System.IO;
 
 string markdownCode = "This is **bold** text.";
 using var reader = new StringReader(markdownCode);
-await MarkdownTokenizer.Create().ParseAsync(reader, onToken: token =>
+await MarkdownTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

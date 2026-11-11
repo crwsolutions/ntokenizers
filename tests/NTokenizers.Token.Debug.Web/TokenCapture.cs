@@ -9,6 +9,7 @@ using NTokenizers.Java;
 using NTokenizers.Json;
 using NTokenizers.Kotlin;
 using NTokenizers.Markdown;
+using NTokenizers.Markdown.Metadata;
 using NTokenizers.Python;
 using NTokenizers.Rust;
 using NTokenizers.Sql;
@@ -38,14 +39,12 @@ public sealed class TokenEntry(
     public string Value { get; } = Value;
     public string? Metadata { get; } = Metadata;
     public List<TokenEntry> Children { get; } = Children;
-
-    internal Task? InlinesTask;
 }
 
 /// <summary>
 /// Captures every token produced by the Markdown tokenizer, including all inline (sub) tokens.
-/// For every InlineMetadata&lt;T&gt; found anywhere in the tree a RegisterInlineTokenHandler is
-/// registered, so no token is missed, at any nesting level.
+/// For every InlineMetadata&lt;T&gt; found anywhere in the tree the inline parse is awaited,
+/// so no token is missed, at any nesting level.
 /// </summary>
 public static class TokenCapture
 {
@@ -64,10 +63,10 @@ public static class TokenCapture
     {
         var root = new List<TokenEntry>();
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(input));
-        await MarkdownTokenizer.Create().ParseAsync(stream, ct, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, ct, async token => 
         {
             if (ct.IsCancellationRequested) return;
-            root.Add(ToEntry(token));
+            root.Add(await ToEntryAsync(token, ct));
         });
         return root;
     }
@@ -80,100 +79,174 @@ public static class TokenCapture
     {
         var root = new List<TokenEntry>();
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(input));
-        await HtmlTokenizer.Create().ParseAsync(stream, ct, token =>
+        await HtmlTokenizer.Create().ParseAsync(stream, ct, async token => 
         {
             if (ct.IsCancellationRequested) return;
-            root.Add(ToEntry(token));
+            root.Add(await ToEntryAsync(token, ct));
         });
         return root;
     }
 
     /// <summary>
     /// Converts a token to a TokenEntry and, when its metadata is an InlineMetadata&lt;T&gt;,
-    /// registers an inline token handler that captures the sub tokens recursively.
+    /// awaits the inline parse that captures the sub tokens recursively. Completes when the
+    /// whole subtree of the token has been captured.
     /// </summary>
-    private static TokenEntry ToEntry(IToken token)
+    private static async Task<TokenEntry> ToEntryAsync(IToken token, CancellationToken ct)
     {
         var entry = new TokenEntry(GetTokenTypeString(token), token.Value, DescribeMetadata(GetMetadata(token)), new List<TokenEntry>());
 
-        // One branch per InlineMetadata<T> in the library. Registering synchronously inside the
-        // on-token callback is safe: the tokenizer only starts the inline parse after the
-        // handler is registered, and RegisterInlineTokenHandler completes when the inline
-        // parse is done.
+        // One branch per InlineMetadata<T> in the library. The inline parse is awaited here,
+        // inside the container token's handler, so the sub tokens arrive in order and the
+        // subtree is fully captured before the parse continues.
         var metadata = GetMetadata(token);
-        if (metadata is InlineMetadata<MarkdownToken> markdownInlines)
+        if (metadata is InlineMetadata<MarkdownToken> markdownInlines and not ListMetadata)
         {
-            // Code fences (generic fallback), blockquotes, headings, lists, tables, indented code
-            entry.InlinesTask = markdownInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            // Code fences (generic fallback), blockquotes, headings, tables, indented code.
+            // ListMetadata (ListStart/ListEnd) never carries a section: the list items are
+            // streamed by the tokenizer itself, so ParseInlinesAsync would throw.
+            await markdownInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<HtmlToken> htmlInlines)
         {
             // <script>/<style> elements inside an html code fence
-            entry.InlinesTask = htmlInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await htmlInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<CSharpToken> csharpInlines)
         {
-            entry.InlinesTask = csharpInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await csharpInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<CToken> cInlines)
         {
-            entry.InlinesTask = cInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await cInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<CppToken> cppInlines)
         {
-            entry.InlinesTask = cppInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await cppInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<CssToken> cssInlines)
         {
-            entry.InlinesTask = cssInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await cssInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<GoToken> goInlines)
         {
-            entry.InlinesTask = goInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await goInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<JavaToken> javaInlines)
         {
-            entry.InlinesTask = javaInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await javaInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<JsonToken> jsonInlines)
         {
-            entry.InlinesTask = jsonInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await jsonInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<KotlinToken> kotlinInlines)
         {
-            entry.InlinesTask = kotlinInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await kotlinInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<PythonToken> pythonInlines)
         {
-            entry.InlinesTask = pythonInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await pythonInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<RustToken> rustInlines)
         {
-            entry.InlinesTask = rustInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await rustInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<SqlToken> sqlInlines)
         {
-            entry.InlinesTask = sqlInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await sqlInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<SwiftToken> swiftInlines)
         {
-            entry.InlinesTask = swiftInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await swiftInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<TomlToken> tomlInlines)
         {
-            entry.InlinesTask = tomlInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await tomlInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<TypescriptToken> typescriptInlines)
         {
-            entry.InlinesTask = typescriptInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await typescriptInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<XmlToken> xmlInlines)
         {
-            entry.InlinesTask = xmlInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await xmlInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
         else if (metadata is InlineMetadata<YamlToken> yamlInlines)
         {
-            entry.InlinesTask = yamlInlines.RegisterInlineTokenHandler(sub => entry.Children.Add(ToEntry(sub)), () => { });
+            await yamlInlines.ParseInlinesAsync(async sub =>
+            {
+                if (ct.IsCancellationRequested) return;
+                entry.Children.Add(await ToEntryAsync(sub, ct));
+            });
         }
 
         return entry;

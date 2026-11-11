@@ -51,6 +51,8 @@ sidebar:
       url: "tools"
     - title: "CommonMark"
       url: "commonmark"
+    - title: "Migrating v8 to v9"
+      url: "migrating-v8-v9"
 
 # Breadcrumb
 breadcrumb_home_label : "Home"

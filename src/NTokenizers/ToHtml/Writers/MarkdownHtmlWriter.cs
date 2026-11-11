@@ -18,6 +18,6 @@ internal sealed class MarkdownHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
         codeBlockWriter.WriteAdditionalCss(bob);
     }
 
-    internal Task WriteTokenAsync(MarkdownToken token, TextWriter writer) =>
-        _dispatcher.WriteTokenAsync(token, writer);
+    internal Task WriteTokenAsync(MarkdownToken token, TextWriter writer, CancellationToken ct = default) =>
+        _dispatcher.WriteTokenAsync(token, writer, ct);
 }

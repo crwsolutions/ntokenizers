@@ -15,10 +15,10 @@ The C# tokenizer is part of the NTokenizers library and provides a stream-capabl
 
 The C# tokenizer inherits from `BaseTokenizer<CSharpToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<CSharpToken> onToken)` - Asynchronously parses a stream of C# code
-- `Parse(Stream stream, Action<CSharpToken> onToken)` - Synchronously parses a stream of C# code
+- `ParseAsync(Stream stream, Func<CSharpToken, Task> onToken)` - Asynchronously parses a stream of C# code
+- `Parse(Stream stream, Func<CSharpToken, Task> onToken)` - Synchronously parses a stream of C# code
 - `Parse(string input)` - Parses a string of C# code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<CSharpToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<CSharpToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -35,7 +35,7 @@ string csharpCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csharpCode));
-await CSharpTokenizer.Create().ParseAsync(stream, onToken: token =>
+await CSharpTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -61,7 +61,7 @@ using System.IO;
 
 string csharpCode = "int x = 42;";
 using var reader = new StringReader(csharpCode);
-await CSharpTokenizer.Create().ParseAsync(reader, onToken: token =>
+await CSharpTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

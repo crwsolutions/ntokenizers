@@ -41,50 +41,48 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
         public bool InCommentLine;
         public bool InCommentBlock;
         public bool InOperator;
+        public bool Escape;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        bool escape = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref escape));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref bool escape)
+    private async Task ProcessChar(char c, State state)
     {
         if (state.InString)
         {
-            ProcessInString(c, state, ref escape);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InRawString)
         {
-            ProcessInRawString(c, state);
+            await ProcessInRawString(c, state);
             return;
         }
 
         if (state.InChar)
         {
-            ProcessInChar(c, state, ref escape);
+            await ProcessInChar(c, state);
             return;
         }
 
         if (state.InCommentLine)
         {
-            ProcessInCommentLine(c, state);
+            await ProcessInCommentLine(c, state);
             return;
         }
 
         if (state.InCommentBlock)
         {
-            ProcessInCommentBlock(c, state);
+            await ProcessInCommentBlock(c, state);
             return;
         }
 
@@ -97,9 +95,9 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
             }
             else
             {
-                EmitToken(GoTokenType.Whitespace);
+                await EmitToken(GoTokenType.Whitespace);
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -113,10 +111,10 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -131,17 +129,17 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
             }
             else
             {
-                EmitToken(GoTokenType.Number);
+                await EmitToken(GoTokenType.Number);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
 
         if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -199,35 +197,35 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
         }
         else if (c == '(')
         {
-            EmitToken(GoTokenType.OpenParenthesis, "(");
+            await EmitToken(GoTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(GoTokenType.CloseParenthesis, ")");
+            await EmitToken(GoTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(GoTokenType.OpenBrace, "{");
+            await EmitToken(GoTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(GoTokenType.CloseBrace, "}");
+            await EmitToken(GoTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(GoTokenType.OpenBracket, "[");
+            await EmitToken(GoTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(GoTokenType.CloseBracket, "]");
+            await EmitToken(GoTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(GoTokenType.Comma, ",");
+            await EmitToken(GoTokenType.Comma, ",");
         }
         else if (c == ';')
         {
-            EmitToken(GoTokenType.SequenceTerminator, ";");
+            await EmitToken(GoTokenType.SequenceTerminator, ";");
         }
         else if (c == ':')
         {
@@ -235,16 +233,16 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
             if (next == ':')
             {
                 Read();
-                EmitToken(GoTokenType.DoubleColon, "::");
+                await EmitToken(GoTokenType.DoubleColon, "::");
             }
             else if (next == '=')
             {
                 Read();
-                EmitToken(GoTokenType.Operator, ":=");
+                await EmitToken(GoTokenType.Operator, ":=");
             }
             else
             {
-                EmitToken(GoTokenType.Colon, ":");
+                await EmitToken(GoTokenType.Colon, ":");
             }
         }
         else if (c == '.')
@@ -257,20 +255,20 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
             }
             else
             {
-                EmitToken(GoTokenType.Dot, ".");
+                await EmitToken(GoTokenType.Dot, ".");
             }
         }
         else if (c == '@')
         {
-            EmitToken(GoTokenType.At, "@");
+            await EmitToken(GoTokenType.At, "@");
         }
         else if (c == '#')
         {
-            EmitToken(GoTokenType.Pound, "#");
+            await EmitToken(GoTokenType.Pound, "#");
         }
         else if (c == '?')
         {
-            EmitToken(GoTokenType.QuestionMark, "?");
+            await EmitToken(GoTokenType.QuestionMark, "?");
         }
         else if (IsOperatorChar(c))
         {
@@ -279,61 +277,61 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
         }
         else
         {
-            EmitToken(GoTokenType.NotDefined, c.ToString());
+            await EmitToken(GoTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(GoTokenType.StringValue);
+            await EmitToken(GoTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInRawString(char c, State state)
+    private async Task ProcessInRawString(char c, State state)
     {
         _buffer.Append(c);
         if (c == '`')
         {
-            EmitToken(GoTokenType.StringValue);
+            await EmitToken(GoTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInChar(char c, State state, ref bool escape)
+    private async Task ProcessInChar(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '\'')
         {
-            EmitToken(GoTokenType.CharValue);
+            await EmitToken(GoTokenType.CharValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInCommentLine(char c, State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(GoTokenType.Comment);
+            await EmitToken(GoTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -345,7 +343,7 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -354,14 +352,14 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(GoTokenType.Comment);
+                await EmitToken(GoTokenType.Comment);
                 ClearState(state);
                 return;
             }
         }
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -378,23 +376,23 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
                     return;
                 }
             }
-            EmitToken(GoTokenType.Operator);
+            await EmitToken(GoTokenType.Operator);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
-            EmitToken(GoTokenType.Operator, current);
+            await EmitToken(GoTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
-            EmitToken(GoTokenType.Operator, current);
+            await EmitToken(GoTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            bool tempEscape = false;
-            ProcessChar(c, state, ref tempEscape);
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -417,73 +415,73 @@ public sealed class GoTokenizer : BaseSubTokenizer<GoToken>
                op == "<" || op == ">" || op == "=";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Booleans.Contains(value))
         {
-            EmitToken(GoTokenType.Boolean, value);
+            await EmitToken(GoTokenType.Boolean, value);
         }
         else if (Nulls.Contains(value))
         {
-            EmitToken(GoTokenType.Null, value);
+            await EmitToken(GoTokenType.Null, value);
         }
         else if (Keywords.Contains(value))
         {
-            EmitToken(GoTokenType.Keyword, value);
+            await EmitToken(GoTokenType.Keyword, value);
         }
         else
         {
-            EmitToken(GoTokenType.Identifier, value);
+            await EmitToken(GoTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(GoTokenType type, string value)
+    private async Task EmitToken(GoTokenType type, string value)
     {
-        _onToken(new GoToken(type, value));
+        await _onToken(new GoToken(type, value));
     }
 
-    private void EmitToken(GoTokenType type)
+    private async Task EmitToken(GoTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(GoTokenType.Whitespace);
+                await EmitToken(GoTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(GoTokenType.Number);
+                await EmitToken(GoTokenType.Number);
             }
             else if (state.InString)
             {
-                EmitToken(GoTokenType.StringValue);
+                await EmitToken(GoTokenType.StringValue);
             }
             else if (state.InRawString)
             {
-                EmitToken(GoTokenType.StringValue);
+                await EmitToken(GoTokenType.StringValue);
             }
             else if (state.InChar)
             {
-                EmitToken(GoTokenType.CharValue);
+                await EmitToken(GoTokenType.CharValue);
             }
             else if (state.InCommentLine || state.InCommentBlock)
             {
-                EmitToken(GoTokenType.Comment);
+                await EmitToken(GoTokenType.Comment);
             }
             else if (state.InOperator)
             {
-                EmitToken(GoTokenType.Operator);
+                await EmitToken(GoTokenType.Operator);
                 _buffer.Clear();
             }
         }

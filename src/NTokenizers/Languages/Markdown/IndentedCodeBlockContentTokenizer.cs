@@ -25,7 +25,7 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
     // ends first.
     private readonly StringBuilder _pendingBlankContent = new();
 
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
@@ -39,13 +39,13 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
                 // only when the input has one, so the token stream stays faithful to the
                 // input.
                 (string line, bool hasLineEnding) = ReadLineText(this);
-                EmitText();
+                await EmitTextAsync();
                 _pendingBlankContent.Append(RemoveLeadingIndent(line));
                 if (hasLineEnding)
                 {
                     _pendingBlankContent.Append('\n');
                 }
-                EmitContent(_pendingBlankContent.ToString());
+                await EmitContentAsync(_pendingBlankContent.ToString());
                 _pendingBlankContent.Clear();
                 continue;
             }
@@ -57,7 +57,7 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
                 // whitespace beyond those columns. A blank line always ends the line in
                 // the input, so its line ending is buffered as well.
                 (string line, _) = ReadLineText(this);
-                EmitText();
+                await EmitTextAsync();
                 _pendingBlankContent.Append(RemoveLeadingIndent(line)).Append('\n');
                 continue;
             }
@@ -69,9 +69,7 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
         }
 
         _pendingBlankContent.Clear(); // Trailing blank lines do not belong to the block.
-        EmitText();
-
-        return Task.CompletedTask;
+        await EmitTextAsync();
     }
 
     /// <summary>
@@ -81,7 +79,7 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
     /// space). Line breaks stay literal in the content; leading indentation of a line does
     /// not emit by itself.
     /// </summary>
-    private void EmitContent(string content)
+    private async Task EmitContentAsync(string content)
     {
         _atLineStart = true; // start of a content line
         foreach (char c in content)
@@ -99,7 +97,7 @@ internal sealed class IndentedCodeBlockContentTokenizer : BaseMarkdownTokenizer
             }
             else if (!_atLineStart && c == ' ' && _buffer.Length > 1)
             {
-                EmitText(); // word rule of the main loop, applied after the append
+                await EmitTextAsync(); // word rule of the main loop, applied after the append
             }
         }
     }

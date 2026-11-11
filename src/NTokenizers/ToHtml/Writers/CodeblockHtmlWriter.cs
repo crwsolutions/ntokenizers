@@ -45,144 +45,144 @@ internal class CodeblockHtmlWriter : BaseHtmlWriter, IAdditionalCssWriter
     /// <summary>
     /// Writes a code block token, delegating to the appropriate language writer.
     /// </summary>
-    internal async Task WriteCodeBlockAsync(ICodeBlockMetadata codeBlock, TextWriter writer)
+    internal async Task WriteCodeBlockAsync(ICodeBlockMetadata codeBlock, TextWriter writer, CancellationToken ct = default)
     {
         var language = codeBlock.Language;
         var escapedLanguage = EscapeHtml(language);
 
         // Write container with header
-        writer.Write("<div class=\"code-block-container\">\n");
-        writer.Write("<div class=\"code-block-header\">\n");
-        writer.Write($"<span class=\"code-block-language\">{escapedLanguage}</span>\n");
-        writer.Write($"<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n");
-        writer.Write("</div>\n");
-        writer.Write("<pre><code class=\"language-" + escapedLanguage + "\">");
+        await writer.WriteAsync("<div class=\"code-block-container\">\n");
+        await writer.WriteAsync("<div class=\"code-block-header\">\n");
+        await writer.WriteAsync($"<span class=\"code-block-language\">{escapedLanguage}</span>\n");
+        await writer.WriteAsync($"<button class=\"code-block-copy\" onclick=\"copyCode(this)\" title=\"Copy to clipboard\">Copy</button>\n");
+        await writer.WriteAsync("</div>\n");
+        await writer.WriteAsync("<pre><code class=\"language-" + escapedLanguage + "\">");
 
         if (codeBlock is CSharpCodeBlockMetadata csharpMeta)
         {
-            await WriteCodeBlockContentAsync(csharpMeta, writer, t => _csharpWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(csharpMeta, writer, async t => await _csharpWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is JsonCodeBlockMetadata jsonMeta)
         {
-            await WriteCodeBlockContentAsync(jsonMeta, writer, t => _jsonWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(jsonMeta, writer, async t => await _jsonWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is XmlCodeBlockMetadata xmlMeta)
         {
-            await WriteCodeBlockContentAsync(xmlMeta, writer, t => _xmlWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(xmlMeta, writer, async t => await _xmlWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is HtmlCodeBlockMetadata htmlMeta)
         {
-            await WriteHtmlCodeBlockContentAsync(htmlMeta, writer);
+            await WriteHtmlCodeBlockContentAsync(htmlMeta, writer, ct);
         }
         else if (codeBlock is CssCodeBlockMetadata cssMeta)
         {
-            await WriteCodeBlockContentAsync(cssMeta, writer, t => _cssWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(cssMeta, writer, async t => await _cssWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is TypeScriptCodeBlockMetadata tsMeta)
         {
-            await WriteCodeBlockContentAsync(tsMeta, writer, t => _tsWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(tsMeta, writer, async t => await _tsWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is YamlCodeBlockMetadata yamlMeta)
         {
-            await WriteCodeBlockContentAsync(yamlMeta, writer, t => _yamlWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(yamlMeta, writer, async t => await _yamlWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is SqlCodeBlockMetadata sqlMeta)
         {
-            await WriteCodeBlockContentAsync(sqlMeta, writer, t => _sqlWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(sqlMeta, writer, async t => await _sqlWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is TomlCodeBlockMetadata tomlMeta)
         {
-            await WriteCodeBlockContentAsync(tomlMeta, writer, t => _tomlWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(tomlMeta, writer, async t => await _tomlWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is JavaCodeBlockMetadata javaMeta)
         {
-            await WriteCodeBlockContentAsync(javaMeta, writer, t => _javaWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(javaMeta, writer, async t => await _javaWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is CCodeBlockMetadata cMeta)
         {
-            await WriteCodeBlockContentAsync(cMeta, writer, t => _cWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(cMeta, writer, async t => await _cWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is CppCodeBlockMetadata cppMeta)
         {
-            await WriteCodeBlockContentAsync(cppMeta, writer, t => _cppWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(cppMeta, writer, async t => await _cppWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is RustCodeBlockMetadata rustMeta)
         {
-            await WriteCodeBlockContentAsync(rustMeta, writer, t => _rustWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(rustMeta, writer, async t => await _rustWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is KotlinCodeBlockMetadata kotlinMeta)
         {
-            await WriteCodeBlockContentAsync(kotlinMeta, writer, t => _kotlinWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(kotlinMeta, writer, async t => await _kotlinWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is GoCodeBlockMetadata goMeta)
         {
-            await WriteCodeBlockContentAsync(goMeta, writer, t => _goWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(goMeta, writer, async t => await _goWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is SwiftCodeBlockMetadata swiftMeta)
         {
-            await WriteCodeBlockContentAsync(swiftMeta, writer, t => _swiftWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(swiftMeta, writer, async t => await _swiftWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is PythonCodeBlockMetadata pythonMeta)
         {
-            await WriteCodeBlockContentAsync(pythonMeta, writer, t => _pythonWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(pythonMeta, writer, async t => await _pythonWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else if (codeBlock is GenericCodeBlockMetadata genericMeta)
         {
-            await WriteCodeBlockContentAsync(genericMeta, writer, t => _genericWriter.WriteHtml(t, writer));
+            await WriteCodeBlockContentAsync(genericMeta, writer, async t => await _genericWriter.WriteHtmlAsync(t, writer, ct), ct);
         }
         else
         {
             // Fallback for any unrecognized metadata type
-            await WriteCodeBlockContentFallbackAsync(codeBlock as InlineMetadata<IToken>, writer);
+            await WriteCodeBlockContentFallbackAsync(codeBlock as InlineMetadata<IToken>, writer, ct);
         }
     }
 
-    private async Task WriteHtmlCodeBlockContentAsync(HtmlCodeBlockMetadata meta, TextWriter writer)
+    private async Task WriteHtmlCodeBlockContentAsync(HtmlCodeBlockMetadata meta, TextWriter writer, CancellationToken ct = default)
     {
-        await meta.RegisterInlineTokenHandler(async token =>
+        // Html tokens arrive in stream order; nested script/style sections are consumed
+        // through their own metadata before the Html tokenizer continues.
+        await meta.ParseInlinesAsync(async token =>
         {
             if (token.Metadata is TypeScriptCodeBlockMetadata tsMeta)
             {
                 // Nested script element — delegate to TypeScript writer
-                await tsMeta.RegisterInlineTokenHandler(t => _tsWriter.WriteHtml(t, writer));
+                await tsMeta.ParseInlinesAsync(async t => await _tsWriter.WriteHtmlAsync(t, writer, ct));
             }
             else if (token.Metadata is CssCodeBlockMetadata cssMeta)
             {
                 // Nested style element — delegate to CSS writer
-                await cssMeta.RegisterInlineTokenHandler(t => _cssWriter.WriteHtml(t, writer));
+                await cssMeta.ParseInlinesAsync(async t => await _cssWriter.WriteHtmlAsync(t, writer, ct));
             }
             else
             {
                 // Regular HTML token
-                _htmlWriter.WriteHtml(token, writer);
+                await _htmlWriter.WriteHtmlAsync(token, writer, ct);
             }
-        },
-        () => WriteCodeBlockCloseTags(writer));
+        });
+        await WriteCodeBlockCloseTags(writer, ct);
     }
 
-    private async Task WriteCodeBlockContentAsync<TToken>(InlineMetadata<TToken> meta, TextWriter writer, Action<TToken> writeToken) where TToken : IToken
+    private async Task WriteCodeBlockContentAsync<TToken>(InlineMetadata<TToken> meta, TextWriter writer, Func<TToken, Task> writeToken, CancellationToken ct) where TToken : IToken
     {
-        await meta.RegisterInlineTokenHandler(writeToken, () => WriteCodeBlockCloseTags(writer));
+        await meta.ParseInlinesAsync(async token => await writeToken(token));
+        await WriteCodeBlockCloseTags(writer, ct);
     }
 
-    private async Task WriteCodeBlockContentFallbackAsync(InlineMetadata<IToken>? meta, TextWriter writer)
+    private async Task WriteCodeBlockContentFallbackAsync(InlineMetadata<IToken>? meta, TextWriter writer, CancellationToken ct = default)
     {
         if (meta == null)
         {
-            WriteCodeBlockCloseTags(writer);
+            await WriteCodeBlockCloseTags(writer, ct);
             return;
         }
-        await meta.RegisterInlineTokenHandler(token =>
-        {
-            WriteValue(writer, token.Value, null, inPreBlock: true);
-        },
-        () => WriteCodeBlockCloseTags(writer));
+        await meta.ParseInlinesAsync(async token => await WriteValueAsync(writer, token.Value, null, inPreBlock: true));
+        await WriteCodeBlockCloseTags(writer, ct);
     }
 
-    private static void WriteCodeBlockCloseTags(TextWriter writer)
+    private static async Task WriteCodeBlockCloseTags(TextWriter writer, CancellationToken ct)
     {
-        writer.Write("</code></pre>\n");
-        writer.Write("</div>\n");
+        await writer.WriteAsync("</code></pre>\n");
+        await writer.WriteAsync("</div>\n");
     }
 
     public void WriteAdditionalCss(StringBuilder bob)

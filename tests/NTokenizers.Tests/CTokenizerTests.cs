@@ -280,11 +280,11 @@ public class CTokenizerTests
 
         var cTokens = new List<CToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is CCodeBlockMetadata cMeta)
             {
-                cMeta.RegisterInlineTokenHandler(t => cTokens.Add((CToken)t));
+                await cMeta.ParseInlinesAsync(async t => cTokens.Add((CToken)t));
             }
         });
 

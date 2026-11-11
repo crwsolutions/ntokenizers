@@ -37,45 +37,42 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
         public bool InOperator;
         public bool InLifetime;
         public bool InRawString;
+        public bool Escape; public int RawHashCount;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        bool escape = false;
-        int rawHashCount = 0;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref escape, ref rawHashCount));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref bool escape, ref int rawHashCount)
+    private async Task ProcessChar(char c, State state)
     {
         if (state.InString)
         {
-            ProcessInString(c, state, ref escape, ref rawHashCount);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InChar)
         {
-            ProcessInChar(c, state, ref escape);
+            await ProcessInChar(c, state);
             return;
         }
 
         if (state.InCommentLine)
         {
-            ProcessInCommentLine(c, state);
+            await ProcessInCommentLine(c, state);
             return;
         }
 
         if (state.InCommentBlock)
         {
-            ProcessInCommentBlock(c, state);
+            await ProcessInCommentBlock(c, state);
             return;
         }
 
@@ -88,9 +85,9 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             }
             else
             {
-                EmitToken(RustTokenType.Whitespace);
+                await EmitToken(RustTokenType.Whitespace);
                 ClearState(state);
-                ProcessChar(c, state, ref escape, ref rawHashCount);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -104,10 +101,10 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape, ref rawHashCount);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -123,17 +120,17 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             }
             else
             {
-                EmitToken(RustTokenType.Number);
+                await EmitToken(RustTokenType.Number);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape, ref rawHashCount);
+                await ProcessChar(c, state);
                 return;
             }
         }
 
         if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -146,10 +143,10 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             }
             else
             {
-                EmitToken(RustTokenType.Lifetime);
+                await EmitToken(RustTokenType.Lifetime);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape, ref rawHashCount);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -224,35 +221,35 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
         }
         else if (c == '(')
         {
-            EmitToken(RustTokenType.OpenParenthesis, "(");
+            await EmitToken(RustTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(RustTokenType.CloseParenthesis, ")");
+            await EmitToken(RustTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(RustTokenType.OpenBrace, "{");
+            await EmitToken(RustTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(RustTokenType.CloseBrace, "}");
+            await EmitToken(RustTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(RustTokenType.OpenBracket, "[");
+            await EmitToken(RustTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(RustTokenType.CloseBracket, "]");
+            await EmitToken(RustTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(RustTokenType.Comma, ",");
+            await EmitToken(RustTokenType.Comma, ",");
         }
         else if (c == ';')
         {
-            EmitToken(RustTokenType.SequenceTerminator, ";");
+            await EmitToken(RustTokenType.SequenceTerminator, ";");
         }
         else if (c == ':')
         {
@@ -260,11 +257,11 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             if (next == ':')
             {
                 Read();
-                EmitToken(RustTokenType.DoubleColon, "::");
+                await EmitToken(RustTokenType.DoubleColon, "::");
             }
             else
             {
-                EmitToken(RustTokenType.Colon, ":");
+                await EmitToken(RustTokenType.Colon, ":");
             }
         }
         else if (c == '.')
@@ -277,20 +274,20 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             }
             else
             {
-                EmitToken(RustTokenType.Dot, ".");
+                await EmitToken(RustTokenType.Dot, ".");
             }
         }
         else if (c == '#')
         {
-            EmitToken(RustTokenType.Pound, "#");
+            await EmitToken(RustTokenType.Pound, "#");
         }
         else if (c == '@')
         {
-            EmitToken(RustTokenType.At, "@");
+            await EmitToken(RustTokenType.At, "@");
         }
         else if (c == '?')
         {
-            EmitToken(RustTokenType.QuestionMark, "?");
+            await EmitToken(RustTokenType.QuestionMark, "?");
         }
         else if (c == '=')
         {
@@ -298,7 +295,7 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             if (next == '>')
             {
                 Read();
-                EmitToken(RustTokenType.FatArrow, "=>");
+                await EmitToken(RustTokenType.FatArrow, "=>");
             }
             else
             {
@@ -312,7 +309,7 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             if (next == '>')
             {
                 Read();
-                EmitToken(RustTokenType.Arrow, "->");
+                await EmitToken(RustTokenType.Arrow, "->");
             }
             else
             {
@@ -327,51 +324,51 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
         }
         else
         {
-            EmitToken(RustTokenType.NotDefined, c.ToString());
+            await EmitToken(RustTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref bool escape, ref int rawHashCount)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(RustTokenType.StringValue);
+            await EmitToken(RustTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInChar(char c, State state, ref bool escape)
+    private async Task ProcessInChar(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '\'')
         {
-            EmitToken(RustTokenType.CharValue);
+            await EmitToken(RustTokenType.CharValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInCommentLine(char c, State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(RustTokenType.Comment);
+            await EmitToken(RustTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -383,7 +380,7 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -392,7 +389,7 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(RustTokenType.Comment);
+                await EmitToken(RustTokenType.Comment);
                 _buffer.Clear();
                 ClearState(state);
                 return;
@@ -400,7 +397,7 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
         }
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -408,24 +405,24 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
         if (IsMultiCharOperator(combined))
         {
             _buffer.Append(c);
-            EmitToken(RustTokenType.Operator);
+            await EmitToken(RustTokenType.Operator);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
-            EmitToken(RustTokenType.Operator, current);
+            await EmitToken(RustTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
-            EmitToken(RustTokenType.Operator, current);
+            await EmitToken(RustTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            bool tempEscape = false;
-            int tempRaw = 0;
-            ProcessChar(c, state, ref tempEscape, ref tempRaw);
+            state.Escape = false;
+            state.RawHashCount = 0;
+            await ProcessChar(c, state);
         }
     }
 
@@ -447,73 +444,73 @@ public sealed class RustTokenizer : BaseSubTokenizer<RustToken>
                op == "<" || op == ">" || op == "=" || op == "?";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
             if (value == "true" || value == "false")
             {
-                EmitToken(RustTokenType.Boolean, value);
+                await EmitToken(RustTokenType.Boolean, value);
             }
             else
             {
-                EmitToken(RustTokenType.Keyword, value);
+                await EmitToken(RustTokenType.Keyword, value);
             }
         }
         else
         {
-            EmitToken(RustTokenType.Identifier, value);
+            await EmitToken(RustTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(RustTokenType type, string value)
+    private async Task EmitToken(RustTokenType type, string value)
     {
-        _onToken(new RustToken(type, value));
+        await _onToken(new RustToken(type, value));
     }
 
-    private void EmitToken(RustTokenType type)
+    private async Task EmitToken(RustTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(RustTokenType.Whitespace);
+                await EmitToken(RustTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(RustTokenType.Number);
+                await EmitToken(RustTokenType.Number);
             }
             else if (state.InString)
             {
-                EmitToken(RustTokenType.StringValue);
+                await EmitToken(RustTokenType.StringValue);
             }
             else if (state.InChar)
             {
-                EmitToken(RustTokenType.CharValue);
+                await EmitToken(RustTokenType.CharValue);
             }
             else if (state.InCommentLine || state.InCommentBlock)
             {
-                EmitToken(RustTokenType.Comment);
+                await EmitToken(RustTokenType.Comment);
             }
             else if (state.InLifetime)
             {
-                EmitToken(RustTokenType.Lifetime);
+                await EmitToken(RustTokenType.Lifetime);
                 _buffer.Clear();
             }
             else if (state.InOperator)
             {
-                EmitToken(RustTokenType.Operator);
+                await EmitToken(RustTokenType.Operator);
                 _buffer.Clear();
             }
         }

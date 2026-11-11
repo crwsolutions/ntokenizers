@@ -200,9 +200,9 @@ class Program
                 WriteOutput(new string(' ', listDepth * 2));
                 var markupText = $"{Markup.Escape(token.Value)}[bold lime]{listMetadata.Marker} [/ ]".Replace("[/ ]", "[/]");
                 WriteOutput(new Markup(markupText), $"{token.Value}{listMetadata.Marker} ", markupText);
-                await listMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await listMetadata.ParseInlinesAsync(async inlineToken =>
                 {
-                    _ = RenderTokenAsync(inlineToken, listDepth + 1);
+                    await RenderTokenAsync(inlineToken, listDepth + 1);
                 });
                 Debug.WriteLine("Written listItem inlines");
 
@@ -213,12 +213,12 @@ class Program
                 {
                     // Nested quote inside an already-open panel: render the inlines into the
                     // existing panel. No new panel is started, no panel is closed here (the
-                    // outermost quote's onInlinesCompleted owns that).
+                    // outermost quote's inline-parse completion owns that).
                     WriteOutputLineBreak();
                     WriteOutput(new Markup("[grey]> [/]"), "> ", "[grey]> [/]");
-                    await blockquoteMetadata.RegisterInlineTokenHandler(inlineToken =>
+                    await blockquoteMetadata.ParseInlinesAsync(async inlineToken =>
                     {
-                        _ = RenderTokenAsync(inlineToken, listDepth);
+                        await RenderTokenAsync(inlineToken, listDepth);
                     });
                 }
                 else
@@ -237,23 +237,22 @@ class Program
                         _livePanelMarkup = new StringBuilder();
                         _livePanelContext = context;
 
-                        // The onInlinesCompleted callback fires after all of the quote's
-                        // inlines have been drained (the tokenizer calls CompleteProcessing
-                        // on the BlockquoteMetadata). That is the right moment to tear down
-                        // the panel: it spans the entire quote, not just the first inline.
-                        await blockquoteMetadata.RegisterInlineTokenHandler(
-                            inlineToken => _ = RenderTokenAsync(inlineToken, listDepth),
-                            onInlinesCompleted: () =>
-                            {
-                                _livePanelMarkup = null;
-                                _livePanelContext = null;
-                            });
+                        // The inline parse completes after all of the quote's inlines have
+                        // been drained. That is the right moment to tear down the panel: it
+                        // spans the entire quote, not just the first inline.
+                        await blockquoteMetadata.ParseInlinesAsync(async inlineToken =>
+                        {
+                            await RenderTokenAsync(inlineToken, listDepth);
+                        });
+
+                        _livePanelMarkup = null;
+                        _livePanelContext = null;
                     });
                 }
             }
             else if (token.Metadata is HeadingMetadata headingMetadata)
             {
-                await headingMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await headingMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var markupText = headingMetadata.Level != 1 ?
@@ -265,7 +264,7 @@ class Program
             }
             else if (token.Metadata is XmlCodeBlockMetadata xmlMetadata)
             {
-                await xmlMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await xmlMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -287,7 +286,7 @@ class Program
             }
             else if (token.Metadata is JsonCodeBlockMetadata jsonMetadata)
             {
-                await jsonMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await jsonMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -312,7 +311,7 @@ class Program
             }
             else if (token.Metadata is HtmlCodeBlockMetadata htmlMetadata)
             {
-                await htmlMetadata.RegisterInlineTokenHandler(async inlineToken =>
+                await htmlMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     if (inlineToken.Metadata is TypeScriptCodeBlockMetadata tsMeta)
                     {
@@ -353,7 +352,7 @@ class Program
             }
             else if (token.Metadata is TomlCodeBlockMetadata tomlMetadata)
             {
-                await tomlMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await tomlMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -378,7 +377,7 @@ class Program
             }
             else if (token.Metadata is CCodeBlockMetadata cMetadata)
             {
-                await cMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await cMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -397,7 +396,7 @@ class Program
             }
             else if (token.Metadata is CppCodeBlockMetadata cppMetadata)
             {
-                await cppMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await cppMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -416,7 +415,7 @@ class Program
             }
             else if (token.Metadata is RustCodeBlockMetadata rustMetadata)
             {
-                await rustMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await rustMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -435,7 +434,7 @@ class Program
             }
             else if (token.Metadata is KotlinCodeBlockMetadata kotlinMetadata)
             {
-                await kotlinMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await kotlinMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -454,7 +453,7 @@ class Program
             }
             else if (token.Metadata is GoCodeBlockMetadata goMetadata)
             {
-                await goMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await goMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -473,7 +472,7 @@ class Program
             }
             else if (token.Metadata is SwiftCodeBlockMetadata swiftMetadata)
             {
-                await swiftMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await swiftMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -492,7 +491,7 @@ class Program
             }
             else if (token.Metadata is JavaCodeBlockMetadata javaMetadata)
             {
-                await javaMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await javaMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -511,7 +510,7 @@ class Program
             }
             else if (token.Metadata is PythonCodeBlockMetadata pythonMetadata)
             {
-                await pythonMetadata.RegisterInlineTokenHandler(inlineToken =>
+                await pythonMetadata.ParseInlinesAsync(async inlineToken =>
                 {
                     var value = Markup.Escape(inlineToken.Value);
                     var colored = inlineToken.TokenType switch
@@ -543,14 +542,17 @@ class Program
                 WriteOutput(new Markup(markupText), token.Value, markupText);
             }
 
-            if (token.Metadata is InlineMetadata)
+            // Inline metadata (headings, blockquotes, lists, code blocks, tables, ...) is
+            // followed by a line break; FootnoteMetadata is the only metadata that carries
+            // no inline content.
+            if (token.Metadata is not null and not FootnoteMetadata)
             {
                 WriteOutputLineBreak();
             }
         }
 
         // Parse markup
-        await MarkdownTokenizer.Create().ParseAsync(reader, onToken: token => _ = RenderTokenAsync(token));
+        await MarkdownTokenizer.Create().ParseAsync(reader, onToken: async token => await RenderTokenAsync(token));
 
         await writerTask;
 
@@ -633,7 +635,7 @@ class Program
 
     private static async Task HandleScript(TypeScriptCodeBlockMetadata tsMetadata)
     {
-        await tsMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await tsMetadata.ParseInlinesAsync(async inlineToken =>
         {
             var value = Markup.Escape(inlineToken.Value);
             var colored = inlineToken.TokenType switch
@@ -653,10 +655,8 @@ class Program
 
     private static async Task HandleCss(CssCodeBlockMetadata cssMetadata)
     {
-        await cssMetadata.RegisterInlineTokenHandler(inlineToken =>
+        await cssMetadata.ParseInlinesAsync(async inlineToken =>
         {
-            var escaped = inlineToken.Value.Replace("\r", "\\r").Replace("\n", "\\n");
-            Console.Error.WriteLine($"[CSS] type={inlineToken.TokenType} value={escaped}");
             var value = Markup.Escape(inlineToken.Value);
             var colored = inlineToken.TokenType switch
             {

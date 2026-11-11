@@ -47,50 +47,48 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
         public bool InCommentBlock;
         public bool InOperator;
         public bool InPreprocessor;
+        public bool Escape;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        bool escape = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref escape));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref bool escape)
+    private async Task ProcessChar(char c, State state)
     {
         if (state.InString)
         {
-            ProcessInString(c, state, ref escape);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InChar)
         {
-            ProcessInChar(c, state, ref escape);
+            await ProcessInChar(c, state);
             return;
         }
 
         if (state.InCommentLine)
         {
-            ProcessInCommentLine(c, state);
+            await ProcessInCommentLine(c, state);
             return;
         }
 
         if (state.InCommentBlock)
         {
-            ProcessInCommentBlock(c, state);
+            await ProcessInCommentBlock(c, state);
             return;
         }
 
         if (state.InPreprocessor)
         {
-            ProcessInPreprocessor(c, state);
+            await ProcessInPreprocessor(c, state);
             return;
         }
 
@@ -103,9 +101,9 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
             }
             else
             {
-                EmitToken(CTokenType.Whitespace);
+                await EmitToken(CTokenType.Whitespace);
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -119,10 +117,10 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -138,17 +136,17 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
             }
             else
             {
-                EmitToken(CTokenType.Number);
+                await EmitToken(CTokenType.Number);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
 
         if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -206,39 +204,39 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
         }
         else if (c == '(')
         {
-            EmitToken(CTokenType.OpenParenthesis, "(");
+            await EmitToken(CTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(CTokenType.CloseParenthesis, ")");
+            await EmitToken(CTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(CTokenType.OpenBrace, "{");
+            await EmitToken(CTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(CTokenType.CloseBrace, "}");
+            await EmitToken(CTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(CTokenType.OpenBracket, "[");
+            await EmitToken(CTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(CTokenType.CloseBracket, "]");
+            await EmitToken(CTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(CTokenType.Comma, ",");
+            await EmitToken(CTokenType.Comma, ",");
         }
         else if (c == ';')
         {
-            EmitToken(CTokenType.SequenceTerminator, ";");
+            await EmitToken(CTokenType.SequenceTerminator, ";");
         }
         else if (c == ':')
         {
-            EmitToken(CTokenType.Colon, ":");
+            await EmitToken(CTokenType.Colon, ":");
         }
         else if (c == '.')
         {
@@ -250,7 +248,7 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
             }
             else
             {
-                EmitToken(CTokenType.Dot, ".");
+                await EmitToken(CTokenType.Dot, ".");
             }
         }
         else if (IsOperatorChar(c))
@@ -260,51 +258,51 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
         }
         else
         {
-            EmitToken(CTokenType.NotDefined, c.ToString());
+            await EmitToken(CTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(CTokenType.StringValue);
+            await EmitToken(CTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInChar(char c, State state, ref bool escape)
+    private async Task ProcessInChar(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '\'')
         {
-            EmitToken(CTokenType.CharValue);
+            await EmitToken(CTokenType.CharValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInCommentLine(char c, State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(CTokenType.Comment);
+            await EmitToken(CTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -316,7 +314,7 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -325,18 +323,18 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(CTokenType.Comment);
+                await EmitToken(CTokenType.Comment);
                 ClearState(state);
                 return;
             }
         }
     }
 
-    private void ProcessInPreprocessor(char c, State state)
+    private async Task ProcessInPreprocessor(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(CTokenType.Preprocessor);
+            await EmitToken(CTokenType.Preprocessor);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -348,7 +346,7 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
         }
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -365,23 +363,23 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
                     return;
                 }
             }
-            EmitToken(CTokenType.Operator);
+            await EmitToken(CTokenType.Operator);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
-            EmitToken(CTokenType.Operator, current);
+            await EmitToken(CTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
-            EmitToken(CTokenType.Operator, current);
+            await EmitToken(CTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            bool tempEscape = false;
-            ProcessChar(c, state, ref tempEscape);
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -403,65 +401,65 @@ public sealed class CTokenizer : BaseSubTokenizer<CToken>
                op == "<" || op == ">" || op == "=";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
-            EmitToken(CTokenType.Keyword, value);
+            await EmitToken(CTokenType.Keyword, value);
         }
         else
         {
-            EmitToken(CTokenType.Identifier, value);
+            await EmitToken(CTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(CTokenType type, string value)
+    private async Task EmitToken(CTokenType type, string value)
     {
-        _onToken(new CToken(type, value));
+        await _onToken(new CToken(type, value));
     }
 
-    private void EmitToken(CTokenType type)
+    private async Task EmitToken(CTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(CTokenType.Whitespace);
+                await EmitToken(CTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(CTokenType.Number);
+                await EmitToken(CTokenType.Number);
             }
             else if (state.InString)
             {
-                EmitToken(CTokenType.StringValue);
+                await EmitToken(CTokenType.StringValue);
             }
             else if (state.InChar)
             {
-                EmitToken(CTokenType.CharValue);
+                await EmitToken(CTokenType.CharValue);
             }
             else if (state.InCommentLine || state.InCommentBlock)
             {
-                EmitToken(CTokenType.Comment);
+                await EmitToken(CTokenType.Comment);
             }
             else if (state.InPreprocessor)
             {
-                EmitToken(CTokenType.Preprocessor);
+                await EmitToken(CTokenType.Preprocessor);
             }
             else if (state.InOperator)
             {
-                EmitToken(CTokenType.Operator);
+                await EmitToken(CTokenType.Operator);
                 _buffer.Clear();
             }
         }

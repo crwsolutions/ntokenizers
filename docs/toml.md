@@ -15,10 +15,10 @@ The TOML tokenizer is part of the NTokenizers library and provides a stream-capa
 
 The TOML tokenizer inherits from `BaseSubTokenizer<TomlToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<TomlToken> onToken)` - Asynchronously parses a stream of TOML content
-- `Parse(Stream stream, Action<TomlToken> onToken)` - Synchronously parses a stream of TOML content
+- `ParseAsync(Stream stream, Func<TomlToken, Task> onToken)` - Asynchronously parses a stream of TOML content
+- `Parse(Stream stream, Func<TomlToken, Task> onToken)` - Synchronously parses a stream of TOML content
 - `Parse(string input)` - Parses a string of TOML content and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<TomlToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<TomlToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -38,7 +38,7 @@ string tomlCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(tomlCode));
-await TomlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await TomlTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -76,7 +76,7 @@ string tomlCode = """
     name = "Tom Preston-Werner"
     """;
 using var reader = new StringReader(tomlCode);
-await TomlTokenizer.Create().ParseAsync(reader, onToken: token =>
+await TomlTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

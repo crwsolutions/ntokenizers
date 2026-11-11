@@ -552,7 +552,7 @@ public class GoTokenizerTests
         var code = "x := 42";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(code));
         var tokens = new List<GoToken>();
-        await GoTokenizer.Create().ParseAsync(stream, t => tokens.Add((GoToken)t));
+        await GoTokenizer.Create().ParseAsync(stream, async t => tokens.Add((GoToken)t));
         Assert.NotEmpty(tokens);
     }
 
@@ -571,11 +571,11 @@ public class GoTokenizerTests
 
         var goTokens = new List<GoToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is GoCodeBlockMetadata goMeta)
             {
-                goMeta.RegisterInlineTokenHandler(t => goTokens.Add((GoToken)t));
+                await goMeta.ParseInlinesAsync(async t => goTokens.Add((GoToken)t));
             }
         });
 

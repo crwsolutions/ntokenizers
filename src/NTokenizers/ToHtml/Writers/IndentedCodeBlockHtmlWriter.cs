@@ -14,14 +14,10 @@ internal sealed class IndentedCodeBlockHtmlWriter : BaseHtmlWriter, IAdditionalC
     {
     }
 
-    internal async Task WriteContentAsync(IndentedCodeBlockMetadata metadata, TextWriter writer)
+    internal async Task WriteContentAsync(IndentedCodeBlockMetadata metadata, TextWriter writer, CancellationToken ct = default)
     {
-        writer.Write("<pre><code>");
-        await metadata.RegisterInlineTokenHandler(
-            token => WriteValue(writer, token.Value, null, inPreBlock: true),
-            () =>
-            {
-                writer.Write("</code></pre>");
-            });
+        await writer.WriteAsync("<pre><code>");
+        await metadata.ParseInlinesAsync(async token => await WriteValueAsync(writer, token.Value, null, inPreBlock: true));
+        await writer.WriteAsync("</code></pre>");
     }
 }

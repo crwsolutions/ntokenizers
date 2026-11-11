@@ -9,7 +9,7 @@
 
 		<!-- NuGet package metadata -->
 		<PackageId>NTokenizers</PackageId>
-		<Version>8.0.0</Version>
+		<Version>9.0.0</Version>
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -21,8 +21,11 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://crwsolutions.github.io/ntokenizers</PackageProjectUrl>
 		<Title>NTokenizers</Title>
-		<PackageReleaseNotes>Core: new Markdown tokens Strikethrough and BoldItalic.
-ToHtml (breaking): WriteHtml* methods now return the consumed Markdown text and take a CancellationToken. Inline HTML output uses semantic elements (&lt;strong&gt;, &lt;em&gt;, &lt;s&gt;) no classes.</PackageReleaseNotes>
+		<PackageReleaseNotes>BREAKING: token emission is now async end-to-end.
+- All ParseAsync/Parse handler overloads take Func&lt;TToken, Task&gt; instead of Action&lt;TToken&gt;; the parse loop awaits the handler for every token.
+- Renamed: RegisterInlineTokenHandler is now InlineMetadata&lt;TToken&gt;.ParseInlinesAsync(handler) - call and await it from inside the container token's handler; it completes when the section is fully consumed (the onInlinesCompleted callback is gone).
+- ToHtml: MarkdownConverter writes asynchronously straight to the caller's TextWriter. ToHtml(string)/ToHtmlDocument(string) are kept as in-memory convenience wrappers (sync-over-async).
+See the v8 to v9 migration guide: https://crwsolutions.github.io/ntokenizers/migrating-v8-v9</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>

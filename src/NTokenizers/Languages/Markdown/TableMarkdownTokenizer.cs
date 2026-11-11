@@ -8,7 +8,7 @@ internal class TableMarkdownTokenizer : BaseMarkdownTokenizer
 
     internal TableMarkdownTokenizer(TableMetadata metadata) => _tableMetaData = metadata;
 
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         do
         {
@@ -31,23 +31,23 @@ internal class TableMarkdownTokenizer : BaseMarkdownTokenizer
                     }
                 }
                 _tableMetaData.Alignments = alignments;
-                _onToken(new MarkdownToken(MarkdownTokenType.TableAlignments, string.Empty));
+                await _onToken(new MarkdownToken(MarkdownTokenType.TableAlignments, string.Empty));
             }
             else
             {
-                _onToken(new MarkdownToken(MarkdownTokenType.TableRow, string.Empty));
-                _onToken(new MarkdownToken(MarkdownTokenType.TableCell, string.Empty));
+                await _onToken(new MarkdownToken(MarkdownTokenType.TableRow, string.Empty));
+                await _onToken(new MarkdownToken(MarkdownTokenType.TableCell, string.Empty));
 
                 while (Peek() != -1 && Peek() != '\n' && Peek() != '\r')
                 {
                     if (Peek() == '|')
                     {
-                        EmitText();
+                        await EmitTextAsync();
 
                         Read();
                         if (Peek() != -1 && Peek() != '\n' && Peek() != '\r')
                         {
-                            _onToken(new MarkdownToken(MarkdownTokenType.TableCell, string.Empty));
+                            await _onToken(new MarkdownToken(MarkdownTokenType.TableCell, string.Empty));
                         }
                         else
                         {
@@ -56,16 +56,16 @@ internal class TableMarkdownTokenizer : BaseMarkdownTokenizer
                     }
 
                     // Try inline constructs
-                    if (TryParseBoldOrItalic()) continue;
-                    if (TryParseInlineCode()) continue;
-                    if (TryParseLink()) continue;
-                    if (TryParseImage()) continue;
-                    if (TryParseEmoji()) continue;
-                    if (TryParseSubscript()) continue;
-                    if (TryParseStrikethrough()) continue;
-                    if (TryParseSuperscript()) continue;
-                    if (TryParseInsertedText()) continue;
-                    if (TryParseMarkedText()) continue;
+                    if (await TryParseBoldOrItalicAsync()) continue;
+                    if (await TryParseInlineCodeAsync()) continue;
+                    if (await TryParseLinkAsync()) continue;
+                    if (await TryParseImageAsync()) continue;
+                    if (await TryParseEmojiAsync()) continue;
+                    if (await TryParseSubscriptAsync()) continue;
+                    if (await TryParseStrikethroughAsync()) continue;
+                    if (await TryParseSuperscriptAsync()) continue;
+                    if (await TryParseInsertedTextAsync()) continue;
+                    if (await TryParseMarkedTextAsync()) continue;
 
                     // Regular character
                     _buffer.Append((char)Read());
@@ -83,9 +83,7 @@ internal class TableMarkdownTokenizer : BaseMarkdownTokenizer
 
         } while (Peek() == '|' && !ct.IsCancellationRequested); //Next line of the table
 
-        EmitText();
-
-        return Task.CompletedTask;
+        await EmitTextAsync();
     }
 
     private Justify ReadAlignment()
@@ -128,4 +126,3 @@ internal class TableMarkdownTokenizer : BaseMarkdownTokenizer
         return justify;
     }
 }
-

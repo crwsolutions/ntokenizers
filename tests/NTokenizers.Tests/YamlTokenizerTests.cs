@@ -403,7 +403,7 @@ name: Bob";
             cts.Cancel();
         }, TestContext.Current.CancellationToken);
 
-        await YamlTokenizer.Create().ParseAsync(stream, cts.Token, tokens.Add);
+        await YamlTokenizer.Create().ParseAsync(stream, cts.Token, async t => tokens.Add(t));
 
         // Should have been cancelled and not parsed all 10000 keys
         var keyCount = tokens.Count(t => t.TokenType == YamlTokenType.Key);
@@ -507,7 +507,7 @@ name: Bob
     {
         var tokens = new List<YamlToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        var result = YamlTokenizer.Create().Parse(stream, tokens.Add);
+        var result = YamlTokenizer.Create().Parse(stream, async t => tokens.Add(t));
 
         return (tokens, result);
     }
@@ -516,7 +516,7 @@ name: Bob
     {
         var tokens = new List<YamlToken>();
         using var reader = new StringReader(input);
-        YamlTokenizer.Create().ParseAsync(reader, stopDelimiter, token => tokens.Add(token)).GetAwaiter().GetResult();
+        YamlTokenizer.Create().ParseAsync(reader, stopDelimiter, async token => tokens.Add(token)).GetAwaiter().GetResult();
         return tokens;
     }
 }

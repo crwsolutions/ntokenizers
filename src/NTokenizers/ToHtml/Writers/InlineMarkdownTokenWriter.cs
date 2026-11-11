@@ -10,139 +10,139 @@ namespace NTokenizers.ToHtml.Writers;
 /// </summary>
 internal class InlineMarkdownTokenWriter : BaseHtmlWriter
 {
-    internal void WriteToken(MarkdownToken token, TextWriter writer)
+    internal async Task WriteTokenAsync(MarkdownToken token, TextWriter writer, CancellationToken ct = default)
     {
         var value = token.Value;
 
         switch (token.TokenType)
         {
             case MarkdownTokenType.Text:
-                WriteValue(writer, value);
+                await WriteValueAsync(writer, value);
                 break;
 
             case MarkdownTokenType.Bold:
-                writer.Write("<strong>");
-                WriteValue(writer, value);
-                writer.Write("</strong>");
+                await writer.WriteAsync("<strong>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</strong>");
                 break;
 
             case MarkdownTokenType.Italic:
-                writer.Write("<em>");
-                WriteValue(writer, value);
-                writer.Write("</em>");
+                await writer.WriteAsync("<em>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</em>");
                 break;
 
             case MarkdownTokenType.BoldItalic:
-                writer.Write("<strong><em>");
-                WriteValue(writer, value);
-                writer.Write("</em></strong>");
+                await writer.WriteAsync("<strong><em>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</em></strong>");
                 break;
 
             case MarkdownTokenType.Emphasis:
-                writer.Write("<em>");
-                WriteValue(writer, value);
-                writer.Write("</em>");
+                await writer.WriteAsync("<em>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</em>");
                 break;
 
             case MarkdownTokenType.CodeInline:
-                writer.Write("<code>");
-                writer.Write(EscapeHtml(value));
-                writer.Write("</code>");
+                await writer.WriteAsync("<code>");
+                await writer.WriteAsync(EscapeHtml(value));
+                await writer.WriteAsync("</code>");
                 break;
 
             case MarkdownTokenType.Link:
                 if (token.Metadata is LinkMetadata linkMeta)
                 {
-                    writer.Write($"<a href=\"{FormatLinkHref(linkMeta)}\"");
+                    await writer.WriteAsync($"<a href=\"{FormatLinkHref(linkMeta)}\"");
                     if (!string.IsNullOrEmpty(linkMeta.Title))
                     {
-                        writer.Write($" title=\"{FormatTitle(linkMeta.Title!)}\"");
+                        await writer.WriteAsync($" title=\"{FormatTitle(linkMeta.Title!)}\"");
                     }
-                    writer.Write(">");
+                    await writer.WriteAsync(">");
                     if (!string.IsNullOrEmpty(linkMeta.Text))
                     {
-                        WriteValue(writer, linkMeta.Text!, null);
+                        await WriteValueAsync(writer, linkMeta.Text!, null);
                     }
                     else
                     {
-                        WriteValue(writer, linkMeta.Url!, null);
+                        await WriteValueAsync(writer, linkMeta.Url!, null);
                     }
-                    writer.Write("</a>");
+                    await writer.WriteAsync("</a>");
                 }
                 else
                 {
-                    WriteValue(writer, value);
+                    await WriteValueAsync(writer, value);
                 }
                 break;
 
             case MarkdownTokenType.Image:
                 if (token.Metadata is LinkMetadata imageMeta)
                 {
-                    writer.Write($"<img src=\"{FormatLinkHref(imageMeta)}\"");
+                    await writer.WriteAsync($"<img src=\"{FormatLinkHref(imageMeta)}\"");
                     if (!string.IsNullOrEmpty(imageMeta.Text))
-                        writer.Write($" alt=\"{EscapeHtml(imageMeta.Text!)}\"");
+                        await writer.WriteAsync($" alt=\"{EscapeHtml(imageMeta.Text!)}\"");
                     if (!string.IsNullOrEmpty(imageMeta.Title))
-                        writer.Write($" title=\"{FormatTitle(imageMeta.Title!)}\"");
-                    writer.Write(" />");
+                        await writer.WriteAsync($" title=\"{FormatTitle(imageMeta.Title!)}\"");
+                    await writer.WriteAsync(" />");
                 }
                 else
                 {
-                    WriteValue(writer, value);
+                    await WriteValueAsync(writer, value);
                 }
                 break;
 
             case MarkdownTokenType.Emoji:
-                writer.Write(value);
+                await writer.WriteAsync(value);
                 break;
 
             case MarkdownTokenType.Subscript:
-                writer.Write("<sub>");
-                WriteValue(writer, value);
-                writer.Write("</sub>");
+                await writer.WriteAsync("<sub>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</sub>");
                 break;
 
             case MarkdownTokenType.Superscript:
-                writer.Write("<sup>");
-                WriteValue(writer, value);
-                writer.Write("</sup>");
+                await writer.WriteAsync("<sup>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</sup>");
                 break;
 
             case MarkdownTokenType.InsertedText:
-                writer.Write("<ins>");
-                WriteValue(writer, value);
-                writer.Write("</ins>");
+                await writer.WriteAsync("<ins>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</ins>");
                 break;
 
             case MarkdownTokenType.MarkedText:
-                writer.Write("<mark>");
-                WriteValue(writer, value);
-                writer.Write("</mark>");
+                await writer.WriteAsync("<mark>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</mark>");
                 break;
 
             case MarkdownTokenType.Strikethrough:
-                writer.Write("<del>");
-                WriteValue(writer, value);
-                writer.Write("</del>");
+                await writer.WriteAsync("<del>");
+                await WriteValueAsync(writer, value);
+                await writer.WriteAsync("</del>");
                 break;
 
             case MarkdownTokenType.FootnoteReference:
                 if (token.Metadata is FootnoteMetadata fnMeta)
                 {
-                    writer.Write($"<sup class=\"tok-footnote\">[{fnMeta.Id}]</sup>");
+                    await writer.WriteAsync($"<sup class=\"tok-footnote\">[{fnMeta.Id}]</sup>");
                 }
                 else
                 {
-                    WriteValue(writer, value);
+                    await WriteValueAsync(writer, value);
                 }
                 break;
 
             case MarkdownTokenType.TypographicReplacement:
-                writer.Write(value);
+                await writer.WriteAsync(value);
                 break;
 
             // Fallback for any inline token not explicitly handled
             default:
-                WriteValue(writer, value);
+                await WriteValueAsync(writer, value);
                 break;
         }
     }

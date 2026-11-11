@@ -31,116 +31,113 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
     /// <summary>
     /// Parses TypeScript content from the given <see cref="TextReader"/> and produces a sequence of <see cref="TypescriptToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
-        var state = State.Start;
-        char? stringDelimiter = null;
+        var state = new State();
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, ref state, ref stringDelimiter));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, ref State state, ref char? stringDelimiter)
+    private async Task ProcessChar(char c, State state)
     {
-        switch (state)
+        switch (state.Current)
         {
-            case State.Start:
-                ProcessStart(c, ref state, ref stringDelimiter);
+            case ParseState.Start:
+                await ProcessStart(c, state);
                 break;
-            case State.InWhitespace:
-                ProcessWhitespace(c, ref state, ref stringDelimiter);
+            case ParseState.InWhitespace:
+                await ProcessWhitespace(c, state);
                 break;
-            case State.InIdentifier:
-                ProcessIdentifier(c, ref state, ref stringDelimiter);
+            case ParseState.InIdentifier:
+                await ProcessIdentifier(c, state);
                 break;
-            case State.InNumber:
-                ProcessNumber(c, ref state, ref stringDelimiter);
+            case ParseState.InNumber:
+                await ProcessNumber(c, state);
                 break;
-            case State.InString:
-                ProcessString(c, ref state, ref stringDelimiter);
+            case ParseState.InString:
+                await ProcessString(c, state);
                 break;
-            case State.InStringEscape:
-                ProcessStringEscape(c, ref state);
+            case ParseState.InStringEscape:
+                await ProcessStringEscape(c, state);
                 break;
-            case State.InCommentLine:
-                ProcessCommentLine(c, ref state);
+            case ParseState.InCommentLine:
+                await ProcessCommentLine(c, state);
                 break;
-            case State.InCommentBlock:
-                ProcessCommentBlock(c, ref state);
+            case ParseState.InCommentBlock:
+                await ProcessCommentBlock(c, state);
                 break;
-            case State.InCommentBlockStar:
-                ProcessCommentBlockStar(c, ref state);
+            case ParseState.InCommentBlockStar:
+                await ProcessCommentBlockStar(c, state);
                 break;
-            case State.InOperator:
-                ProcessOperator(c, ref state, ref stringDelimiter);
+            case ParseState.InOperator:
+                await ProcessOperator(c, state);
                 break;
         }
     }
 
-    private void ProcessStart(char c, ref State state, ref char? stringDelimiter)
+    private async Task ProcessStart(char c, State state)
     {
         if (char.IsWhiteSpace(c))
         {
             _buffer.Append(c);
-            state = State.InWhitespace;
+            state.Current = ParseState.InWhitespace;
         }
         else if (c == '\'' || c == '"' || c == '`')
         {
-            stringDelimiter = c;
+            state.StringDelimiter = c;
             _buffer.Append(c);
-            state = State.InString;
+            state.Current = ParseState.InString;
         }
         else if (char.IsLetter(c) || c == '_' || c == '$')
         {
             _buffer.Append(c);
-            state = State.InIdentifier;
+            state.Current = ParseState.InIdentifier;
         }
         else if (char.IsDigit(c))
         {
             _buffer.Append(c);
-            state = State.InNumber;
+            state.Current = ParseState.InNumber;
         }
         else if (c == '/' || IsOperatorChar(c))
         {
             _buffer.Append(c);
-            state = State.InOperator;
+            state.Current = ParseState.InOperator;
         }
         else if (c == '(')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.OpenParenthesis, "("));
+            await _onToken(new TypescriptToken(TypescriptTokenType.OpenParenthesis, "("));
         }
         else if (c == ')')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.CloseParenthesis, ")"));
+            await _onToken(new TypescriptToken(TypescriptTokenType.CloseParenthesis, ")"));
         }
         else if (c == ',')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.Comma, ","));
+            await _onToken(new TypescriptToken(TypescriptTokenType.Comma, ","));
         }
         else if (c == '.')
         {
             // Dot could be part of ?. operator, but here it's standalone
-            _onToken(new TypescriptToken(TypescriptTokenType.Dot, "."));
+            await _onToken(new TypescriptToken(TypescriptTokenType.Dot, "."));
         }
         else if (c == ';')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.SequenceTerminator, ";"));
+            await _onToken(new TypescriptToken(TypescriptTokenType.SequenceTerminator, ";"));
         }
         else if (c == '{' || c == '}' || c == '[' || c == ']' || c == ':')
         {
             // Other punctuation - emit as operator or notdefined
-            _onToken(new TypescriptToken(TypescriptTokenType.Operator, c.ToString()));
+            await _onToken(new TypescriptToken(TypescriptTokenType.Operator, c.ToString()));
         }
         else
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.NotDefined, c.ToString()));
+            await _onToken(new TypescriptToken(TypescriptTokenType.NotDefined, c.ToString()));
         }
     }
 
-    private void ProcessWhitespace(char c, ref State state, ref char? stringDelimiter)
+    private async Task ProcessWhitespace(char c, State state)
     {
         if (char.IsWhiteSpace(c))
         {
@@ -148,14 +145,14 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         }
         else
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _buffer.ToString()));
+            await _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _buffer.ToString()));
             _buffer.Clear();
-            state = State.Start;
-            ProcessStart(c, ref state, ref stringDelimiter);
+            state.Current = ParseState.Start;
+            await ProcessStart(c, state);
         }
     }
 
-    private void ProcessIdentifier(char c, ref State state, ref char? stringDelimiter)
+    private async Task ProcessIdentifier(char c, State state)
     {
         if (char.IsLetterOrDigit(c) || c == '_' || c == '$')
         {
@@ -169,19 +166,19 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
             // Check if it's a keyword (case-insensitive)
             if (Keywords.Contains(identifier))
             {
-                _onToken(new TypescriptToken(TypescriptTokenType.Keyword, identifier));
+                await _onToken(new TypescriptToken(TypescriptTokenType.Keyword, identifier));
             }
             else
             {
-                _onToken(new TypescriptToken(TypescriptTokenType.Identifier, identifier));
+                await _onToken(new TypescriptToken(TypescriptTokenType.Identifier, identifier));
             }
 
-            state = State.Start;
-            ProcessStart(c, ref state, ref stringDelimiter);
+            state.Current = ParseState.Start;
+            await ProcessStart(c, state);
         }
     }
 
-    private void ProcessNumber(char c, ref State state, ref char? stringDelimiter)
+    private async Task ProcessNumber(char c, State state)
     {
         if (char.IsDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+' || c == 'x' || c == 'X' ||
             (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'T' || c == ':')
@@ -208,43 +205,43 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                 tokenType = TypescriptTokenType.DateTimeValue;
             }
 
-            _onToken(new TypescriptToken(tokenType, number));
-            state = State.Start;
-            ProcessStart(c, ref state, ref stringDelimiter);
+            await _onToken(new TypescriptToken(tokenType, number));
+            state.Current = ParseState.Start;
+            await ProcessStart(c, state);
         }
     }
 
-    private void ProcessString(char c, ref State state, ref char? stringDelimiter)
+    private async Task ProcessString(char c, State state)
     {
         _buffer.Append(c);
 
         if (c == '\\')
         {
-            state = State.InStringEscape;
+            state.Current = ParseState.InStringEscape;
         }
-        else if (c == stringDelimiter)
+        else if (c == state.StringDelimiter)
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _buffer.ToString()));
+            await _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _buffer.ToString()));
             _buffer.Clear();
-            stringDelimiter = null;
-            state = State.Start;
+            state.StringDelimiter = null;
+            state.Current = ParseState.Start;
         }
     }
 
-    private void ProcessStringEscape(char c, ref State state)
+    private async Task ProcessStringEscape(char c, State state)
     {
         _buffer.Append(c);
-        state = State.InString;
+        state.Current = ParseState.InString;
     }
 
-    private void ProcessCommentLine(char c, ref State state)
+    private async Task ProcessCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
+            await _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
             _buffer.Clear();
             _buffer.Append(c);
-            state = State.InWhitespace;
+            state.Current = ParseState.InWhitespace;
         }
         else
         {
@@ -252,31 +249,31 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         }
     }
 
-    private void ProcessCommentBlock(char c, ref State state)
+    private async Task ProcessCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
         {
-            state = State.InCommentBlockStar;
+            state.Current = ParseState.InCommentBlockStar;
         }
     }
 
-    private void ProcessCommentBlockStar(char c, ref State state)
+    private async Task ProcessCommentBlockStar(char c, State state)
     {
         _buffer.Append(c);
         if (c == '/')
         {
-            _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
+            await _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
             _buffer.Clear();
-            state = State.Start;
+            state.Current = ParseState.Start;
         }
         else if (c != '*')
         {
-            state = State.InCommentBlock;
+            state.Current = ParseState.InCommentBlock;
         }
     }
 
-    private void ProcessOperator(char c, ref State state, ref char? stringDelimiter)
+    private async Task ProcessOperator(char c, State state)
     {
         string current = _buffer.ToString();
 
@@ -284,13 +281,13 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         if (current == "/" && c == '/')
         {
             _buffer.Append(c);
-            state = State.InCommentLine;
+            state.Current = ParseState.InCommentLine;
             return;
         }
         else if (current == "/" && c == '*')
         {
             _buffer.Append(c);
-            state = State.InCommentBlock;
+            state.Current = ParseState.InCommentBlock;
             return;
         }
 
@@ -313,13 +310,13 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         }
 
         // Emit current operator and process next character
-        EmitOperator(current);
+        await EmitOperator(current);
         _buffer.Clear();
-        state = State.Start;
-        ProcessStart(c, ref state, ref stringDelimiter);
+        state.Current = ParseState.Start;
+        await ProcessStart(c, state);
     }
 
-    private void EmitOperator(string op)
+    private async Task EmitOperator(string op)
     {
         TypescriptTokenType tokenType = op switch
         {
@@ -330,7 +327,7 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
             _ => TypescriptTokenType.Operator
         };
 
-        _onToken(new TypescriptToken(tokenType, op));
+        await _onToken(new TypescriptToken(tokenType, op));
     }
 
     private static bool IsOperatorChar(char c)
@@ -346,27 +343,27 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
             or "&&=" or "||=" or "??=" or "=>" or "**" or "**=" or "??" or "?.";
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
-            switch (state)
+            switch (state.Current)
             {
-                case State.InWhitespace:
-                    _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _buffer.ToString()));
+                case ParseState.InWhitespace:
+                    await _onToken(new TypescriptToken(TypescriptTokenType.Whitespace, _buffer.ToString()));
                     break;
-                case State.InIdentifier:
+                case ParseState.InIdentifier:
                     string identifier = _buffer.ToString();
                     if (Keywords.Contains(identifier))
                     {
-                        _onToken(new TypescriptToken(TypescriptTokenType.Keyword, identifier));
+                        await _onToken(new TypescriptToken(TypescriptTokenType.Keyword, identifier));
                     }
                     else
                     {
-                        _onToken(new TypescriptToken(TypescriptTokenType.Identifier, identifier));
+                        await _onToken(new TypescriptToken(TypescriptTokenType.Identifier, identifier));
                     }
                     break;
-                case State.InNumber:
+                case ParseState.InNumber:
                     string number = _buffer.ToString();
                     TypescriptTokenType tokenType = TypescriptTokenType.Number;
                     if (number.Contains('T') || number.Count(ch => ch == ':') >= 2 ||
@@ -374,26 +371,26 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
                     {
                         tokenType = TypescriptTokenType.DateTimeValue;
                     }
-                    _onToken(new TypescriptToken(tokenType, number));
+                    await _onToken(new TypescriptToken(tokenType, number));
                     break;
-                case State.InString:
+                case ParseState.InString:
                     // Incomplete string - emit as string value
-                    _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _buffer.ToString()));
+                    await _onToken(new TypescriptToken(TypescriptTokenType.StringValue, _buffer.ToString()));
                     break;
-                case State.InCommentLine:
-                case State.InCommentBlock:
-                case State.InCommentBlockStar:
-                    _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
+                case ParseState.InCommentLine:
+                case ParseState.InCommentBlock:
+                case ParseState.InCommentBlockStar:
+                    await _onToken(new TypescriptToken(TypescriptTokenType.Comment, _buffer.ToString()));
                     break;
-                case State.InOperator:
-                    EmitOperator(_buffer.ToString());
+                case ParseState.InOperator:
+                    await EmitOperator(_buffer.ToString());
                     break;
             }
             _buffer.Clear();
         }
     }
 
-    private enum State
+    private enum ParseState
     {
         Start,
         InWhitespace,
@@ -405,5 +402,11 @@ public class TypescriptTokenizer : BaseSubTokenizer<TypescriptToken>
         InCommentBlock,
         InCommentBlockStar,
         InOperator
+    }
+
+    private sealed class State
+    {
+        public ParseState Current = ParseState.Start;
+        public char? StringDelimiter;
     }
 }

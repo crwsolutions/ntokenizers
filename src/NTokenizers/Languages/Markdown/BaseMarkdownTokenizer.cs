@@ -22,7 +22,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return char.IsLetterOrDigit(_buffer[_buffer.Length - 1]) || _buffer[_buffer.Length - 1] == '_';
     }
 
-    internal bool TryParseBoldOrItalic()
+    internal async Task<bool> TryParseBoldOrItalicAsync()
     {
         // Check for *** (bold italic with asterisks), but not four or more
         // (which should be handled as nested bold). Only opens bold italic when
@@ -31,7 +31,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (PeekAhead(0) == '*' && PeekAhead(1) == '*' && PeekAhead(2) == '*' && PeekAhead(3) != '*'
             && !PrecededByWordCharacter())
         {
-            EmitText();
+            await EmitTextAsync();
             Read();
             Read();
             Read();
@@ -45,7 +45,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                     Read();
                     Read();
                     Read();
-                    _onToken(new MarkdownToken(MarkdownTokenType.BoldItalic, content.ToString()));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.BoldItalic, content.ToString()));
                     return true;
                 }
                 if (PeekAhead(0) == '*' && PeekAhead(1) == '*' && PeekAhead(2) != '*')
@@ -53,7 +53,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                     // Closing **, fall back to bold with leading * as text
                     Read();
                     Read();
-                    _onToken(new MarkdownToken(MarkdownTokenType.Bold, "*" + content.ToString()));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.Bold, "*" + content.ToString()));
                     return true;
                 }
                 AppendEscapedChar(content);
@@ -69,7 +69,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (PeekAhead(0) == '_' && PeekAhead(1) == '_' && PeekAhead(2) == '_' && PeekAhead(3) != '_'
             && !PrecededByWordCharacter())
         {
-            EmitText();
+            await EmitTextAsync();
             Read();
             Read();
             Read();
@@ -82,14 +82,14 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                     Read();
                     Read();
                     Read();
-                    _onToken(new MarkdownToken(MarkdownTokenType.BoldItalic, content.ToString()));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.BoldItalic, content.ToString()));
                     return true;
                 }
                 if (PeekAhead(0) == '_' && PeekAhead(1) == '_' && PeekAhead(2) != '_')
                 {
                     Read();
                     Read();
-                    _onToken(new MarkdownToken(MarkdownTokenType.Bold, "_" + content.ToString()));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.Bold, "_" + content.ToString()));
                     return true;
                 }
                 AppendEscapedChar(content);
@@ -103,7 +103,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         // Check for **
         if (PeekAhead(0) == '*' && PeekAhead(1) == '*')
         {
-            EmitText();
+            await EmitTextAsync();
             Read();
             Read();
 
@@ -115,7 +115,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                 {
                     Read();
                     Read();
-                    _onToken(new MarkdownToken(MarkdownTokenType.Bold, boldText.ToString()));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.Bold, boldText.ToString()));
                     return true;
                 }
                 AppendEscapedChar(boldText);
@@ -129,7 +129,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         // Handle __bold__ syntax
         if (PeekAhead(0) == '_' && PeekAhead(1) == '_')
         {
-            EmitText();
+            await EmitTextAsync();
             Read();
             Read();
             var boldText = new StringBuilder();
@@ -138,7 +138,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                 if (PeekAhead(0) == '_' && PeekAhead(1) == '_')
                 {
                     Read(); Read();
-                    _onToken(new MarkdownToken(MarkdownTokenType.Bold, boldText.ToString()));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.Bold, boldText.ToString()));
                     return true;
                 }
                 AppendEscapedChar(boldText);
@@ -152,7 +152,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         // Check for single *
         if (PeekAhead(0) == '*')
         {
-            EmitText();
+            await EmitTextAsync();
             Read();
 
             // Read italic text until closing *
@@ -162,7 +162,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                 if (Peek() == '*')
                 {
                     Read();
-                    _onToken(new MarkdownToken(MarkdownTokenType.Italic, italicText.ToString()));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.Italic, italicText.ToString()));
                     return true;
                 }
                 AppendEscapedChar(italicText);
@@ -176,7 +176,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         // Handle _italic_ syntax
         if (PeekAhead(0) == '_' && PeekAhead(1) != '_')
         {
-            EmitText();
+            await EmitTextAsync();
             Read();
             var italicText = new StringBuilder();
             while (Peek() != -1 && Peek() != '_')
@@ -186,7 +186,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             if (Peek() == '_')
             {
                 Read();
-                _onToken(new MarkdownToken(MarkdownTokenType.Italic, italicText.ToString()));
+                await _onToken(new MarkdownToken(MarkdownTokenType.Italic, italicText.ToString()));
                 return true;
             }
             _buffer.Append('_').Append(italicText);
@@ -216,7 +216,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         content.Append((char)Read());
     }
 
-    internal bool TryParseInlineCode()
+    internal async Task<bool> TryParseInlineCodeAsync()
     {
         if (Peek() != '`') return false;
 
@@ -229,7 +229,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             openLength++;
         }
 
-        EmitText();
+        await EmitTextAsync();
 
         // Keep reading (including whitespace and line breaks, which are preserved) until a
         // backtick run of exactly the opening length closes the span, or end of stream.
@@ -262,7 +262,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
 
         if (foundClose)
         {
-            _onToken(new MarkdownToken(MarkdownTokenType.CodeInline, code.ToString()));
+            await _onToken(new MarkdownToken(MarkdownTokenType.CodeInline, code.ToString()));
             return true;
         }
 
@@ -284,7 +284,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseLink()
+    internal async Task<bool> TryParseLinkAsync()
     {
         if (Peek() != '[') return false;
 
@@ -296,7 +296,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (PeekAhead(pos) != ']' || PeekAhead(pos + 1) != '(')
             return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume [
 
         // Read link text
@@ -372,7 +372,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             ? $"[{linkText}]({rawUrl})"
             : $"[{linkText}]({rawUrl} \"{title}\")";
 
-        _onToken(new MarkdownToken(
+        await _onToken(new MarkdownToken(
             MarkdownTokenType.Link,
             value,
             new LinkMetadata(urlStr, linkText.Length > 0 ? linkText.ToString().Trim() : null, title, isBracketed)
@@ -381,12 +381,12 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseImage()
+    internal async Task<bool> TryParseImageAsync()
     {
         if (PeekAhead(0) != '!' || PeekAhead(1) != '[')
             return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume !
         Read(); // Consume [
 
@@ -463,7 +463,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             ? $"![{altText}]({rawUrl})"
             : $"![{altText}]({rawUrl} \"{title}\")";
 
-        _onToken(new MarkdownToken(
+        await _onToken(new MarkdownToken(
             MarkdownTokenType.Image,
             value,
             new LinkMetadata(urlStr, altText.Length > 0 ? altText.ToString().Trim() : null, title, isBracketed)
@@ -472,7 +472,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseEmoji()
+    internal async Task<bool> TryParseEmojiAsync()
     {
         if (Peek() != ':') return false;
 
@@ -488,7 +488,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (PeekAhead(pos) != ':' || pos == 1)
             return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume opening :
 
         // Read emoji name
@@ -501,7 +501,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         if (Peek() == ':')
             Read(); // Consume closing :
 
-        _onToken(new MarkdownToken(
+        await _onToken(new MarkdownToken(
             MarkdownTokenType.Emoji,
             emojiName.ToString(),
             new EmojiMetadata(emojiName.ToString())
@@ -510,11 +510,11 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseSubscript()
+    internal async Task<bool> TryParseSubscriptAsync()
     {
         if (Peek() != '~') return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume opening ~
 
         // Read subscript text until closing ~
@@ -524,7 +524,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             char c = (char)Read();
             if (c == '~')
             {
-                _onToken(new MarkdownToken(MarkdownTokenType.Subscript, subText.ToString()));
+                await _onToken(new MarkdownToken(MarkdownTokenType.Subscript, subText.ToString()));
                 return true;
             }
             subText.Append(c);
@@ -535,11 +535,11 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseSuperscript()
+    internal async Task<bool> TryParseSuperscriptAsync()
     {
         if (Peek() != '^') return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume opening ^
 
         // Read superscript text until closing ^
@@ -549,7 +549,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             char c = (char)Read();
             if (c == '^')
             {
-                _onToken(new MarkdownToken(MarkdownTokenType.Superscript, supText.ToString()));
+                await _onToken(new MarkdownToken(MarkdownTokenType.Superscript, supText.ToString()));
                 return true;
             }
             supText.Append(c);
@@ -560,12 +560,12 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseStrikethrough()
+    internal async Task<bool> TryParseStrikethroughAsync()
     {
         if (PeekAhead(0) != '~' || PeekAhead(1) != '~')
             return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume first ~
         Read(); // Consume second ~
 
@@ -577,7 +577,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             {
                 Read();
                 Read();
-                _onToken(new MarkdownToken(MarkdownTokenType.Strikethrough, delText.ToString()));
+                await _onToken(new MarkdownToken(MarkdownTokenType.Strikethrough, delText.ToString()));
                 return true;
             }
             delText.Append((char)Read());
@@ -588,12 +588,12 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseInsertedText()
+    internal async Task<bool> TryParseInsertedTextAsync()
     {
         if (PeekAhead(0) != '+' || PeekAhead(1) != '+')
             return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume first +
         Read(); // Consume second +
 
@@ -611,7 +611,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             {
                 Read();
                 Read();
-                _onToken(new MarkdownToken(MarkdownTokenType.InsertedText, insText.ToString()));
+                await _onToken(new MarkdownToken(MarkdownTokenType.InsertedText, insText.ToString()));
                 return true;
             }
             insText.Append((char)Read());
@@ -622,7 +622,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal bool TryParseMarkedText()
+    internal async Task<bool> TryParseMarkedTextAsync()
     {
         if (PeekAhead(0) != '=' ||
             PeekAhead(1) != '=' ||
@@ -631,7 +631,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             return false;
         }
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume first =
         Read(); // Consume second =
 
@@ -643,7 +643,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             {
                 Read();
                 Read();
-                _onToken(new MarkdownToken(MarkdownTokenType.MarkedText, markedText.ToString()));
+                await _onToken(new MarkdownToken(MarkdownTokenType.MarkedText, markedText.ToString()));
                 return true;
             }
             markedText.Append((char)Read());
@@ -654,11 +654,11 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         return true;
     }
 
-    internal void EmitText()
+    internal async Task EmitTextAsync()
     {
         if (_buffer.Length > 0)
         {
-            _onToken(new MarkdownToken(MarkdownTokenType.Text, _buffer.ToString()));
+            await _onToken(new MarkdownToken(MarkdownTokenType.Text, _buffer.ToString()));
             _buffer.Clear();
         }
     }
@@ -695,23 +695,40 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
     /// <summary>
     /// Parses inline constructs such as bold, italic
     /// </summary>
-    internal protected bool TryParseInlineConstruct(char ch) => ch switch
+    internal protected async Task<bool> TryParseInlineConstructAsync(char ch)
     {
-        '\\' when TryParseBackslashEscape() => true,
-        '*' when TryParseBoldOrItalic() => true,
-        '_' when TryParseBoldOrItalic() => true,
-        '`' when TryParseInlineCode() => true,
-        '[' when TryParseLink() => true,
-        '!' when PeekAhead(1) == '[' && TryParseImage() => true,
-        ':' when TryParseEmoji() => true,
-        '^' when TryParseSuperscript() => true,
-        '~' when PeekAhead(1) == '~' && TryParseStrikethrough() => true,
-        '~' when TryParseSubscript() => true,
-        '+' when PeekAhead(1) == '+' && TryParseInsertedText() => true,
-        '=' when PeekAhead(1) == '=' && TryParseMarkedText() => true,
-        '<' when TryParseHtmlTag() => true,
-        _ => false
-    };
+        switch (ch)
+        {
+            case '\\' when TryParseBackslashEscape():
+                return true;
+            case '*':
+                return await TryParseBoldOrItalicAsync();
+            case '_':
+                return await TryParseBoldOrItalicAsync();
+            case '`':
+                return await TryParseInlineCodeAsync();
+            case '[':
+                return await TryParseLinkAsync();
+            case '!' when PeekAhead(1) == '[':
+                return await TryParseImageAsync();
+            case ':':
+                return await TryParseEmojiAsync();
+            case '^':
+                return await TryParseSuperscriptAsync();
+            case '~' when PeekAhead(1) == '~':
+                return await TryParseStrikethroughAsync();
+            case '~':
+                return await TryParseSubscriptAsync();
+            case '+' when PeekAhead(1) == '+':
+                return await TryParseInsertedTextAsync();
+            case '=' when PeekAhead(1) == '=':
+                return await TryParseMarkedTextAsync();
+            case '<':
+                return await TryParseHtmlTagAsync();
+            default:
+                return false;
+        }
+    }
 
     /// <summary>
     /// Parses an autolink or an inline HTML tag at an opening angle bracket.
@@ -725,7 +742,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
     /// pass-through: no tag structure is validated and no markdown is parsed inside the tag).
     /// A run without a closing '&gt;' is plain text. Newlines may occur inside the tag.
     /// </remarks>
-    private bool TryParseHtmlTag()
+    private async Task<bool> TryParseHtmlTagAsync()
     {
         if (Peek() != '<') return false;
 
@@ -735,7 +752,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             return false;
         }
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume <
 
         // Read the span up to the first closing angle bracket (or end of stream when absent).
@@ -746,7 +763,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         }
 
         // An autolink is a bracketed URI or email address; consume the closing '>' as well.
-        if (TryParseAutolink(content.ToString()))
+        if (await TryParseAutolinkAsync(content.ToString()))
         {
             if (Peek() == '>')
             {
@@ -763,7 +780,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
         }
 
         Read(); // Consume >
-        _onToken(new MarkdownToken(MarkdownTokenType.HtmlTag, "<" + content + ">"));
+        await _onToken(new MarkdownToken(MarkdownTokenType.HtmlTag, "<" + content + ">"));
         return true;
     }
 
@@ -779,7 +796,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
     /// part containing a '.'. Neither may contain spaces; a backslash disqualifies an
     /// email but is allowed (and percent-encoded by the writer) in a URI.
     /// </remarks>
-    private bool TryParseAutolink(string content)
+    private async Task<bool> TryParseAutolinkAsync(string content)
     {
         if (content.Length == 0)
         {
@@ -818,7 +835,7 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
                 return false;
             }
 
-            EmitLinkToken($"<{content}>", content, content, true);
+            await EmitLinkTokenAsync($"<{content}>", content, content, true);
             return true;
         }
 
@@ -830,16 +847,16 @@ public abstract class BaseMarkdownTokenizer : BaseTokenizer<MarkdownToken>
             }
 
             string email = content;
-            EmitLinkToken($"<{email}>", "mailto:" + email, email, true);
+            await EmitLinkTokenAsync($"<{email}>", "mailto:" + email, email, true);
             return true;
         }
 
         return false;
     }
 
-    private void EmitLinkToken(string value, string url, string text, bool isAutolink)
+    private async Task EmitLinkTokenAsync(string value, string url, string text, bool isAutolink)
     {
-        _onToken(new MarkdownToken(MarkdownTokenType.Link, value,
+        await _onToken(new MarkdownToken(MarkdownTokenType.Link, value,
             new LinkMetadata(url, text, null, IsBracketed: false, IsAutolink: isAutolink)));
     }
 }

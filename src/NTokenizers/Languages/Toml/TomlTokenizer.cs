@@ -16,18 +16,16 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
     /// Parses TOML or TOML-like content from the given <see cref="TextReader"/> and
     /// produces a sequence of <see cref="TomlToken"/> objects.
     /// </summary>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
 
-        TokenizeCharacters(ct, c => ProcessChar(c, state));
+        await TokenizeCharactersAsync(ct, async c => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state)
+    private async Task ProcessChar(char c, State state)
     {
         // --- Comment: # to end of line ---
         if (state.ParseState == ParseState.Comment)
@@ -35,7 +33,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
             _buffer.Append(c);
             if (c == '\n')
             {
-                _onToken(new TomlToken(TomlTokenType.Comment, _buffer.ToString()));
+                await _onToken(new TomlToken(TomlTokenType.Comment, _buffer.ToString()));
                 _buffer.Clear();
                 state.ParseState = ParseState.None;
             }
@@ -57,9 +55,9 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
             }
             else if (c == '"')
             {
-                _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
+                await _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
                 _buffer.Clear();
-                _onToken(new TomlToken(TomlTokenType.StringQuote, "\""));
+                await _onToken(new TomlToken(TomlTokenType.StringQuote, "\""));
                 state.ParseState = ParseState.None;
             }
             else
@@ -74,9 +72,9 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
         {
             if (c == '\'')
             {
-                _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
+                await _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
                 _buffer.Clear();
-                _onToken(new TomlToken(TomlTokenType.StringQuote, "'"));
+                await _onToken(new TomlToken(TomlTokenType.StringQuote, "'"));
                 state.ParseState = ParseState.None;
             }
             else
@@ -108,9 +106,9 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
                     {
                         _buffer.Length--;
                     }
-                    _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
+                    await _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
                     _buffer.Clear();
-                    _onToken(new TomlToken(TomlTokenType.StringQuote, "\"\"\""));
+                    await _onToken(new TomlToken(TomlTokenType.StringQuote, "\"\"\""));
                     state.ParseState = ParseState.None;
                     state.MlQuoteCount = 0;
                 }
@@ -139,9 +137,9 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
                     {
                         _buffer.Length--;
                     }
-                    _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
+                    await _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
                     _buffer.Clear();
-                    _onToken(new TomlToken(TomlTokenType.StringQuote, "'''"));
+                    await _onToken(new TomlToken(TomlTokenType.StringQuote, "'''"));
                     state.ParseState = ParseState.None;
                     state.MlQuoteCount = 0;
                 }
@@ -168,7 +166,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
             }
 
             // End of number
-            EmitNumber();
+            await EmitNumber();
             state.ParseState = ParseState.None;
             state.AfterEquals = false;
             // Fall through to process current c
@@ -201,7 +199,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
             }
 
             // End of token — still ambiguous, emit as Number
-            EmitNumber();
+            await EmitNumber();
             state.ParseState = ParseState.None;
             state.AfterEquals = false;
             // Fall through to process current c
@@ -216,7 +214,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
                 return;
             }
 
-            EmitDateTime();
+            await EmitDateTime();
             state.ParseState = ParseState.None;
             state.AfterEquals = false;
             // Fall through to process current c
@@ -231,7 +229,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
                 return;
             }
 
-            EmitIdentifierToken(state);
+            await EmitIdentifierToken(state);
             state.ParseState = ParseState.None;
             state.AfterEquals = false;
             // Fall through to process current c
@@ -247,7 +245,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
         // --- Emit any pending whitespace ---
         if (_buffer.Length > 0)
         {
-            _onToken(new TomlToken(TomlTokenType.Whitespace, _buffer.ToString()));
+            await _onToken(new TomlToken(TomlTokenType.Whitespace, _buffer.ToString()));
             _buffer.Clear();
         }
 
@@ -264,13 +262,13 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
                 {
                     Read(); // consume second "
                     Read(); // consume third "
-                    _onToken(new TomlToken(TomlTokenType.StringQuote, "\"\"\""));
+                    await _onToken(new TomlToken(TomlTokenType.StringQuote, "\"\"\""));
                     state.ParseState = ParseState.MultilineBasic;
                     state.MlQuoteCount = 0;
                 }
                 else
                 {
-                    _onToken(new TomlToken(TomlTokenType.StringQuote, "\""));
+                    await _onToken(new TomlToken(TomlTokenType.StringQuote, "\""));
                     state.ParseState = ParseState.BasicString;
                 }
                 break;
@@ -280,49 +278,49 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
                 {
                     Read(); // consume second '
                     Read(); // consume third '
-                    _onToken(new TomlToken(TomlTokenType.StringQuote, "'''"));
+                    await _onToken(new TomlToken(TomlTokenType.StringQuote, "'''"));
                     state.ParseState = ParseState.MultilineLiteral;
                     state.MlQuoteCount = 0;
                 }
                 else
                 {
-                    _onToken(new TomlToken(TomlTokenType.StringQuote, "'"));
+                    await _onToken(new TomlToken(TomlTokenType.StringQuote, "'"));
                     state.ParseState = ParseState.LiteralString;
                 }
                 break;
 
             case '.':
-                _onToken(new TomlToken(TomlTokenType.Dot, "."));
+                await _onToken(new TomlToken(TomlTokenType.Dot, "."));
                 break;
 
             case '=':
-                _onToken(new TomlToken(TomlTokenType.Equal, "="));
+                await _onToken(new TomlToken(TomlTokenType.Equal, "="));
                 state.AfterEquals = true;
                 break;
 
             case ',':
-                _onToken(new TomlToken(TomlTokenType.Comma, ","));
+                await _onToken(new TomlToken(TomlTokenType.Comma, ","));
                 break;
 
             case '[':
-                _onToken(new TomlToken(TomlTokenType.OpenBracket, "["));
+                await _onToken(new TomlToken(TomlTokenType.OpenBracket, "["));
                 break;
 
             case ']':
-                _onToken(new TomlToken(TomlTokenType.CloseBracket, "]"));
+                await _onToken(new TomlToken(TomlTokenType.CloseBracket, "]"));
                 break;
 
             case '{':
-                _onToken(new TomlToken(TomlTokenType.OpenBrace, "{"));
+                await _onToken(new TomlToken(TomlTokenType.OpenBrace, "{"));
                 break;
 
             case '}':
-                _onToken(new TomlToken(TomlTokenType.CloseBrace, "}"));
+                await _onToken(new TomlToken(TomlTokenType.CloseBrace, "}"));
                 break;
 
             case '-':
             case '+':
-                HandleSign(c, state);
+                await HandleSign(c, state);
                 break;
 
             default:
@@ -340,7 +338,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
         }
     }
 
-    private void HandleSign(char c, State state)
+    private async Task HandleSign(char c, State state)
     {
         char next = PeekAhead(0);
         if (next >= '0' && next <= '9')
@@ -360,7 +358,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
         }
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
@@ -368,45 +366,45 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
             {
                 case ParseState.Number:
                 case ParseState.NumberOrDate:
-                    EmitNumber();
+                    await EmitNumber();
                     break;
                 case ParseState.DateTime:
-                    EmitDateTime();
+                    await EmitDateTime();
                     break;
                 case ParseState.Identifier:
-                    EmitIdentifierToken(state);
+                    await EmitIdentifierToken(state);
                     break;
                 case ParseState.Comment:
-                    _onToken(new TomlToken(TomlTokenType.Comment, _buffer.ToString()));
+                    await _onToken(new TomlToken(TomlTokenType.Comment, _buffer.ToString()));
                     break;
                 case ParseState.BasicString:
                 case ParseState.LiteralString:
                 case ParseState.MultilineBasic:
                 case ParseState.MultilineLiteral:
                     // Incomplete string, emit content as-is
-                    _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
+                    await _onToken(new TomlToken(TomlTokenType.StringValue, _buffer.ToString()));
                     break;
                 default:
-                    _onToken(new TomlToken(TomlTokenType.Whitespace, _buffer.ToString()));
+                    await _onToken(new TomlToken(TomlTokenType.Whitespace, _buffer.ToString()));
                     break;
             }
             _buffer.Clear();
         }
     }
 
-    private void EmitNumber()
+    private async Task EmitNumber()
     {
-        _onToken(new TomlToken(TomlTokenType.Number, _buffer.ToString()));
+        await _onToken(new TomlToken(TomlTokenType.Number, _buffer.ToString()));
         _buffer.Clear();
     }
 
-    private void EmitDateTime()
+    private async Task EmitDateTime()
     {
-        _onToken(new TomlToken(TomlTokenType.DateTime, _buffer.ToString()));
+        await _onToken(new TomlToken(TomlTokenType.DateTime, _buffer.ToString()));
         _buffer.Clear();
     }
 
-    private void EmitIdentifierToken(State state)
+    private async Task EmitIdentifierToken(State state)
     {
         string value = _buffer.ToString();
         _buffer.Clear();
@@ -418,7 +416,7 @@ public sealed class TomlTokenizer : BaseSubTokenizer<TomlToken>
             _ => TomlTokenType.Identifier
         };
 
-        _onToken(new TomlToken(type, value));
+        await _onToken(new TomlToken(type, value));
     }
 
     private static bool IsNumberChar(char c)

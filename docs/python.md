@@ -30,7 +30,7 @@ foreach (var token in tokens)
 ## Streaming
 
 ```csharp
-await PythonTokenizer.Create().ParseAsync(stream, onToken: token =>
+await PythonTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     // Handle tokens as they arrive
 });

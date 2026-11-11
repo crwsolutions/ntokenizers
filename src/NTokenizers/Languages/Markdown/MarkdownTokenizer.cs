@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using NTokenizers.C;
 using NTokenizers.Core;
@@ -215,7 +214,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     // three-column limit as the line-start constructs.
                     if (CountLeadingIndentColumns() < 4 && TryScanThematicBreak(out _, out _, out _))
                     {
-                        EmitListEnd();
+                        await EmitListEndAsync();
                         goto ProcessLineStartConstruct;
                     }
 
@@ -229,7 +228,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                         bool parsedSibling = await TryParseSiblingListItemAsync();
                         if (!parsedSibling)
                         {
-                            EmitListEnd();
+                            await EmitListEndAsync();
                         }
                         else
                         {
@@ -275,7 +274,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     // TryParseHeadingAsync), so this is a no-op in that case.
                     // CloseParagraph flushes the held soft break (the paragraph's closing
                     // newline) as a Text("\n") separator after the PEnd.
-                    CloseParagraph();
+                    await CloseParagraphAsync();
                     _pendingSoftBreak = false;
 
                     //Eat newline after line-start construct
@@ -317,19 +316,19 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                     if (_pendingSoftBreak)
                     {
                         _pendingSoftBreak = false;
-                        _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
+                        await _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
                     }
                 }
                 else
                 {
                     _pendingSoftBreak = false;
                     _block = BlockContext.Paragraph;
-                    _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockStart, string.Empty));
+                    await _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockStart, string.Empty));
                 }
             }
 
             // Try inline constructs
-            if (TryParseInlineConstruct(c))
+            if (await TryParseInlineConstructAsync(c))
             {
                 continue;
             }
@@ -356,23 +355,23 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                         // soft break (the paragraph's closing newline) as a Text("\n")
                         // separator, and the blank line's own line ending is emitted as
                         // well: the newline count is preserved (no normalization).
-                        CloseParagraph();
+                        await CloseParagraphAsync();
                         _pendingSoftBreak = false;
-                        _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
+                        await _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
                         _buffer.Clear();
                     }
                     else
                     {
                         // A non-blank line within the paragraph; its break is a pending soft break.
                         _pendingSoftBreak = true;
-                        EmitText();
+                        await EmitTextAsync();
                     }
                 }
                 else
                 {
                     // Not in a paragraph: keep the line break as plain text (baseline behavior).
                     _pendingSoftBreak = false;
-                    EmitText();
+                    await EmitTextAsync();
                 }
                 _atLineStart = true;
                 _prefixConsumedThisLine = false;
@@ -381,7 +380,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             //Emit words to keep the streaming character of the tokenizer.
             if (!_atLineStart && c == ' ' && _buffer.Length > 1)
             {
-                EmitText();
+                await EmitTextAsync();
             }
         }
 
@@ -389,7 +388,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // the last line (CloseParagraph flushes a held soft break, i.e. the document's
         // trailing newline, as a Text("\n") separator after the PEnd); an open list is
         // closed as well.
-        EmitText();
+        await EmitTextAsync();
         // A list item's content sub-document consumes the item's own closing line break
         // without emitting it: a list item renders as a box that already closes on a fresh
         // line, so the terminating line must not appear inside the box (it would show as a
@@ -402,9 +401,9 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         {
             _pendingSoftBreak = false;
         }
-        CloseParagraph();
+        await CloseParagraphAsync();
         _pendingSoftBreak = false;
-        EmitListEnd();
+        await EmitListEndAsync();
     }
 
     /// <summary>
@@ -415,16 +414,16 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     /// so it can never render as an in-paragraph soft break, and no newline of the input
     /// is ever dropped from the stream.
     /// </summary>
-    private void CloseParagraph()
+    private async Task CloseParagraphAsync()
     {
         if (_block == BlockContext.Paragraph)
         {
             _block = BlockContext.None;
-            _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockEnd, string.Empty));
+            await _onToken(new MarkdownToken(MarkdownTokenType.ParagraphBlockEnd, string.Empty));
             if (_pendingSoftBreak)
             {
                 _pendingSoftBreak = false;
-                _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
+                await _onToken(new MarkdownToken(MarkdownTokenType.Text, "\n"));
             }
         }
     }
@@ -448,12 +447,16 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             return false;
         }
 
-        EmitText();
+        await EmitTextAsync();
         _pendingSoftBreak = false;
 
-        // Open the block: the token is emitted with its metadata and the block content is
-        // streamed as plain Text tokens through the metadata's inline token handler.
-        return await ParseInlines(MarkdownTokenType.IndentedCodeBlock, new IndentedCodeBlockMetadata(), IndentedCodeBlockContentTokenizer.Create());
+        // Open the block: the token is emitted with its metadata; the block content is
+        // streamed as plain Text tokens when the client handler calls
+        // metadata.ParseInlinesAsync. The post-emit work (the continue below) runs
+        // right after the awaited emit.
+        await _onToken(new MarkdownToken(MarkdownTokenType.IndentedCodeBlock, string.Empty,
+            new IndentedCodeBlockMetadata(Reader, Bob, _lookaheadBuffer)));
+        return true;
     }
 
     /// <summary>
@@ -533,7 +536,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
             // The line belongs to this level: strip only its _depth markers; any excess
             // stays in the remainder to open deeper nested quotes.
-            EmitText();
+            await EmitTextAsync();
             for (int i = 0; i < stop; i++)
             {
                 Read();
@@ -554,7 +557,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 && !WouldStartBlockquoteBreakingConstruct(end);
             if (lazy)
             {
-                EmitText();
+                await EmitTextAsync();
                 for (int i = 0; i < end; i++)
                 {
                     Read();
@@ -563,7 +566,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
                 return true;
             }
 
-            CloseParagraph();
+            await CloseParagraphAsync();
             return false;
         }
 
@@ -574,10 +577,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         if (IndentedCodeBlockContentTokenizer.PeekCurrentLineKind(this) == IndentedCodeBlockContentTokenizer.LineStart.Blank)
         {
             _pendingSoftBreak = false;
-            CloseParagraph();
+            await CloseParagraphAsync();
 
             IndentedCodeBlockContentTokenizer.ReadLineText(this);
-            EmitText();
+            await EmitTextAsync();
             return false;
         }
 
@@ -716,11 +719,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     private async Task<bool> TryParseLineStartConstructAsync()
     {
         if (await TryParseHeadingAsync()) return true;
-        if (TryParseHorizontalRule()) return true;
+        if (await TryParseHorizontalRuleAsync()) return true;
         if (await TryParseBlockquoteAsync()) return true;
         if (await TryParseListItemAsync()) return true;
         if (await TryParseCodeFence()) return true;
-        if (TryParseCustomContainer()) return true;
+        if (await TryParseCustomContainerAsync()) return true;
         if (await TryParseTableAsync()) return true;
         return false;
     }
@@ -747,11 +750,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // An ATX heading interrupts a paragraph. Close any open paragraph before the
         // heading is emitted, so that the paragraph's end token precedes the heading's
         // tokens in the stream rather than wrapping it.
-        CloseParagraph();
+        await CloseParagraphAsync();
         _pendingSoftBreak = false;
 
         // Emit any pending text
-        EmitText();
+        await EmitTextAsync();
 
         // Consume the # characters
         for (int i = 0; i < level; i++)
@@ -763,59 +766,24 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         // Headings parse their content with heading-specific rules (the optional
         // closing sequence of '#' characters is stripped), so the dedicated heading
-        // inline tokenizer is used instead of the generic inline tokenizer.
-        return await ParseInlines(MarkdownTokenType.Heading, new HeadingMetadata(level), HeadingMarkdownTokenizer.Create());
-    }
-
-    private async Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, Func<Action<TToken>, Task> parseAsync, string? value = null) where TToken : IToken
-    {
-        // Emit token with value (client can set OnInlineToken to parse inline content)
-        var emitTask = Task.Run(() =>
-            _onToken(new MarkdownToken(tokenType, value ?? string.Empty, metadata)));
-
-        // Await the client registering the handler
-        var handlerTask = metadata.GetInlineTokenHandlerAsync();
-
-        // Ensure the heading token emission is complete
-        await emitTask;
-
-        using var cts = new CancellationTokenSource();
-        var delayTask = Task.Delay(2000, cts.Token);
-
-        var completedTask = await Task.WhenAny(handlerTask, delayTask);
-
-        if (completedTask == handlerTask)
-        {
-            cts.Cancel();
-            Debug.WriteLine("Canceling wait token");
-        }
-
-        if (completedTask != handlerTask || handlerTask.Result == null)
-        {
-            return false;
-        }
-
-        // Run the tokenizer
-        await parseAsync(handlerTask.Result);
-
-        metadata.CompleteProcessing();
+        // inline tokenizer is used instead of the generic inline tokenizer. The heading
+        // content is streamed when the client handler calls metadata.ParseInlinesAsync;
+        // the post-emit work (the return below) runs right after the awaited emit.
+        await _onToken(new MarkdownToken(MarkdownTokenType.Heading, string.Empty,
+            new HeadingMetadata(level, Reader, Bob, _lookaheadBuffer)));
         return true;
     }
 
-    private Task<bool> ParseInlines<TToken>(MarkdownTokenType tokenType, InlineMetadata<TToken> metadata, BaseTokenizer<TToken> tokenizer, string? value = null) where TToken : IToken =>
-        ParseInlines(tokenType, metadata, handler => tokenizer.ParseAsync(Reader, Bob, _lookaheadBuffer, handler), value);
-
-    private Task<bool> ParseCodeInlines<TToken>(CodeBlockMetadata<TToken> metadata, string fence) where TToken : IToken
+    // Emits the CodeBlock container token with its metadata. The fence content is read
+    // straight from the stream, bypassing the blockquote decision table. Inside a quote
+    // that would leak the '>' markers into the code (and a prefixed closing fence would go
+    // unrecognized), so the reader carried by the metadata is wrapped to strip this level's
+    // markers while keeping them in the faithful text. The fence content is streamed when
+    // the client handler calls metadata.ParseInlinesAsync; the post-emit work (the fence
+    // newline consumption in TryParseCodeFence) runs right after the awaited emit.
+    private async Task EmitCodeBlockAsync<TToken>(CodeBlockMetadata<TToken> metadata) where TToken : IToken
     {
-        // Fence content is read straight from the stream, bypassing the blockquote decision
-        // table. Inside a quote that would leak the '>' markers into the code (and a
-        // prefixed closing fence would go unrecognized), so the reader is wrapped to strip
-        // this level's markers while keeping them in the faithful text.
-        TextReader reader = _depth > 0
-            ? new FilteredBlockquoteReader(Reader, _depth, Bob)
-            : Reader;
-
-        return ParseInlines(MarkdownTokenType.CodeBlock, metadata, handler => metadata.CreateTokenizer().ParseAsync(reader, Bob, fence, handler));
+        await _onToken(new MarkdownToken(MarkdownTokenType.CodeBlock, string.Empty, metadata));
     }
 
     /// <summary>
@@ -876,7 +844,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         return true;
     }
 
-    private bool TryParseHorizontalRule()
+    private async Task<bool> TryParseHorizontalRuleAsync()
     {
         if (!TryScanThematicBreak(out char marker, out int markers, out int lineLength))
             return false;
@@ -886,7 +854,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // Flush the buffered leading whitespace (and any other buffered content) before the
         // break, matching how a list item flushes its marker indentation. Outside a
         // paragraph the HTML writer drops this text; it is only content inside a paragraph.
-        EmitText();
+        await EmitTextAsync();
 
         // Consume the break line up to (not including) the line ending; the main loop owns
         // the line ending (it re-arms _atLineStart and the blockquote decision table).
@@ -895,11 +863,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         if (hadOpenParagraph)
         {
-            CloseParagraph();
+            await CloseParagraphAsync();
             _pendingSoftBreak = false;
         }
 
-        _onToken(new MarkdownToken(MarkdownTokenType.HorizontalRule, new string(marker, markers)));
+        await _onToken(new MarkdownToken(MarkdownTokenType.HorizontalRule, new string(marker, markers)));
 
         return true;
     }
@@ -931,10 +899,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // A blockquote interrupts a paragraph ("foo\n> bar" is a closed paragraph followed
         // by a blockquote), so the paragraph's end token precedes the blockquote in the
         // stream - the same rule as for ATX headings.
-        CloseParagraph();
+        await CloseParagraphAsync();
         _pendingSoftBreak = false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume >
 
         // Skip whitespace after >
@@ -945,9 +913,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // deeper level, so the quote it opens is level _depth + 1. The nested tokenizer
         // consumes the block's own closing line break without emitting it: a blockquote
         // renders as a box that already closes on a fresh line, so the terminating line
-        // must not appear inside the box (the renderer inserts its own separation via
-        // CompleteProcessing).
-        await ParseInlines(MarkdownTokenType.Blockquote, new BlockquoteMetadata(), new MarkdownTokenizer(_depth + 1, dropClosingNewline: true));
+        // must not appear inside the box. The content is streamed when the client handler
+        // calls metadata.ParseInlinesAsync; the post-emit work (the return below) runs
+        // right after the awaited emit.
+        await _onToken(new MarkdownToken(MarkdownTokenType.Blockquote, string.Empty,
+            new BlockquoteMetadata(_depth + 1, Reader, Bob, _lookaheadBuffer)));
 
         return true;
     }
@@ -1026,22 +996,22 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
     // Emits the ListStart for an open list that has no start token yet, remembering the
     // list kind and (for ordered lists) the delimiter.
-    private void EmitListStart(ListClassification item)
+    private async Task EmitListStartAsync(ListClassification item)
     {
         if (_listState == ListState.None)
         {
             bool isOrdered = item.Kind == ListKind.Ordered;
             _listState = isOrdered ? ListState.Ordered : ListState.Unordered;
             _listDelimiter = isOrdered ? item.Marker : '\0';
-            _onToken(new MarkdownToken(MarkdownTokenType.ListStart, string.Empty, new ListMetadata(isOrdered)));
+            await _onToken(new MarkdownToken(MarkdownTokenType.ListStart, string.Empty, new ListMetadata(isOrdered, Reader, Bob, _lookaheadBuffer)));
         }
     }
 
-    private void EmitListEnd()
+    private async Task EmitListEndAsync()
     {
         if (_listState != ListState.None)
         {
-            _onToken(new MarkdownToken(MarkdownTokenType.ListEnd, string.Empty, new ListMetadata(_listState == ListState.Ordered)));
+            await _onToken(new MarkdownToken(MarkdownTokenType.ListEnd, string.Empty, new ListMetadata(_listState == ListState.Ordered, Reader, Bob, _lookaheadBuffer)));
             _listState = ListState.None;
         }
     }
@@ -1066,7 +1036,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             return false;
         }
 
-        EmitText();
+        await EmitTextAsync();
         ConsumeMarker(item);
         await EmitListItemAsync(item);
         return true;
@@ -1091,14 +1061,14 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         {
             _pendingSoftBreak = false;
         }
-        CloseParagraph();
+        await CloseParagraphAsync();
         _pendingSoftBreak = false;
 
-        EmitListStart(item);
+        await EmitListStartAsync(item);
 
         // Flush the leading indentation as text (decoration, not item content), then
         // consume the marker plus its trailing space, when present.
-        EmitText();
+        await EmitTextAsync();
         ConsumeMarker(item);
 
         await EmitListItemAsync(item);
@@ -1174,6 +1144,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             bool hasNormalizedTabPadding = _listItemHasNormalizedTabPadding;
             _listItemHasNormalizedTabPadding = false;
 
+
             // A preceding line-start scan (e.g. the thematic-break probe) may have buffered
             // the tail of the marker's line, including its line ending. If that tail carries
             // no content (only whitespace up to the line ending), drop it so the
@@ -1204,15 +1175,18 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
             var reader = new ListContentReader(Reader, contentOffset, Bob, startsAtLineStart);
 
+            // The item's content is a full markdown sub-document. It is streamed when the
+            // client handler calls metadata.ParseInlinesAsync; the post-emit work (the
+            // reader handoff below) runs right after the awaited emit.
             if (item.Kind == ListKind.Unordered)
             {
-                await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(item.Marker),
-                    handler => new MarkdownTokenizer(0, dropClosingNewline: true, inListItemContent: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+                await _onToken(new MarkdownToken(MarkdownTokenType.UnorderedListItem, string.Empty,
+                    new ListItemMetadata(item.Marker, () => new MarkdownTokenizer(0, dropClosingNewline: true, inListItemContent: true), reader, Bob, _lookaheadBuffer)));
             }
             else
             {
-                await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(item.Number, item.Marker),
-                    handler => new MarkdownTokenizer(0, dropClosingNewline: true, inListItemContent: true).ParseAsync(reader, Bob, _lookaheadBuffer, handler));
+                await _onToken(new MarkdownToken(MarkdownTokenType.OrderedListItem, string.Empty,
+                    new OrderedListItemMetadata(item.Number, item.Marker, () => new MarkdownTokenizer(0, dropClosingNewline: true, inListItemContent: true), reader, Bob, _lookaheadBuffer)));
             }
 
             reader.Handoff(_lookaheadBuffer);
@@ -1222,11 +1196,13 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
 
         if (item.Kind == ListKind.Unordered)
         {
-            await ParseInlines(MarkdownTokenType.UnorderedListItem, new ListItemMetadata(item.Marker), InlineMarkdownTokenizer.Create());
+            await _onToken(new MarkdownToken(MarkdownTokenType.UnorderedListItem, string.Empty,
+                new ListItemMetadata(item.Marker, () => InlineMarkdownTokenizer.Create(), Reader, Bob, _lookaheadBuffer)));
             return;
         }
 
-        await ParseInlines(MarkdownTokenType.OrderedListItem, new OrderedListItemMetadata(item.Number, item.Marker), InlineMarkdownTokenizer.Create());
+        await _onToken(new MarkdownToken(MarkdownTokenType.OrderedListItem, string.Empty,
+            new OrderedListItemMetadata(item.Number, item.Marker, () => InlineMarkdownTokenizer.Create(), Reader, Bob, _lookaheadBuffer)));
     }
 
     private int GetListContentOffset(ListClassification item)
@@ -1259,10 +1235,10 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
         // region, which would otherwise render the code block inside the <p> (invalid HTML),
         // and it places the paragraph's closing newline where it belongs: after the text it
         // terminates, before the fence.
-        CloseParagraph();
+        await CloseParagraphAsync();
         _pendingSoftBreak = false;
 
-        EmitText();
+        await EmitTextAsync();
 
         // Consume the fence characters
         for (int i = 0; i < fenceLength; i++)
@@ -1284,58 +1260,68 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             Read();
 
         // The closing fence must use the same character and at least as many of it as
-        // the opening fence, so the opening fence itself is the stop delimiter.
-        bool parsed = await ParseCodeInlines(lang.ToString(), new string(fenceChar, fenceLength));
+        // the opening fence, so the opening fence itself is the stop delimiter. The fence
+        // content is streamed when the client handler calls metadata.ParseInlinesAsync;
+        // the post-emit work below runs right after the awaited emit.
+        await ParseCodeInlinesAsync(lang.ToString(), new string(fenceChar, fenceLength));
 
         // Consume the fence's own closing line break (if any): a code fence renders as a
         // unit that closes on a fresh line, so its terminating line break must not appear
         // in the token stream. A blank line that separates this fence from the next block
         // is still emitted as Text("\n") by the main loop.
-        if (parsed)
+        if (Peek() == '\r')
         {
-            if (Peek() == '\r')
-            {
+            Read();
+            if (Peek() == '\n')
                 Read();
-                if (Peek() == '\n')
-                    Read();
-            }
-            else if (Peek() == '\n')
-            {
-                Read();
-            }
+        }
+        else if (Peek() == '\n')
+        {
+            Read();
         }
 
-        return parsed;
+        return true;
     }
 
-    private async Task<bool> ParseCodeInlines(string language, string fence) => language.Trim().ToLowerInvariant() switch
+    // Emits the CodeBlock container token for the fence. The metadata carries the section
+    // reader (wrapped to strip blockquote markers when inside a quote), the shared capture
+    // builder, the shared lookahead and the opening fence as stop delimiter; the fence
+    // content is streamed when the client handler calls metadata.ParseInlinesAsync.
+    private Task ParseCodeInlinesAsync(string language, string fence)
     {
-        "csharp" or "cs" or "c#" => await ParseCodeInlines(new CSharpCodeBlockMetadata(language), fence),
-        "json" => await ParseCodeInlines(new JsonCodeBlockMetadata(language), fence),
-        "xml" or "xaml" or "svg" => await ParseCodeInlines(new XmlCodeBlockMetadata(language), fence),
-        "html" => await ParseCodeInlines(new HtmlCodeBlockMetadata(language), fence),
-        "yaml" => await ParseCodeInlines(new YamlCodeBlockMetadata(language), fence),
-        "sql" => await ParseCodeInlines(new SqlCodeBlockMetadata(language), fence),
-        "typescript" or "ts" or "javascript" or "js" => await ParseCodeInlines(new TypeScriptCodeBlockMetadata(language), fence),
-        "css" => await ParseCodeInlines(new CssCodeBlockMetadata(language), fence),
-        "toml" => await ParseCodeInlines(new TomlCodeBlockMetadata(language), fence),
-        "java" => await ParseCodeInlines(new JavaCodeBlockMetadata(language), fence),
-        "c" => await ParseCodeInlines(new CCodeBlockMetadata(language), fence),
-        "cpp" or "c++" => await ParseCodeInlines(new CppCodeBlockMetadata(language), fence),
-        "rust" or "rs" => await ParseCodeInlines(new RustCodeBlockMetadata(language), fence),
-        "kotlin" or "kt" => await ParseCodeInlines(new KotlinCodeBlockMetadata(language), fence),
-        "go" or "golang" => await ParseCodeInlines(new GoCodeBlockMetadata(language), fence),
-        "swift" => await ParseCodeInlines(new SwiftCodeBlockMetadata(language), fence),
-        "python" or "py" => await ParseCodeInlines(new PythonCodeBlockMetadata(language), fence),
-        _ => await ParseCodeInlines(new GenericCodeBlockMetadata(language), fence)
-    };
+        TextReader reader = _depth > 0
+            ? new FilteredBlockquoteReader(Reader, _depth, Bob)
+            : Reader;
 
-    private bool TryParseCustomContainer()
+        return language.Trim().ToLowerInvariant() switch
+        {
+            "csharp" or "cs" or "c#" => EmitCodeBlockAsync(new CSharpCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "json" => EmitCodeBlockAsync(new JsonCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "xml" or "xaml" or "svg" => EmitCodeBlockAsync(new XmlCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "html" => EmitCodeBlockAsync(new HtmlCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "yaml" => EmitCodeBlockAsync(new YamlCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "sql" => EmitCodeBlockAsync(new SqlCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "typescript" or "ts" or "javascript" or "js" => EmitCodeBlockAsync(new TypeScriptCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "css" => EmitCodeBlockAsync(new CssCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "toml" => EmitCodeBlockAsync(new TomlCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "java" => EmitCodeBlockAsync(new JavaCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "c" => EmitCodeBlockAsync(new CCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "cpp" or "c++" => EmitCodeBlockAsync(new CppCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "rust" or "rs" => EmitCodeBlockAsync(new RustCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "kotlin" or "kt" => EmitCodeBlockAsync(new KotlinCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "go" or "golang" => EmitCodeBlockAsync(new GoCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "swift" => EmitCodeBlockAsync(new SwiftCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            "python" or "py" => EmitCodeBlockAsync(new PythonCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence)),
+            _ => EmitCodeBlockAsync(new GenericCodeBlockMetadata(language, reader, Bob, _lookaheadBuffer, fence))
+        };
+    }
+
+    private async Task<bool> TryParseCustomContainerAsync()
     {
         if (PeekAhead(0) != ':' || PeekAhead(1) != ':' || PeekAhead(2) != ':')
             return false;
 
-        EmitText();
+        await EmitTextAsync();
 
         // Consume :::
         Read();
@@ -1353,7 +1339,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             containerType.Append((char)Read());
         }
 
-        _onToken(new MarkdownToken(MarkdownTokenType.CustomContainer, containerType.ToString().Trim()));
+        await _onToken(new MarkdownToken(MarkdownTokenType.CustomContainer, containerType.ToString().Trim()));
 
         return true;
     }
@@ -1362,7 +1348,7 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
     {
         if (Peek() != '|') return false;
 
-        EmitText();
+        await EmitTextAsync();
         Read(); // Consume |
 
         if (Peek() == '|') //this is invalid
@@ -1371,8 +1357,11 @@ public sealed class MarkdownTokenizer : BaseMarkdownTokenizer
             return false;
         }
 
-        var metadata = new TableMetadata();
-        await ParseInlines(MarkdownTokenType.Table, metadata, new TableMarkdownTokenizer(metadata));
+        // The table rows are streamed when the client handler calls
+        // metadata.ParseInlinesAsync; the post-emit work (the optional closing pipe
+        // consumption) runs right after the awaited emit.
+        await _onToken(new MarkdownToken(MarkdownTokenType.Table, string.Empty,
+            new TableMetadata(Reader, Bob, _lookaheadBuffer)));
 
         if (Peek() == '|')
         {

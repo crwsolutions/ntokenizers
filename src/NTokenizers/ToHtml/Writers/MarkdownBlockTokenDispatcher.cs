@@ -48,12 +48,12 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
     /// inside the container and the container's outer scope can add its own separation
     /// afterwards.
     /// </summary>
-    internal void FlushPendingBlockBreak(TextWriter writer)
+    internal async Task FlushPendingBlockBreak(TextWriter writer, CancellationToken ct = default)
     {
         if (_pendingBlockBreak)
         {
             _pendingBlockBreak = false;
-            writer.Write('\n');
+            await writer.WriteAsync("\n");
         }
     }
 
@@ -61,14 +61,14 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
     /// Writes the given markdown token to the writer, dispatching block tokens to the
     /// dedicated writers and inline tokens to the inline writer.
     /// </summary>
-    internal async Task WriteTokenAsync(MarkdownToken token, TextWriter writer)
+    internal async Task WriteTokenAsync(MarkdownToken token, TextWriter writer, CancellationToken ct = default)
     {
         // Write the block break that follows a closed paragraph, before the next token.
         // It is intentionally omitted when the paragraph is the last token (end of stream).
         if (_pendingBlockBreak)
         {
             _pendingBlockBreak = false;
-            writer.Write('\n');
+            await writer.WriteAsync("\n");
         }
 
         switch (token.TokenType)
@@ -79,7 +79,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                     // Newline/whitespace text outside a paragraph is block separation, not content.
                     break;
                 }
-                WriteValue(writer, token.Value, null);
+                await WriteValueAsync(writer, token.Value, null);
                 break;
 
             case MarkdownTokenType.Bold:
@@ -97,14 +97,14 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
             case MarkdownTokenType.Strikethrough:
             case MarkdownTokenType.FootnoteReference:
             case MarkdownTokenType.TypographicReplacement:
-                _inlineWriter.WriteToken(token, writer);
+                await _inlineWriter.WriteTokenAsync(token, writer, ct);
                 break;
 
             case MarkdownTokenType.Heading:
                 if (token.Metadata is HeadingMetadata headingMeta)
                 {
                     var headingWriter = new HeadingHtmlWriter();
-                    await headingWriter.WriteContentAsync(headingMeta, writer);
+                    await headingWriter.WriteContentAsync(headingMeta, writer, ct);
                     // The heading is a top-level block: a following block is separated from
                     // it by a line break, written before that block and omitted at end of
                     // stream (consistent with paragraphs, code blocks, and thematic breaks).
@@ -116,7 +116,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 if (token.Metadata is BlockquoteMetadata bqMeta)
                 {
                     var bqWriter = new BlockquoteHtmlWriter();
-                    await bqWriter.WriteContentAsync(bqMeta, writer);
+                    await bqWriter.WriteContentAsync(bqMeta, writer, ct);
                     // The blockquote is a block: a following block is separated from it by a
                     // line break, written before that block and omitted at end of stream.
                     _pendingBlockBreak = true;
@@ -129,7 +129,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 // Items follow until the matching ListEnd.
                 if (token.Metadata is ListMetadata lsMeta)
                 {
-                    writer.Write(lsMeta.IsOrdered ? "<ol>\n" : "<ul>\n");
+                    await writer.WriteAsync(lsMeta.IsOrdered ? "<ol>\n" : "<ul>\n");
                     _inOrderedList = lsMeta.IsOrdered;
                     if (_inOrderedList)
                     {
@@ -145,7 +145,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 // following block starts immediately after the closing tag.
                 if (token.Metadata is ListMetadata leMeta)
                 {
-                    writer.Write(leMeta.IsOrdered ? "</ol>" : "</ul>");
+                    await writer.WriteAsync(leMeta.IsOrdered ? "</ol>" : "</ul>");
                     if (leMeta.IsOrdered)
                     {
                         _inOrderedList = false;
@@ -157,7 +157,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 if (token.Metadata is ListItemMetadata liMeta)
                 {
                     var liWriter = new ListItemHtmlWriter(_inlineListItems || _inParagraph);
-                    await liWriter.WriteContentAsync(liMeta, writer);
+                    await liWriter.WriteContentAsync(liMeta, writer, ct);
                 }
                 break;
 
@@ -169,14 +169,14 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                     int? value = _inOrderedList && oliMeta.Number != _orderedCounter ? oliMeta.Number : null;
                     _orderedCounter = value.HasValue ? oliMeta.Number + 1 : _orderedCounter + 1;
                     var oliWriter = new OrderedListItemHtmlWriter(_inlineListItems || _inParagraph, value);
-                    await oliWriter.WriteContentAsync(oliMeta, writer);
+                    await oliWriter.WriteContentAsync(oliMeta, writer, ct);
                 }
                 break;
 
             case MarkdownTokenType.HorizontalRule:
                 // The line break after <hr /> is written before the next block token and
                 // omitted at end of stream (consistent with paragraphs and code blocks).
-                writer.Write("<hr />");
+                await writer.WriteAsync("<hr />");
                 _pendingBlockBreak = true;
                 break;
 
@@ -184,7 +184,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 if (token.Metadata is ICodeBlockMetadata codeBlockMetadata)
                 {
                     var codeBlockWriter = new CodeblockHtmlWriter();
-                    await codeBlockWriter.WriteCodeBlockAsync(codeBlockMetadata, writer);
+                    await codeBlockWriter.WriteCodeBlockAsync(codeBlockMetadata, writer, ct);
                 }
                 break;
 
@@ -194,7 +194,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 if (token.Metadata is TableMetadata tableMeta)
                 {
                     var tableWriter = new TableHtmlWriter();
-                    await tableWriter.WriteContentAsync(tableMeta, writer);
+                    await tableWriter.WriteContentAsync(tableMeta, writer, ct);
                 }
                 break;
 
@@ -210,45 +210,45 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
             case MarkdownTokenType.FootnoteDefinition:
                 if (token.Metadata is FootnoteMetadata fnDefMeta)
                 {
-                    writer.Write($"<sup id=\"fn-{fnDefMeta.Id}\">");
-                    WriteValue(writer, token.Value, null);
-                    writer.Write("</sup>\n");
+                    await writer.WriteAsync($"<sup id=\"fn-{fnDefMeta.Id}\">");
+                    await WriteValueAsync(writer, token.Value, null);
+                    await writer.WriteAsync("</sup>\n");
                 }
                 break;
 
             case MarkdownTokenType.DefinitionTerm:
-                writer.Write("<dt>");
-                WriteValue(writer, token.Value, null);
-                writer.Write("</dt>\n");
+                await writer.WriteAsync("<dt>");
+                await WriteValueAsync(writer, token.Value, null);
+                await writer.WriteAsync("</dt>\n");
                 break;
 
             case MarkdownTokenType.DefinitionDescription:
-                writer.Write("<dd>");
-                WriteValue(writer, token.Value, null);
-                writer.Write("</dd>\n");
+                await writer.WriteAsync("<dd>");
+                await WriteValueAsync(writer, token.Value, null);
+                await writer.WriteAsync("</dd>\n");
                 break;
 
             case MarkdownTokenType.Abbreviation:
-                WriteValue(writer, token.Value, null);
+                await WriteValueAsync(writer, token.Value, null);
                 break;
 
             case MarkdownTokenType.CustomContainer:
-                writer.Write($"<div class=\"tok-container tok-container-{EscapeHtml(token.Value)}\">\n");
+                await writer.WriteAsync($"<div class=\"tok-container tok-container-{EscapeHtml(token.Value)}\">\n");
                 // Content follows as subsequent tokens
                 break;
 
             case MarkdownTokenType.HtmlTag:
                 // Pass through raw HTML tags
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             case MarkdownTokenType.ParagraphBlockStart:
-                writer.Write("<p>");
+                await writer.WriteAsync("<p>");
                 _inParagraph = true;
                 break;
 
             case MarkdownTokenType.ParagraphBlockEnd:
-                writer.Write("</p>");
+                await writer.WriteAsync("</p>");
                 _inParagraph = false;
                 // A following block is separated from the paragraph by a line break; the
                 // break is written before that block (and omitted at end of stream).
@@ -259,7 +259,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 if (token.Metadata is IndentedCodeBlockMetadata icoMeta)
                 {
                     var icoWriter = new IndentedCodeBlockHtmlWriter();
-                    await icoWriter.WriteContentAsync(icoMeta, writer);
+                    await icoWriter.WriteContentAsync(icoMeta, writer, ct);
                     // A following block is separated from the code block by a line break; the
                     // break is written before that block (and omitted at end of stream).
                     _pendingBlockBreak = true;
@@ -267,7 +267,7 @@ internal sealed class MarkdownBlockTokenDispatcher : BaseHtmlWriter
                 break;
 
             default:
-                WriteValue(writer, token.Value, null);
+                await WriteValueAsync(writer, token.Value, null);
                 break;
         }
     }

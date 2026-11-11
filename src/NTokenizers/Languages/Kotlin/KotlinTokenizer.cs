@@ -37,44 +37,42 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
         public bool InCommentLine;
         public bool InCommentBlock;
         public bool InOperator;
+        public bool Escape;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        bool escape = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref escape));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref bool escape)
+    private async Task ProcessChar(char c, State state)
     {
         if (state.InString)
         {
-            ProcessInString(c, state, ref escape);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InChar)
         {
-            ProcessInChar(c, state, ref escape);
+            await ProcessInChar(c, state);
             return;
         }
 
         if (state.InCommentLine)
         {
-            ProcessInCommentLine(c, state);
+            await ProcessInCommentLine(c, state);
             return;
         }
 
         if (state.InCommentBlock)
         {
-            ProcessInCommentBlock(c, state);
+            await ProcessInCommentBlock(c, state);
             return;
         }
 
@@ -87,9 +85,9 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
             }
             else
             {
-                EmitToken(KotlinTokenType.Whitespace);
+                await EmitToken(KotlinTokenType.Whitespace);
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -103,10 +101,10 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -121,17 +119,17 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
             }
             else
             {
-                EmitToken(KotlinTokenType.Number);
+                await EmitToken(KotlinTokenType.Number);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
 
         if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -184,35 +182,35 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
         }
         else if (c == '(')
         {
-            EmitToken(KotlinTokenType.OpenParenthesis, "(");
+            await EmitToken(KotlinTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(KotlinTokenType.CloseParenthesis, ")");
+            await EmitToken(KotlinTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(KotlinTokenType.OpenBrace, "{");
+            await EmitToken(KotlinTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(KotlinTokenType.CloseBrace, "}");
+            await EmitToken(KotlinTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(KotlinTokenType.OpenBracket, "[");
+            await EmitToken(KotlinTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(KotlinTokenType.CloseBracket, "]");
+            await EmitToken(KotlinTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(KotlinTokenType.Comma, ",");
+            await EmitToken(KotlinTokenType.Comma, ",");
         }
         else if (c == ';')
         {
-            EmitToken(KotlinTokenType.SequenceTerminator, ";");
+            await EmitToken(KotlinTokenType.SequenceTerminator, ";");
         }
         else if (c == ':')
         {
@@ -220,11 +218,11 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
             if (next == ':')
             {
                 Read();
-                EmitToken(KotlinTokenType.DoubleColon, "::");
+                await EmitToken(KotlinTokenType.DoubleColon, "::");
             }
             else
             {
-                EmitToken(KotlinTokenType.Colon, ":");
+                await EmitToken(KotlinTokenType.Colon, ":");
             }
         }
         else if (c == '.')
@@ -237,20 +235,20 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
             }
             else
             {
-                EmitToken(KotlinTokenType.Dot, ".");
+                await EmitToken(KotlinTokenType.Dot, ".");
             }
         }
         else if (c == '@')
         {
-            EmitToken(KotlinTokenType.At, "@");
+            await EmitToken(KotlinTokenType.At, "@");
         }
         else if (c == '#')
         {
-            EmitToken(KotlinTokenType.Pound, "#");
+            await EmitToken(KotlinTokenType.Pound, "#");
         }
         else if (c == '?')
         {
-            EmitToken(KotlinTokenType.QuestionMark, "?");
+            await EmitToken(KotlinTokenType.QuestionMark, "?");
         }
         else if (IsOperatorChar(c))
         {
@@ -259,51 +257,51 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
         }
         else
         {
-            EmitToken(KotlinTokenType.NotDefined, c.ToString());
+            await EmitToken(KotlinTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(KotlinTokenType.StringValue);
+            await EmitToken(KotlinTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInChar(char c, State state, ref bool escape)
+    private async Task ProcessInChar(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '\'')
         {
-            EmitToken(KotlinTokenType.CharValue);
+            await EmitToken(KotlinTokenType.CharValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInCommentLine(char c, State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(KotlinTokenType.Comment);
+            await EmitToken(KotlinTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -315,7 +313,7 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -324,7 +322,7 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(KotlinTokenType.Comment);
+                await EmitToken(KotlinTokenType.Comment);
                 _buffer.Clear();
                 ClearState(state);
                 return;
@@ -332,7 +330,7 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
         }
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -340,23 +338,23 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
         if (IsMultiCharOperator(combined))
         {
             _buffer.Append(c);
-            EmitToken(KotlinTokenType.Operator);
+            await EmitToken(KotlinTokenType.Operator);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
-            EmitToken(KotlinTokenType.Operator, current);
+            await EmitToken(KotlinTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
-            EmitToken(KotlinTokenType.Operator, current);
+            await EmitToken(KotlinTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            bool tempEscape = false;
-            ProcessChar(c, state, ref tempEscape);
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -378,72 +376,72 @@ public sealed class KotlinTokenizer : BaseSubTokenizer<KotlinToken>
                op == "<" || op == ">" || op == "=" || op == "?";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
             if (value == "true" || value == "false")
             {
-                EmitToken(KotlinTokenType.Boolean, value);
+                await EmitToken(KotlinTokenType.Boolean, value);
             }
             else if (value == "null")
             {
-                EmitToken(KotlinTokenType.Null, value);
+                await EmitToken(KotlinTokenType.Null, value);
             }
             else
             {
-                EmitToken(KotlinTokenType.Keyword, value);
+                await EmitToken(KotlinTokenType.Keyword, value);
             }
         }
         else
         {
-            EmitToken(KotlinTokenType.Identifier, value);
+            await EmitToken(KotlinTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(KotlinTokenType type, string value)
+    private async Task EmitToken(KotlinTokenType type, string value)
     {
-        _onToken(new KotlinToken(type, value));
+        await _onToken(new KotlinToken(type, value));
     }
 
-    private void EmitToken(KotlinTokenType type)
+    private async Task EmitToken(KotlinTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(KotlinTokenType.Whitespace);
+                await EmitToken(KotlinTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(KotlinTokenType.Number);
+                await EmitToken(KotlinTokenType.Number);
             }
             else if (state.InString)
             {
-                EmitToken(KotlinTokenType.StringValue);
+                await EmitToken(KotlinTokenType.StringValue);
             }
             else if (state.InChar)
             {
-                EmitToken(KotlinTokenType.CharValue);
+                await EmitToken(KotlinTokenType.CharValue);
             }
             else if (state.InCommentLine || state.InCommentBlock)
             {
-                EmitToken(KotlinTokenType.Comment);
+                await EmitToken(KotlinTokenType.Comment);
             }
             else if (state.InOperator)
             {
-                EmitToken(KotlinTokenType.Operator);
+                await EmitToken(KotlinTokenType.Operator);
                 _buffer.Clear();
             }
         }

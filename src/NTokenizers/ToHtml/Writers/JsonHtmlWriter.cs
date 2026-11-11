@@ -15,7 +15,7 @@ internal sealed class JsonHtmlWriter : AbstractTokenToHtmlWriter<JsonToken>
         css.AppendLine();
     }
 
-    internal override void WriteHtml(JsonToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(JsonToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
@@ -25,36 +25,36 @@ internal sealed class JsonHtmlWriter : AbstractTokenToHtmlWriter<JsonToken>
             case JsonTokenType.EndArray:
             case JsonTokenType.Colon:
             case JsonTokenType.Comma:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case JsonTokenType.PropertyName:
-                WriteValue(writer, token.Value, "tok-json-property", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-json-property", inPreBlock: true);
                 break;
 
             case JsonTokenType.StringValue:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case JsonTokenType.Number:
-                WriteValue(writer, token.Value, "tok-number", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-number", inPreBlock: true);
                 break;
 
             case JsonTokenType.True:
             case JsonTokenType.False:
-                WriteValue(writer, token.Value, "tok-boolean", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-boolean", inPreBlock: true);
                 break;
 
             case JsonTokenType.Null:
-                WriteValue(writer, token.Value, "tok-null", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-null", inPreBlock: true);
                 break;
 
             case JsonTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

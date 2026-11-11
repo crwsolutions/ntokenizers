@@ -7,16 +7,16 @@ namespace NTokenizers.ToHtml.Writers;
 /// </summary>
 internal sealed class PythonHtmlWriter : AbstractTokenToHtmlWriter<PythonToken>
 {
-    internal override void WriteHtml(PythonToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(PythonToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
             case PythonTokenType.NotDefined:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
 
             case PythonTokenType.Operator:
-                WriteValue(writer, token.Value, "tok-operator", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-operator", inPreBlock: true);
                 break;
 
             case PythonTokenType.OpenParenthesis:
@@ -30,35 +30,35 @@ internal sealed class PythonHtmlWriter : AbstractTokenToHtmlWriter<PythonToken>
             case PythonTokenType.Colon:
             case PythonTokenType.Semicolon:
             case PythonTokenType.Hash:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case PythonTokenType.StringValue:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case PythonTokenType.Number:
-                WriteValue(writer, token.Value, "tok-number", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-number", inPreBlock: true);
                 break;
 
             case PythonTokenType.Identifier:
-                WriteValue(writer, token.Value, "tok-identifier", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-identifier", inPreBlock: true);
                 break;
 
             case PythonTokenType.Keyword:
-                WriteValue(writer, token.Value, "tok-keyword", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-keyword", inPreBlock: true);
                 break;
 
             case PythonTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case PythonTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

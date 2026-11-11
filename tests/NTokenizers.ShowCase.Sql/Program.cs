@@ -8,7 +8,7 @@ string sql = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(sql));
-await SqlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await SqlTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch

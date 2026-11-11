@@ -31,6 +31,15 @@ public sealed class MarkdownConverter
     }
 
     /// <summary>
+    /// Converts a Markdown string to an HTML fragment (no document wrapper).
+    /// </summary>
+    public static Task<string> ToHtmlAsync(string input)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
+        return ToHtmlAsync(stream);
+    }
+
+    /// <summary>
     /// Converts a Markdown stream to an HTML fragment (no document wrapper).
     /// </summary>
     public static async Task<string> ToHtmlAsync(Stream inputStream)
@@ -42,6 +51,8 @@ public sealed class MarkdownConverter
 
     /// <summary>
     /// Converts a Markdown stream to an HTML fragment and writes it directly to the provided writer.
+    /// The writer is only written to through <c>WriteAsync</c> and <c>FlushAsync</c>, so it can
+    /// safely wrap a stream that disallows synchronous IO, such as a Kestrel response body.
     /// </summary>
     /// <returns>The consumed Markdown source text, as decoded from the stream (with any BOM detected and stripped).</returns>
     public static async Task<string> WriteHtmlAsync(Stream inputStream, TextWriter writer, CancellationToken ct = default)
@@ -53,19 +64,26 @@ public sealed class MarkdownConverter
 
     /// <summary>
     /// Converts a Markdown text reader to an HTML fragment and writes it directly to the provided writer.
+    /// The writer is only written to through <c>WriteAsync</c> and <c>FlushAsync</c> (in token order,
+    /// with a single final flush), so it can safely wrap a stream that disallows synchronous IO,
+    /// such as a Kestrel response body. A write failure (e.g. the client went away)
+    /// propagates from the awaited token callback and ends the parse.
     /// </summary>
     /// <returns>The consumed Markdown source text, exactly as read from the reader.</returns>
     public static async Task<string> WriteHtmlAsync(TextReader reader, TextWriter writer, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         var markdownWriter = new MarkdownHtmlWriter();
-        var stringBuilder = new StringBuilder();
-        var lookaheadBuffer = new Queue<char>();
 
-        return await MarkdownTokenizer.Create().ParseAsync(reader, stringBuilder, lookaheadBuffer, ct, async token =>
+        // Each token is written to completion before the tokenizer emits the next one,
+        // so the output cannot get ahead of the writer.
+        var markdown = await MarkdownTokenizer.Create().ParseAsync(reader, new StringBuilder(), new Queue<char>(), ct, async token =>
         {
-            await markdownWriter.WriteTokenAsync(token, writer);
+            await markdownWriter.WriteTokenAsync(token, writer, ct);
         });
+
+        await writer.FlushAsync();
+        return markdown;
     }
 
     /// <summary>
@@ -75,6 +93,15 @@ public sealed class MarkdownConverter
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         return ToHtmlDocumentAsync(stream).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Converts a Markdown string to a complete HTML document (with DOCTYPE, head, body wrapper).
+    /// </summary>
+    public static Task<string> ToHtmlDocumentAsync(string input)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
+        return ToHtmlDocumentAsync(stream);
     }
 
     /// <summary>

@@ -15,10 +15,10 @@ The JSON tokenizer is part of the NTokenizers library and provides a stream-capa
 
 The JSON tokenizer inherits from `BaseSubTokenizer<JsonToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<JsonToken> onToken)` - Asynchronously parses a stream of JSON code
-- `Parse(Stream stream, Action<JsonToken> onToken)` - Synchronously parses a stream of JSON code
+- `ParseAsync(Stream stream, Func<JsonToken, Task> onToken)` - Asynchronously parses a stream of JSON code
+- `Parse(Stream stream, Func<JsonToken, Task> onToken)` - Synchronously parses a stream of JSON code
 - `Parse(string input)` - Parses a string of JSON code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<JsonToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<JsonToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -38,7 +38,7 @@ string jsonCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonCode));
-await JsonTokenizer.Create().ParseAsync(stream, onToken: token =>
+await JsonTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -70,7 +70,7 @@ using System.IO;
 
 string jsonCode = """{"name":"John","age":30}""";
 using var reader = new StringReader(jsonCode);
-await JsonTokenizer.Create().ParseAsync(reader, onToken: token =>
+await JsonTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

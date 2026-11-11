@@ -533,7 +533,7 @@ public class KotlinTokenizerTests
         var code = "val x = 42";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(code));
         var tokens = new List<KotlinToken>();
-        await KotlinTokenizer.Create().ParseAsync(stream, t => tokens.Add((KotlinToken)t));
+        await KotlinTokenizer.Create().ParseAsync(stream, async t => tokens.Add((KotlinToken)t));
         Assert.NotEmpty(tokens);
     }
 
@@ -552,11 +552,11 @@ public class KotlinTokenizerTests
 
         var kotlinTokens = new List<KotlinToken>();
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(markdown));
-        await MarkdownTokenizer.Create().ParseAsync(stream, token =>
+        await MarkdownTokenizer.Create().ParseAsync(stream, async token => 
         {
             if (token.Metadata is KotlinCodeBlockMetadata kotlinMeta)
             {
-                kotlinMeta.RegisterInlineTokenHandler(t => kotlinTokens.Add((KotlinToken)t));
+                await kotlinMeta.ParseInlinesAsync(async t => kotlinTokens.Add((KotlinToken)t));
             }
         });
 

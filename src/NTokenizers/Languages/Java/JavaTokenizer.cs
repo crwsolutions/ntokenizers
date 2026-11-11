@@ -47,44 +47,42 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
         public bool InCommentLine;
         public bool InCommentBlock;
         public bool InOperator;
+        public bool Escape;
     }
 
     /// <inheritdoc/>
-    internal protected override Task ParseAsync(CancellationToken ct)
+    internal protected override async Task ParseAsync(CancellationToken ct)
     {
         var state = new State();
-        bool escape = false;
 
-        TokenizeCharacters(ct, (c) => ProcessChar(c, state, ref escape));
+        await TokenizeCharactersAsync(ct, async (c) => await ProcessChar(c, state));
 
-        EmitPending(state);
-
-        return Task.CompletedTask;
+        await EmitPending(state);
     }
 
-    private void ProcessChar(char c, State state, ref bool escape)
+    private async Task ProcessChar(char c, State state)
     {
         if (state.InString)
         {
-            ProcessInString(c, state, ref escape);
+            await ProcessInString(c, state);
             return;
         }
 
         if (state.InChar)
         {
-            ProcessInChar(c, state, ref escape);
+            await ProcessInChar(c, state);
             return;
         }
 
         if (state.InCommentLine)
         {
-            ProcessInCommentLine(c, state);
+            await ProcessInCommentLine(c, state);
             return;
         }
 
         if (state.InCommentBlock)
         {
-            ProcessInCommentBlock(c, state);
+            await ProcessInCommentBlock(c, state);
             return;
         }
 
@@ -97,9 +95,9 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
             }
             else
             {
-                EmitToken(JavaTokenType.Whitespace);
+                await EmitToken(JavaTokenType.Whitespace);
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -113,10 +111,10 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
             }
             else
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
@@ -132,17 +130,17 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
             }
             else
             {
-                EmitToken(JavaTokenType.Number);
+                await EmitToken(JavaTokenType.Number);
                 _buffer.Clear();
                 ClearState(state);
-                ProcessChar(c, state, ref escape);
+                await ProcessChar(c, state);
                 return;
             }
         }
 
         if (state.InOperator)
         {
-            ProcessInOperator(c, state);
+            await ProcessInOperator(c, state);
             return;
         }
 
@@ -195,39 +193,39 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
         }
         else if (c == '(')
         {
-            EmitToken(JavaTokenType.OpenParenthesis, "(");
+            await EmitToken(JavaTokenType.OpenParenthesis, "(");
         }
         else if (c == ')')
         {
-            EmitToken(JavaTokenType.CloseParenthesis, ")");
+            await EmitToken(JavaTokenType.CloseParenthesis, ")");
         }
         else if (c == '{')
         {
-            EmitToken(JavaTokenType.OpenBrace, "{");
+            await EmitToken(JavaTokenType.OpenBrace, "{");
         }
         else if (c == '}')
         {
-            EmitToken(JavaTokenType.CloseBrace, "}");
+            await EmitToken(JavaTokenType.CloseBrace, "}");
         }
         else if (c == '[')
         {
-            EmitToken(JavaTokenType.OpenBracket, "[");
+            await EmitToken(JavaTokenType.OpenBracket, "[");
         }
         else if (c == ']')
         {
-            EmitToken(JavaTokenType.CloseBracket, "]");
+            await EmitToken(JavaTokenType.CloseBracket, "]");
         }
         else if (c == ',')
         {
-            EmitToken(JavaTokenType.Comma, ",");
+            await EmitToken(JavaTokenType.Comma, ",");
         }
         else if (c == ';')
         {
-            EmitToken(JavaTokenType.SequenceTerminator, ";");
+            await EmitToken(JavaTokenType.SequenceTerminator, ";");
         }
         else if (c == ':')
         {
-            EmitToken(JavaTokenType.Colon, ":");
+            await EmitToken(JavaTokenType.Colon, ":");
         }
         else if (c == '.')
         {
@@ -239,7 +237,7 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
             }
             else
             {
-                EmitToken(JavaTokenType.Dot, ".");
+                await EmitToken(JavaTokenType.Dot, ".");
             }
         }
         else if (IsOperatorChar(c))
@@ -249,51 +247,51 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
         }
         else
         {
-            EmitToken(JavaTokenType.NotDefined, c.ToString());
+            await EmitToken(JavaTokenType.NotDefined, c.ToString());
         }
     }
 
-    private void ProcessInString(char c, State state, ref bool escape)
+    private async Task ProcessInString(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '"')
         {
-            EmitToken(JavaTokenType.StringValue);
+            await EmitToken(JavaTokenType.StringValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInChar(char c, State state, ref bool escape)
+    private async Task ProcessInChar(char c, State state)
     {
         _buffer.Append(c);
-        if (escape)
+        if (state.Escape)
         {
-            escape = false;
+            state.Escape = false;
         }
         else if (c == '\\')
         {
-            escape = true;
+            state.Escape = true;
         }
         else if (c == '\'')
         {
-            EmitToken(JavaTokenType.CharValue);
+            await EmitToken(JavaTokenType.CharValue);
             ClearState(state);
         }
     }
 
-    private void ProcessInCommentLine(char c, State state)
+    private async Task ProcessInCommentLine(char c, State state)
     {
         if (c == '\n' || c == '\r')
         {
-            EmitToken(JavaTokenType.Comment);
+            await EmitToken(JavaTokenType.Comment);
             _buffer.Clear();
             ClearState(state);
             state.InWhitespace = true;
@@ -305,7 +303,7 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
         }
     }
 
-    private void ProcessInCommentBlock(char c, State state)
+    private async Task ProcessInCommentBlock(char c, State state)
     {
         _buffer.Append(c);
         if (c == '*')
@@ -314,7 +312,7 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
             if (next == '/')
             {
                 _buffer.Append((char)Read());
-                EmitToken(JavaTokenType.Comment);
+                await EmitToken(JavaTokenType.Comment);
                 ClearState(state);
                 return;
             }
@@ -322,7 +320,7 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
         // If not closing, continue accumulating
     }
 
-    private void ProcessInOperator(char c, State state)
+    private async Task ProcessInOperator(char c, State state)
     {
         string current = _buffer.ToString();
         string combined = current + c;
@@ -339,23 +337,23 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
                     return;
                 }
             }
-            EmitToken(JavaTokenType.Operator);
+            await EmitToken(JavaTokenType.Operator);
             _buffer.Clear();
             ClearState(state);
         }
         else if (IsOperatorChar(c))
         {
-            EmitToken(JavaTokenType.Operator, current);
+            await EmitToken(JavaTokenType.Operator, current);
             _buffer.Clear();
             _buffer.Append(c);
         }
         else
         {
-            EmitToken(JavaTokenType.Operator, current);
+            await EmitToken(JavaTokenType.Operator, current);
             _buffer.Clear();
             ClearState(state);
-            bool tempEscape = false;
-            ProcessChar(c, state, ref tempEscape);
+            state.Escape = false;
+            await ProcessChar(c, state);
         }
     }
 
@@ -377,72 +375,72 @@ public sealed class JavaTokenizer : BaseSubTokenizer<JavaToken>
                op == "<" || op == ">" || op == "=" || op == "@";
     }
 
-    private void EmitIdentifierOrKeyword(string value)
+    private async Task EmitIdentifierOrKeyword(string value)
     {
         if (Keywords.Contains(value))
         {
             if (value == "true" || value == "false")
             {
-                EmitToken(JavaTokenType.Boolean, value);
+                await EmitToken(JavaTokenType.Boolean, value);
             }
             else if (value == "null")
             {
-                EmitToken(JavaTokenType.Null, value);
+                await EmitToken(JavaTokenType.Null, value);
             }
             else
             {
-                EmitToken(JavaTokenType.Keyword, value);
+                await EmitToken(JavaTokenType.Keyword, value);
             }
         }
         else
         {
-            EmitToken(JavaTokenType.Identifier, value);
+            await EmitToken(JavaTokenType.Identifier, value);
         }
     }
 
-    private void EmitToken(JavaTokenType type, string value)
+    private async Task EmitToken(JavaTokenType type, string value)
     {
-        _onToken(new JavaToken(type, value));
+        await _onToken(new JavaToken(type, value));
     }
 
-    private void EmitToken(JavaTokenType type)
+    private async Task EmitToken(JavaTokenType type)
     {
-        EmitToken(type, _buffer.ToString());
+        await EmitToken(type, _buffer.ToString());
         _buffer.Clear();
     }
 
-    private void EmitPending(State state)
+    private async Task EmitPending(State state)
     {
         if (_buffer.Length > 0)
         {
             if (state.InWhitespace)
             {
-                EmitToken(JavaTokenType.Whitespace);
+                await EmitToken(JavaTokenType.Whitespace);
             }
             else if (state.InIdentifier)
             {
-                EmitIdentifierOrKeyword(_buffer.ToString());
+                await EmitIdentifierOrKeyword(_buffer.ToString());
                 _buffer.Clear();
             }
             else if (state.InNumber)
             {
-                EmitToken(JavaTokenType.Number);
+                await EmitToken(JavaTokenType.Number);
             }
             else if (state.InString)
             {
-                EmitToken(JavaTokenType.StringValue);
+                await EmitToken(JavaTokenType.StringValue);
             }
             else if (state.InChar)
             {
-                EmitToken(JavaTokenType.CharValue);
+                await EmitToken(JavaTokenType.CharValue);
             }
             else if (state.InCommentLine || state.InCommentBlock)
             {
-                EmitToken(JavaTokenType.Comment);
+                await EmitToken(JavaTokenType.Comment);
             }
             else if (state.InOperator)
             {
-                EmitToken(JavaTokenType.Operator);
+                await EmitToken(JavaTokenType.Operator);
                 _buffer.Clear();
             }
         }

@@ -15,10 +15,10 @@ The XML tokenizer is part of the NTokenizers library and provides a stream-capab
 
 The XML tokenizer inherits from `BaseSubTokenizer<XmlToken>` and provides the following key methods:
 
-- `ParseAsync(Stream stream, Action<XmlToken> onToken)` - Asynchronously parses a stream of XML code
-- `Parse(Stream stream, Action<XmlToken> onToken)` - Synchronously parses a stream of XML code
+- `ParseAsync(Stream stream, Func<XmlToken, Task> onToken)` - Asynchronously parses a stream of XML code
+- `Parse(Stream stream, Func<XmlToken, Task> onToken)` - Synchronously parses a stream of XML code
 - `Parse(string input)` - Parses a string of XML code and returns a list of tokens
-- `ParseAsync(TextReader reader, Action<XmlToken> onToken)` - Asynchronously parses from a TextReader
+- `ParseAsync(TextReader reader, Func<XmlToken, Task> onToken)` - Asynchronously parses from a TextReader
 
 ## Usage Examples
 
@@ -36,7 +36,7 @@ string xmlCode = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(xmlCode));
-await XmlTokenizer.Create().ParseAsync(stream, onToken: token =>
+await XmlTokenizer.Create().ParseAsync(stream, onToken: async token =>
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
@@ -70,7 +70,7 @@ string xmlCode = """
     <root><item id="1">Text</item></root>
     """;
 using var reader = new StringReader(xmlCode);
-await XmlTokenizer.Create().ParseAsync(reader, onToken: token =>
+await XmlTokenizer.Create().ParseAsync(reader, onToken: async token =>
 {
     Console.WriteLine($"Token: {token.TokenType} = '{token.Value}'");
 });

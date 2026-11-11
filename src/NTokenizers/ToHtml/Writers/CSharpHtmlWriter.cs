@@ -7,18 +7,18 @@ namespace NTokenizers.ToHtml.Writers;
 /// </summary>
 internal sealed class CSharpHtmlWriter : AbstractTokenToHtmlWriter<CSharpToken>
 {
-    internal override void WriteHtml(CSharpToken token, TextWriter writer)
+    internal override async Task WriteHtmlAsync(CSharpToken token, TextWriter writer, CancellationToken ct = default)
     {
         switch (token.TokenType)
         {
             case CSharpTokenType.NotDefined:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
 
             case CSharpTokenType.And:
             case CSharpTokenType.Or:
             case CSharpTokenType.Not:
-                WriteValue(writer, token.Value, "tok-keyword", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-keyword", inPreBlock: true);
                 break;
 
             case CSharpTokenType.Equals:
@@ -32,7 +32,7 @@ internal sealed class CSharpHtmlWriter : AbstractTokenToHtmlWriter<CSharpToken>
             case CSharpTokenType.Multiply:
             case CSharpTokenType.Divide:
             case CSharpTokenType.Modulo:
-                WriteValue(writer, token.Value, "tok-operator", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-operator", inPreBlock: true);
                 break;
 
             case CSharpTokenType.OpenParenthesis:
@@ -40,39 +40,39 @@ internal sealed class CSharpHtmlWriter : AbstractTokenToHtmlWriter<CSharpToken>
             case CSharpTokenType.Comma:
             case CSharpTokenType.Dot:
             case CSharpTokenType.SequenceTerminator:
-                WriteValue(writer, token.Value, "tok-punctuation", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-punctuation", inPreBlock: true);
                 break;
 
             case CSharpTokenType.StringValue:
-                WriteValue(writer, token.Value, "tok-string", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-string", inPreBlock: true);
                 break;
 
             case CSharpTokenType.Number:
-                WriteValue(writer, token.Value, "tok-number", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-number", inPreBlock: true);
                 break;
 
             case CSharpTokenType.Identifier:
-                WriteValue(writer, token.Value, "tok-identifier", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-identifier", inPreBlock: true);
                 break;
 
             case CSharpTokenType.Keyword:
-                WriteValue(writer, token.Value, "tok-keyword", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-keyword", inPreBlock: true);
                 break;
 
             case CSharpTokenType.Comment:
-                WriteValue(writer, token.Value, "tok-comment", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-comment", inPreBlock: true);
                 break;
 
             case CSharpTokenType.Operator:
-                WriteValue(writer, token.Value, "tok-operator", inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, "tok-operator", inPreBlock: true);
                 break;
 
             case CSharpTokenType.Whitespace:
-                writer.Write(token.Value);
+                await writer.WriteAsync(token.Value);
                 break;
 
             default:
-                WriteValue(writer, token.Value, null, inPreBlock: true);
+                await WriteValueAsync(writer, token.Value, null, inPreBlock: true);
                 break;
         }
     }

@@ -10,7 +10,7 @@ string typescript = """
     """;
 
 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(typescript));
-await TypescriptTokenizer.Create().ParseAsync(stream, onToken: token =>
+await TypescriptTokenizer.Create().ParseAsync(stream, onToken: async token => 
 {
     var value = Markup.Escape(token.Value);
     var colored = token.TokenType switch
