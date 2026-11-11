@@ -13,9 +13,9 @@
 		<Authors>crwsolutions</Authors>
 		<Copyright>(c) crwsolutions</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Description>Collection of stream-capable tokenizers for Markdown, HTML, JSON, XML, C#, TypeScript, Python, SQL, CSS, YAML, TOML, C, C++, Java, Go, Rust, Kotlin and Swift processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</Description>
-		<PackageDescription>Collection of stream-capable tokenizers for Markdown, HTML, JSON, XML, C#, TypeScript, Python, SQL, CSS, YAML, TOML, C, C++, Java, Go, Rust, Kotlin and Swift processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</PackageDescription>
-		<PackageTags>markdown;md;html;json;xml;c#;csharp;typescript;javascript;python;sql;css;yaml;toml;c;c++;cpp;java;go;rust;kotlin;swift;stream;streaming;parse;parsing;dotnet;tohtml</PackageTags>
+		<Description>Collection of .NET streaming lexer and tokenizers for Markdown, HTML, JSON, XML, C#, TypeScript, Python, SQL, CSS, YAML, TOML, C, C++, Java, Go, Rust, Kotlin and Swift processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</Description>
+		<PackageDescription>Collection of .NET streaming lexer and tokenizers for Markdown, HTML, JSON, XML, C#, TypeScript, Python, SQL, CSS, YAML, TOML, C, C++, Java, Go, Rust, Kotlin and Swift processing, plus a stream-capable Markdown to HTML converter (ToHtml API). See README for usage and details.</PackageDescription>
+		<PackageTags>markdown;md;html;json;xml;c#;csharp;typescript;javascript;python;sql;css;yaml;toml;c;c++;cpp;java;go;rust;kotlin;swift;stream;streaming;parse;parsing;lexer;tokenizers;dotnet;tohtml</PackageTags>
 		<RepositoryUrl>https://github.com/crwsolutions/ntokenizers</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
